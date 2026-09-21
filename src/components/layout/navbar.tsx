@@ -17,6 +17,62 @@ const links: { href: string; key: TranslationKey }[] = [
   { href: "/contact", key: "nav.contact" },
 ];
 
+function LanguageDropdown({
+  locale,
+  setLocale,
+  buttonClassName,
+}: {
+  locale: Locale;
+  setLocale: (l: Locale) => void;
+  buttonClassName?: string;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const order: { val: Locale; label: string }[] = [
+    { val: "en", label: "English" },
+    { val: "hi", label: "हिंदी" },
+    { val: "te", label: "తెలుగు" },
+    { val: "ta", label: "தமிழ்" },
+  ];
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        aria-label="Switch language"
+        onClick={() => setIsOpen(!isOpen)}
+        className={buttonClassName || "p-2 text-muted hover:text-primary transition-colors flex items-center"}
+      >
+        <Languages size={20} />
+      </button>
+      {isOpen && (
+        <>
+          <div
+            className="fixed inset-0 z-40"
+            onClick={() => setIsOpen(false)}
+          />
+          <div className="absolute right-0 mt-2 py-2 w-32 bg-background border border-border rounded-lg shadow-lg z-50">
+            {order.map((l) => (
+              <button
+                key={l.val}
+                type="button"
+                onClick={() => {
+                  setLocale(l.val);
+                  setIsOpen(false);
+                }}
+                className={`w-full text-left px-4 py-2 text-sm hover:bg-cream/40 transition-colors ${
+                  locale === l.val ? "font-semibold text-primary" : "text-text"
+                }`}
+              >
+                {l.label}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 export function Navbar() {
   const [open, setOpen] = useState(false);
   const [user, setUser] = useState<{ name: string } | null>(null);
@@ -59,18 +115,11 @@ export function Navbar() {
           <button aria-label="Search" className="p-2 text-muted hover:text-primary transition-colors">
             <Search size={18} />
           </button>
-          <button
-            aria-label="Switch language"
-            onClick={() => {
-              const order: Locale[] = ["en", "hi", "te", "ta"];
-              const next = order[(order.indexOf(locale) + 1) % order.length];
-              setLocale(next);
-            }}
-            className="flex items-center gap-1 p-2 text-xs font-medium text-muted hover:text-primary transition-colors"
-          >
-            <Languages size={16} />
-            {locale === "en" ? "EN" : locale === "hi" ? "हिं" : locale === "te" ? "తె" : "தமிழ்"}
-          </button>
+          <LanguageDropdown 
+            locale={locale} 
+            setLocale={setLocale} 
+            buttonClassName="p-2 text-muted hover:text-primary transition-colors flex items-center gap-1"
+          />
           {user ? (
             <>
               <LinkButton href="/user/dashboard" variant="ghost" size="sm">
@@ -95,18 +144,11 @@ export function Navbar() {
         </div>
 
         <div className="lg:hidden flex items-center gap-2">
-          <button
-            aria-label="Switch language"
-            onClick={() => {
-              const order: Locale[] = ["en", "hi", "te", "ta"];
-              const next = order[(order.indexOf(locale) + 1) % order.length];
-              setLocale(next);
-            }}
-            className="p-3 text-xs font-medium text-maroon hover:bg-cream/40 rounded-full transition-colors flex items-center gap-1"
-          >
-            <Languages size={20} />
-            {locale === "en" ? "EN" : locale === "hi" ? "हिं" : locale === "te" ? "తె" : "தமிழ்"}
-          </button>
+          <LanguageDropdown 
+            locale={locale} 
+            setLocale={setLocale} 
+            buttonClassName="p-3 text-xs font-medium text-maroon hover:bg-cream/40 rounded-full transition-colors flex items-center gap-1"
+          />
 
           <button
             type="button"
