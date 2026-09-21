@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
 
-export default function BlogPage() {
-  const posts = db.listPublishedPosts();
+export default async function BlogPage() {
+  const posts = await db.listBlogPosts();
 
   return (
     <div className="container-app py-14 max-w-3xl">
@@ -10,7 +10,7 @@ export default function BlogPage() {
       <p className="text-muted mt-2">Stories and updates from the field.</p>
 
       <div className="mt-10 space-y-8">
-        {posts.map((p) => (
+        {posts.map((p: any) => (
           <Link key={p.id} href={`/blog/${p.slug}`} className="block group">
             <p className="text-xs text-muted">
               {p.publishedAt && new Date(p.publishedAt).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}

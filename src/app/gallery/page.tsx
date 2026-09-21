@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { X } from "lucide-react";
 
-const categories = ["All", "Events", "Seva", "Community", "Education", "Spiritual", "Volunteers"];
+const categories = ["All", "Initiatives", "Seva", "Community", "Education", "Spiritual", "Volunteers"];
 
 const items = Array.from({ length: 12 }).map((_, i) => ({
   id: i,

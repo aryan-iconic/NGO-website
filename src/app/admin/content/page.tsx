@@ -2,10 +2,10 @@ import Link from "next/link";
 import { FileText, Calendar, HelpCircle, Image as ImageIcon } from "lucide-react";
 import { db } from "@/lib/db";
 
-export default function AdminContentPage() {
-  const posts = db.listAllPosts();
-  const events = db.listAllEvents();
-  const faqs = db.listFaqs();
+export default async function AdminContentPage() {
+  const posts = await db.listBlogPosts();
+  const events = await db.listEvents();
+  const faqs = await db.listFaqs();
 
   const cards = [
     { href: "/admin/content/blog", icon: FileText, label: "Blog Posts", count: posts.length },

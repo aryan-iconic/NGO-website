@@ -20,7 +20,7 @@ function slugify(title: string) {
 export async function GET() {
   const guard = await requireAdmin();
   if (guard.error) return guard.error;
-  return NextResponse.json({ success: true, events: db.listAllEvents() });
+  return NextResponse.json({ success: true, events: await db.listEvents() });
 }
 
 export async function POST(req: NextRequest) {
@@ -38,11 +38,11 @@ export async function POST(req: NextRequest) {
   const baseSlug = slugify(parsed.data.title);
   let slug = baseSlug;
   let n = 1;
-  while (db.listAllEvents().some((e) => e.slug === slug)) slug = `${baseSlug}-${++n}`;
+  while ((await db.listEvents()).some((e: any) => e.slug === slug)) slug = `${baseSlug}-${++n}`;
 
-  const event = db.createEvent({ ...parsed.data, slug });
+  const event = await db.createEvent({ ...parsed.data, slug });
 
-  db.logAudit({
+  await db.logAudit({
     actorType: "ADMIN",
     actorId: guard.admin!.id,
     actorName: guard.admin!.name,

@@ -1,16 +1,16 @@
 import { db } from "@/lib/db";
 import { formatPaise } from "@/lib/types";
 
-export default function AdminDashboardPage() {
-  const campaigns = db.listAllCampaigns();
-  const donations = db.listAllDonations();
-  const totalPaise = donations.reduce((s, d) => s + d.totalPaise, 0);
-  const volunteers = db.listVolunteerApplications();
+export default async function AdminDashboard() {
+  const campaigns = await db.listAllCampaigns();
+  const donations = await db.listAllDonations();
+  const totalPaise = donations.reduce((s: number, d: any) => s + d.totalPaise, 0);
+  const volunteers = await db.listVolunteerApplications();
 
   const stats = [
     { label: "Total Donations (all-time)", value: formatPaise(totalPaise) },
     { label: "Donation Count", value: String(donations.length) },
-    { label: "Active Campaigns", value: String(campaigns.filter((c) => c.status === "ACTIVE").length) },
+    { label: "Active Campaigns", value: String(campaigns.filter((c: any) => c.status === "ACTIVE").length) },
     { label: "Volunteer Applications", value: String(volunteers.length) },
   ];
 
@@ -42,21 +42,28 @@ export default function AdminDashboardPage() {
             </tr>
           </thead>
           <tbody>
-            {campaigns.map((c) => (
-              <tr key={c.id} className="border-b border-border/60 last:border-none">
-                <td className="py-3">{c.title}</td>
-                <td className="py-3 text-muted">{db.getCategory(c.categoryId)?.name ?? "—"}</td>
-                <td className="py-3">
-                  <span className="px-2 py-0.5 rounded-full text-xs bg-cream text-maroon">
-                    {c.status}
-                  </span>
-                </td>
-                <td className="py-3 text-muted">{c.updatedAt}</td>
-              </tr>
+            {campaigns.map((c: any) => (
+              <DashboardCampaignRow key={c.id} c={c} />
             ))}
           </tbody>
         </table>
       </div>
     </div>
+  );
+}
+
+async function DashboardCampaignRow({ c }: { c: any }) {
+  const category = await db.getCategory(c.categoryId);
+  return (
+    <tr className="border-b border-border/60 last:border-none">
+      <td className="py-3">{c.title}</td>
+      <td className="py-3 text-muted">{category?.name ?? "—"}</td>
+      <td className="py-3">
+        <span className="px-2 py-0.5 rounded-full text-xs bg-cream text-maroon">
+          {c.status}
+        </span>
+      </td>
+      <td className="py-3 text-muted">{new Date(c.updatedAt).toLocaleDateString("en-IN")}</td>
+    </tr>
   );
 }

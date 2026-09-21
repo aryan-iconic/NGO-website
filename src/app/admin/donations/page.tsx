@@ -1,8 +1,8 @@
 import { db } from "@/lib/db";
 import { formatPaise } from "@/lib/types";
 
-export default function AdminDonationsPage() {
-  const donations = db.listAllDonations();
+export default async function AdminDonationsPage() {
+  const donations = await db.listAllDonations();
 
   return (
     <div>
@@ -22,30 +22,9 @@ export default function AdminDonationsPage() {
             </tr>
           </thead>
           <tbody>
-            {donations.map((d) => {
-              const campaign = d.campaignId ? db.getCampaignById(d.campaignId) : null;
-              const receipt = db.getReceiptForDonation(d.id);
-              return (
-                <tr key={d.id} className="border-t border-border">
-                  <td className="p-3">
-                    <p className="font-mono text-xs">{d.donationNumber}</p>
-                    {receipt && <p className="font-mono text-[10px] text-muted">{receipt.receiptNumber}</p>}
-                  </td>
-                  <td className="p-3">
-                    {d.isAnonymous ? <span className="text-muted italic">Anonymous</span> : d.donorName}
-                    <p className="text-xs text-muted">{d.donorEmail}</p>
-                  </td>
-                  <td className="p-3 text-muted">{campaign?.title ?? "General Fund"}</td>
-                  <td className="p-3 font-medium">{formatPaise(d.totalPaise)}</td>
-                  <td className="p-3">
-                    <span className="px-2 py-0.5 rounded-full text-xs bg-success/10 text-success">
-                      {d.status}
-                    </span>
-                  </td>
-                  <td className="p-3 text-muted">{new Date(d.createdAt).toLocaleDateString("en-IN")}</td>
-                </tr>
-              );
-            })}
+            {donations.map((d: any) => (
+              <DonationRow key={d.id} d={d} />
+            ))}
           </tbody>
         </table>
         {donations.length === 0 && (
@@ -53,5 +32,30 @@ export default function AdminDonationsPage() {
         )}
       </div>
     </div>
+  );
+}
+
+async function DonationRow({ d }: { d: any }) {
+  const campaign = d.campaignId ? await db.getCampaignById(d.campaignId) : null;
+  const receipt = await db.getReceiptForDonation(d.id);
+  return (
+    <tr className="border-t border-border">
+      <td className="p-3">
+        <p className="font-mono text-xs">{d.donationNumber}</p>
+        {receipt && <p className="font-mono text-[10px] text-muted">{receipt.receiptNumber}</p>}
+      </td>
+      <td className="p-3">
+        {d.isAnonymous ? <span className="text-muted italic">Anonymous</span> : d.donorName}
+        <p className="text-xs text-muted">{d.donorEmail}</p>
+      </td>
+      <td className="p-3 text-muted">{campaign?.title ?? "General Fund"}</td>
+      <td className="p-3 font-medium">{formatPaise(d.totalPaise)}</td>
+      <td className="p-3">
+        <span className="px-2 py-0.5 rounded-full text-xs bg-success/10 text-success">
+          {d.status}
+        </span>
+      </td>
+      <td className="p-3 text-muted">{new Date(d.createdAt).toLocaleDateString("en-IN")}</td>
+    </tr>
   );
 }

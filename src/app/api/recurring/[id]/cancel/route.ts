@@ -11,7 +11,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
     return NextResponse.json({ success: false, error: { code: "UNAUTHORIZED", message: "Sign in required." } }, { status: 401 });
   }
 
-  const cancelled = db.cancelRecurring(id, adminId ? undefined : userId!);
+  const cancelled = await db.updateRecurringDonationStatus(id, adminId ? undefined : userId!);
   if (!cancelled) {
     return NextResponse.json(
       { success: false, error: { code: "NOT_FOUND", message: "Recurring donation not found." } },

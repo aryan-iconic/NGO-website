@@ -21,7 +21,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       { status: 400 }
     );
   }
-  const updated = db.updateFaq(id, parsed.data);
+  const updated = await db.updateFaq(id, parsed.data);
   if (!updated) return NextResponse.json({ success: false, error: { code: "NOT_FOUND", message: "FAQ not found." } }, { status: 404 });
   return NextResponse.json({ success: true, faq: updated });
 }
@@ -30,7 +30,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   const guard = await requireAdmin();
   if (guard.error) return guard.error;
   const { id } = await params;
-  const ok = db.deleteFaq(id);
+  const ok = await db.deleteFaq(id);
   if (!ok) return NextResponse.json({ success: false, error: { code: "NOT_FOUND", message: "FAQ not found." } }, { status: 404 });
   return NextResponse.json({ success: true });
 }

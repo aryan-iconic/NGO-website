@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
       { status: 400 }
     );
   }
-  const user = db.verifyUserPassword(parsed.data.email, parsed.data.password);
+  const user = await db.verifyUserPassword(parsed.data.email, parsed.data.password);
   if (!user) {
     // Generic message — avoids account enumeration.
     return NextResponse.json(

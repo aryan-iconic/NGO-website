@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
       { status: 400 }
     );
   }
-  const admin = db.verifyAdminPassword(parsed.data.email, parsed.data.password);
+  const admin = await db.verifyAdminPassword(parsed.data.email, parsed.data.password);
   if (!admin) {
     return NextResponse.json(
       { success: false, error: { code: "INVALID_CREDENTIALS", message: "Incorrect email or password." } },

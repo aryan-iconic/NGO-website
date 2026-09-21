@@ -2,8 +2,8 @@ import Link from "next/link";
 import { db } from "@/lib/db";
 import { LinkButton } from "@/components/ui/button";
 
-export default function AdminBlogListPage() {
-  const posts = db.listAllPosts();
+export default async function AdminBlogListPage() {
+  const posts = await db.listBlogPosts();
 
   return (
     <div>
@@ -13,7 +13,7 @@ export default function AdminBlogListPage() {
       </div>
 
       <div className="mt-6 bg-surface border border-border rounded-lg divide-y divide-border">
-        {posts.map((p) => (
+        {posts.map((p: any) => (
           <Link key={p.id} href={`/admin/content/blog/${p.id}`} className="p-4 flex justify-between items-center hover:bg-cream/40">
             <div>
               <p className="font-medium">{p.title}</p>

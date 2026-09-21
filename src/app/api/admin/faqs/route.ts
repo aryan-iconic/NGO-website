@@ -12,7 +12,7 @@ const schema = z.object({
 export async function GET() {
   const guard = await requireAdmin();
   if (guard.error) return guard.error;
-  return NextResponse.json({ success: true, faqs: db.listFaqs() });
+  return NextResponse.json({ success: true, faqs: await db.listFaqs() });
 }
 
 export async function POST(req: NextRequest) {
@@ -26,9 +26,9 @@ export async function POST(req: NextRequest) {
       { status: 400 }
     );
   }
-  const faq = db.createFaq(parsed.data);
+  const faq = await db.createFaq(parsed.data);
 
-  db.logAudit({
+  await db.logAudit({
     actorType: "ADMIN",
     actorId: guard.admin!.id,
     actorName: guard.admin!.name,

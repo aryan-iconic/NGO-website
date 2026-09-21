@@ -2,8 +2,8 @@ import Link from "next/link";
 import { db } from "@/lib/db";
 import { LinkButton } from "@/components/ui/button";
 
-export default function AdminEventsListPage() {
-  const events = db.listAllEvents();
+export default async function AdminEventsListPage() {
+  const events = await db.listEvents();
 
   return (
     <div>
@@ -13,7 +13,7 @@ export default function AdminEventsListPage() {
       </div>
 
       <div className="mt-6 bg-surface border border-border rounded-lg divide-y divide-border">
-        {events.map((e) => (
+        {events.map((e: any) => (
           <Link key={e.id} href={`/admin/content/events/${e.id}`} className="p-4 flex justify-between items-center hover:bg-cream/40">
             <div>
               <p className="font-medium">{e.title}</p>

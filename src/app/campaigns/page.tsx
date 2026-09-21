@@ -9,8 +9,9 @@ export default async function CampaignsPage({
   searchParams: Promise<{ sevaArea?: string }>;
 }) {
   const { sevaArea } = await searchParams;
-  const categories = db.listSevaAreas();
-  const filtered = db.listPublicCampaigns(sevaArea).map(toPublicCampaign);
+  const categories = await db.listSevaAreas();
+  const filteredList = await db.listPublicCampaigns(sevaArea);
+  const filtered = await Promise.all(filteredList.map(toPublicCampaign));
 
   return (
     <div className="container-app py-14">
@@ -28,7 +29,7 @@ export default async function CampaignsPage({
         >
           All
         </Link>
-        {categories.map((cat) => (
+        {categories.map((cat: any) => (
           <Link
             key={cat.id}
             href={`/campaigns?sevaArea=${cat.slug}`}

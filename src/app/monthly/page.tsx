@@ -146,7 +146,7 @@ export default function MonthlyGivingPage() {
         </Button>
         <p className="text-xs text-muted">
           This demo authorizes the subscription immediately via a mock gateway. In production
-          this step opens the payment gateway's subscription authorization flow.
+          this step opens the payment gateway&apos;s subscription authorization flow.
         </p>
       </form>
     </div>

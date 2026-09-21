@@ -1,8 +1,8 @@
 import { db } from "@/lib/db";
 
-export default function AdminPeoplePage() {
-  const volunteers = db.listVolunteerApplications();
-  const messages = db.listContactMessages();
+export default async function AdminPeoplePage() {
+  const volunteers = await db.listVolunteerApplications();
+  const messages = await db.listContactMessages();
 
   return (
     <div className="space-y-12">
@@ -20,7 +20,7 @@ export default function AdminPeoplePage() {
               </tr>
             </thead>
             <tbody>
-              {volunteers.map((v) => (
+              {volunteers.map((v: any) => (
                 <tr key={v.id} className="border-t border-border">
                   <td className="p-3">{v.name}</td>
                   <td className="p-3 text-muted">{v.email}{v.phone ? ` · ${v.phone}` : ""}</td>
@@ -40,7 +40,7 @@ export default function AdminPeoplePage() {
       <section>
         <h2 className="text-2xl font-serif text-maroon">Contact Messages</h2>
         <div className="mt-4 space-y-3">
-          {messages.map((m) => (
+          {messages.map((m: any) => (
             <div key={m.id} className="p-4 rounded-lg border border-border bg-surface">
               <div className="flex justify-between">
                 <p className="font-medium text-maroon">{m.name} <span className="text-muted font-normal">— {m.email}</span></p>

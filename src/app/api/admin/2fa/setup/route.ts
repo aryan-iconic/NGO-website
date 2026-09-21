@@ -9,7 +9,7 @@ export async function POST() {
   const admin = guard.admin!;
 
   const secret = generateSecret();
-  db.setTwoFactorPendingSecret(admin.id, secret);
+  await db.setTwoFactorPendingSecret(admin.id, secret);
   const qrCodeDataUrl = await generateQrCodeDataUrl(admin.email, secret);
 
   return NextResponse.json({ success: true, secret, qrCodeDataUrl });

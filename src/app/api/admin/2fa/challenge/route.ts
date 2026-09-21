@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const admin = db.findAdminById(adminId);
+  const admin = await db.findAdminById(adminId);
   if (!admin || !admin.twoFactorEnabled || !admin.twoFactorSecret) {
     return NextResponse.json(
       { success: false, error: { code: "INVALID_STATE", message: "Two-factor authentication is not set up for this account." } },

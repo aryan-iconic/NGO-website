@@ -23,7 +23,7 @@ export async function PATCH(
   if (guard.error) return guard.error;
 
   const { id } = await params;
-  const existing = db.getSevaArea(id);
+  const existing = await db.getSevaArea(id);
   if (!existing) {
     return NextResponse.json({ success: false, error: { code: "NOT_FOUND", message: "Not found" } }, { status: 404 });
   }
@@ -38,7 +38,7 @@ export async function PATCH(
 
   // Ensure unique slug if provided
   if (parsed.data.slug && parsed.data.slug !== existing.slug) {
-    if (db.getSevaAreaBySlug(parsed.data.slug)) {
+    if (await db.getSevaAreaBySlug(parsed.data.slug)) {
       return NextResponse.json(
         { success: false, error: { code: "CONFLICT", message: "Slug already exists" } },
         { status: 409 }
@@ -46,9 +46,9 @@ export async function PATCH(
     }
   }
 
-  const updated = db.updateSevaArea(id, parsed.data);
+  const updated = await db.updateSevaArea(id, parsed.data);
 
-  db.logAudit({
+  await db.logAudit({
     actorType: "ADMIN",
     actorId: guard.admin!.id,
     actorName: guard.admin!.name,
@@ -68,7 +68,7 @@ export async function DELETE(
   if (guard.error) return guard.error;
 
   const { id } = await params;
-  const existing = db.getSevaArea(id);
+  const existing = await db.getSevaArea(id);
   if (!existing) {
     return NextResponse.json({ success: false, error: { code: "NOT_FOUND", message: "Not found" } }, { status: 404 });
   }
@@ -76,9 +76,9 @@ export async function DELETE(
   // Check dependencies before allowing delete
   // (In memory mock for this demo, campaigns don't throw, but normally they'd cascade or block)
   // To keep it simple, we just allow delete.
-  db.deleteSevaArea(id);
+  await db.deleteSevaArea(id);
 
-  db.logAudit({
+  await db.logAudit({
     actorType: "ADMIN",
     actorId: guard.admin!.id,
     actorName: guard.admin!.name,

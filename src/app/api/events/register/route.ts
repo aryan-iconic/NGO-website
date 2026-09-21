@@ -17,14 +17,14 @@ export async function POST(req: NextRequest) {
       { status: 400 }
     );
   }
-  const event = db.getEventBySlug(parsed.data.eventSlug);
+  const event = await db.getEventBySlug(parsed.data.eventSlug);
   if (!event || !event.registrationEnabled) {
     return NextResponse.json(
       { success: false, error: { code: "REGISTRATION_CLOSED", message: "Registration is not open for this event." } },
       { status: 400 }
     );
   }
-  const result = db.registerForEvent(event.id, parsed.data.name, parsed.data.email, parsed.data.phone);
+  const result = await db.createEventRegistration({ eventId: event.id, name: parsed.data.name, email: parsed.data.email, phone: parsed.data.phone });
   if (result.alreadyRegistered) {
     return NextResponse.json(
       { success: false, error: { code: "ALREADY_REGISTERED", message: "This email is already registered for this event." } },

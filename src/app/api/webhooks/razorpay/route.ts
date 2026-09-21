@@ -38,13 +38,13 @@ export async function POST(req: NextRequest) {
       const paymentId = paymentEntity.id;
 
       // Find donation by orderId
-      const donation = db.listAllDonations().find((d) => d.paymentReference === orderId || d.id === orderId);
+      const donation = (await db.listAllDonations()).find((d: any) => d.paymentReference === orderId || d.id === orderId);
 
       if (donation && donation.status !== "SUCCESS") {
         // Mark as completed, generate receipt, etc.
         // In this in-memory mock, db.settlePayment handles finalizing.
         // However db doesn't expose it. We update status directly or via a new db method.
-        db.markDonationCompleted(donation.id, paymentId);
+        await db.markDonationCompleted(donation.id, paymentId);
       }
     }
 

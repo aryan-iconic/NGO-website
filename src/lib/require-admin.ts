@@ -11,7 +11,7 @@ export async function requireAdmin() {
   if (!adminId) {
     return { error: NextResponse.json({ success: false, error: { code: "UNAUTHORIZED", message: "Admin sign-in required." } }, { status: 401 }) };
   }
-  const admin = db.findAdminById(adminId);
+  const admin = await db.findAdminById(adminId);
   if (!admin) {
     return { error: NextResponse.json({ success: false, error: { code: "FORBIDDEN", message: "Not authorized." } }, { status: 403 }) };
   }

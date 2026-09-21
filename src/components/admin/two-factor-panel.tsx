@@ -80,7 +80,7 @@ export function TwoFactorPanel() {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={setupData.qrCodeDataUrl} alt="Scan this QR code with your authenticator app" className="rounded-lg border border-border" width={180} height={180} />
           <p className="text-xs text-muted">
-            Scan with Google Authenticator, Authy, or similar. Can't scan? Enter this key manually:{" "}
+            Scan with Google Authenticator, Authy, or similar. Can&apos;t scan? Enter this key manually:{" "}
             <code className="text-[11px]">{setupData.secret}</code>
           </p>
           <form onSubmit={confirmSetup} className="flex gap-2">

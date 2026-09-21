@@ -15,7 +15,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   const guard = await requireAdmin();
   if (guard.error) return guard.error;
   const { id } = await params;
-  const post = db.getPostById(id);
+  const post = await db.getBlogPostById(id);
   if (!post) return NextResponse.json({ success: false, error: { code: "NOT_FOUND", message: "Post not found." } }, { status: 404 });
   return NextResponse.json({ success: true, post });
 }
@@ -33,18 +33,18 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     );
   }
 
-  const existing = db.getPostById(id);
+  const existing = await db.getBlogPostById(id);
   const patch = { ...parsed.data } as Record<string, unknown>;
   if (parsed.data.status === "PUBLISHED" && existing && !existing.publishedAt) {
     patch.publishedAt = new Date().toISOString();
   }
 
-  const updated = db.updatePost(id, patch);
+  const updated = await db.updateBlogPost(id, patch);
   if (!updated) {
     return NextResponse.json({ success: false, error: { code: "NOT_FOUND", message: "Post not found." } }, { status: 404 });
   }
 
-  db.logAudit({
+  await db.logAudit({
     actorType: "ADMIN",
     actorId: guard.admin!.id,
     actorName: guard.admin!.name,
@@ -60,10 +60,10 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   const guard = await requireAdmin();
   if (guard.error) return guard.error;
   const { id } = await params;
-  const ok = db.deletePost(id);
+  const ok = await db.deleteBlogPost(id);
   if (!ok) return NextResponse.json({ success: false, error: { code: "NOT_FOUND", message: "Post not found." } }, { status: 404 });
 
-  db.logAudit({
+  await db.logAudit({
     actorType: "ADMIN",
     actorId: guard.admin!.id,
     actorName: guard.admin!.name,

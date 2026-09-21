@@ -8,7 +8,7 @@ export default async function EditBlogPostPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const post = db.getPostById(id);
+  const post = await db.getBlogPostById(id);
   if (!post) notFound();
 
   return (

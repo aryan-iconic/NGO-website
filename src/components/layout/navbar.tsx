@@ -6,7 +6,7 @@ import Link from "next/link";
 import { Menu, X, Search, LogOut, Languages } from "lucide-react";
 import { Logo } from "./logo";
 import { LinkButton } from "@/components/ui/button";
-import { useI18n, TranslationKey } from "@/lib/i18n";
+import { useI18n, TranslationKey, Locale } from "@/lib/i18n";
 
 const links: { href: string; key: TranslationKey }[] = [
   { href: "/campaigns", key: "nav.campaigns" },
@@ -60,12 +60,16 @@ export function Navbar() {
             <Search size={18} />
           </button>
           <button
-            aria-label={locale === "en" ? "Switch to Hindi" : "Switch to English"}
-            onClick={() => setLocale(locale === "en" ? "hi" : "en")}
+            aria-label="Switch language"
+            onClick={() => {
+              const order: Locale[] = ["en", "hi", "te", "ta"];
+              const next = order[(order.indexOf(locale) + 1) % order.length];
+              setLocale(next);
+            }}
             className="flex items-center gap-1 p-2 text-xs font-medium text-muted hover:text-primary transition-colors"
           >
             <Languages size={16} />
-            {locale === "en" ? "हिं" : "EN"}
+            {locale === "en" ? "EN" : locale === "hi" ? "हिं" : locale === "te" ? "తె" : "தமிழ்"}
           </button>
           {user ? (
             <>
@@ -90,17 +94,32 @@ export function Navbar() {
           </LinkButton>
         </div>
 
-        <button
-          type="button"
-          className="lg:hidden p-4 -mr-4 text-maroon relative z-50 touch-manipulation cursor-pointer"
-          aria-label={open ? "Close menu" : "Open menu"}
-          aria-expanded={open}
-          onClick={() => setOpen(!open)}
-        >
-          <span className="pointer-events-none flex items-center justify-center">
-            {open ? <X size={28} /> : <Menu size={28} />}
-          </span>
-        </button>
+        <div className="lg:hidden flex items-center gap-2">
+          <button
+            aria-label="Switch language"
+            onClick={() => {
+              const order: Locale[] = ["en", "hi", "te", "ta"];
+              const next = order[(order.indexOf(locale) + 1) % order.length];
+              setLocale(next);
+            }}
+            className="p-3 text-xs font-medium text-maroon hover:bg-cream/40 rounded-full transition-colors flex items-center gap-1"
+          >
+            <Languages size={20} />
+            {locale === "en" ? "EN" : locale === "hi" ? "हिं" : locale === "te" ? "తె" : "தமிழ்"}
+          </button>
+
+          <button
+            type="button"
+            className="p-3 -mr-2 text-maroon relative z-50 touch-manipulation cursor-pointer"
+            aria-label={open ? "Close menu" : "Open menu"}
+            aria-expanded={open}
+            onClick={() => setOpen(!open)}
+          >
+            <span className="pointer-events-none flex items-center justify-center">
+              {open ? <X size={28} /> : <Menu size={28} />}
+            </span>
+          </button>
+        </div>
       </div>
 
       {open && (
@@ -118,13 +137,7 @@ export function Navbar() {
               {t(l.key)}
             </Link>
           ))}
-          <button
-            onClick={() => setLocale(locale === "en" ? "hi" : "en")}
-            className="py-3 text-left text-sm text-muted flex items-center gap-2"
-          >
-            <Languages size={16} />
-            {locale === "en" ? "हिन्दी में देखें" : "View in English"}
-          </button>
+          
           <div className="flex gap-3 mt-4">
             <LinkButton href={user ? "/user/dashboard" : "/login"} variant="outline" className="flex-1">
               {user ? user.name.split(" ")[0] : t("nav.login")}

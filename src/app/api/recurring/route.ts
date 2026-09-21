@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
   }
 
   if (parsed.data.campaignId) {
-    const campaign = db.getPublicCampaignBySlug(parsed.data.campaignId) ?? db.getCampaignById(parsed.data.campaignId);
+    const campaign = await db.getPublicCampaignBySlug(parsed.data.campaignId) ?? await db.getCampaignById(parsed.data.campaignId);
     if (!campaign || campaign.status !== "ACTIVE") {
       return NextResponse.json(
         { success: false, error: { code: "CAMPAIGN_NOT_AVAILABLE", message: "This campaign is not currently accepting contributions." } },
@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
   }
 
   const userId = (await getCurrentUserId()) ?? undefined;
-  const recurring = db.createRecurringDonation({
+  const recurring = await db.createRecurringDonation({
     userId,
     donorName: parsed.data.donorName,
     donorEmail: parsed.data.donorEmail,
@@ -50,5 +50,5 @@ export async function GET() {
   if (!userId) {
     return NextResponse.json({ success: false, error: { code: "UNAUTHORIZED", message: "Sign in required." } }, { status: 401 });
   }
-  return NextResponse.json({ success: true, recurring: db.listRecurringForUser(userId) });
+  return NextResponse.json({ success: true, recurring: await db.listRecurringDonations(userId) });
 }

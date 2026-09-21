@@ -9,14 +9,14 @@ export default async function UserDashboardPage() {
   const userId = await getCurrentUserId();
   if (!userId) redirect("/login");
 
-  const user = db.findUserById(userId)!;
-  const donations = db.listDonationsForUser(userId);
-  const totalGiven = donations.reduce((s, d) => s + d.totalPaise, 0);
+  const user = await db.findUserById(userId)!;
+  const donations = await db.listDonationsForUser(userId);
+  const totalGiven = donations.reduce((s: number, d: any) => s + d.totalPaise, 0);
 
   return (
     <div className="container-app py-14">
       <h1 className="text-3xl">Welcome back, {user.name.split(" ")[0]}</h1>
-      <p className="text-muted mt-1">Here's a summary of your giving.</p>
+      <p className="text-muted mt-1">Here&apos;s a summary of your giving.</p>
 
       <div className="mt-8 grid sm:grid-cols-3 gap-4">
         <div className="p-5 rounded-lg border border-border bg-surface">
@@ -49,7 +49,7 @@ export default async function UserDashboardPage() {
 
       {donations.length === 0 ? (
         <p className="mt-6 text-muted">
-          You haven't made a donation yet. Your donation history and receipts will appear here.
+          You haven&apos;t made a donation yet. Your donation history and receipts will appear here.
         </p>
       ) : (
         <div className="mt-4 border border-border rounded-lg overflow-hidden">
@@ -63,7 +63,7 @@ export default async function UserDashboardPage() {
               </tr>
             </thead>
             <tbody>
-              {donations.map((d) => (
+              {donations.map((d: any) => (
                 <tr key={d.id} className="border-t border-border">
                   <td className="p-3 font-mono text-xs">{d.donationNumber}</td>
                   <td className="p-3 text-muted">{new Date(d.createdAt).toLocaleDateString("en-IN")}</td>

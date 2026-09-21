@@ -1,7 +1,7 @@
 import { db } from "@/lib/db";
 
-export default function AdminAuditLogsPage() {
-  const logs = db.listAuditLogs();
+export default async function AdminAuditLogsPage() {
+  const logs = await db.listAuditLogs();
 
   return (
     <div>
@@ -19,7 +19,7 @@ export default function AdminAuditLogsPage() {
             </tr>
           </thead>
           <tbody>
-            {logs.map((l) => (
+            {logs.map((l: any) => (
               <tr key={l.id} className="border-t border-border">
                 <td className="p-3">{l.actorName}</td>
                 <td className="p-3 font-mono text-xs">{l.action}</td>

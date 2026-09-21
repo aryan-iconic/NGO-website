@@ -18,7 +18,7 @@ const createSevaAreaSchema = z.object({
 export async function GET() {
   const guard = await requireAdmin();
   if (guard.error) return guard.error;
-  return NextResponse.json({ success: true, sevaAreas: db.listSevaAreas() });
+  return NextResponse.json({ success: true, sevaAreas: await db.listSevaAreas() });
 }
 
 export async function POST(req: NextRequest) {
@@ -34,16 +34,16 @@ export async function POST(req: NextRequest) {
   }
 
   // Ensure unique slug
-  if (db.getSevaAreaBySlug(parsed.data.slug)) {
+  if (await db.getSevaAreaBySlug(parsed.data.slug)) {
     return NextResponse.json(
       { success: false, error: { code: "CONFLICT", message: "Slug already exists" } },
       { status: 409 }
     );
   }
 
-  const sevaArea = db.createSevaArea(parsed.data);
+  const sevaArea = await db.createSevaArea(parsed.data);
   
-  db.logAudit({
+  await db.logAudit({
     actorType: "ADMIN",
     actorId: guard.admin!.id,
     actorName: guard.admin!.name,

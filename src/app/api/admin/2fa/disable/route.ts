@@ -7,8 +7,8 @@ export async function POST() {
   if (guard.error) return guard.error;
   const admin = guard.admin!;
 
-  db.disableTwoFactor(admin.id);
-  db.logAudit({
+  await db.disableTwoFactor(admin.id);
+  await db.logAudit({
     actorType: "ADMIN",
     actorId: admin.id,
     actorName: admin.name,

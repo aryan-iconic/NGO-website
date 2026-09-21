@@ -28,7 +28,7 @@ function slugify(title: string) {
 export async function GET() {
   const guard = await requireAdmin();
   if (guard.error) return guard.error;
-  return NextResponse.json({ success: true, campaigns: db.listAllCampaigns() });
+  return NextResponse.json({ success: true, campaigns: await db.listAllCampaigns() });
 }
 
 export async function POST(req: NextRequest) {
@@ -46,11 +46,11 @@ export async function POST(req: NextRequest) {
   const baseSlug = slugify(input.title);
   let slug = baseSlug;
   let n = 1;
-  while (db.getCampaignById(slug) || db.listAllCampaigns().some((c) => c.slug === slug)) {
+  while (await db.getCampaignById(slug) || (await db.listAllCampaigns()).some((c: any) => c.slug === slug)) {
     slug = `${baseSlug}-${++n}`;
   }
 
-  const campaign = db.createCampaign({
+  const campaign = await db.createCampaign({
     ...input,
     slug,
     suggestedAmountsPaise: [10100, 50100, 100100],
@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
     status: "DRAFT",
   });
 
-  db.logAudit({
+  await db.logAudit({
     actorType: "ADMIN",
     actorId: guard.admin!.id,
     actorName: guard.admin!.name,

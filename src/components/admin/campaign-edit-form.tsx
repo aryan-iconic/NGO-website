@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Campaign } from "@/lib/db";
 
-export function CampaignEditForm({ campaign, sevaAreas }: { campaign: Campaign, sevaAreas: any[] }) {
+export function CampaignEditForm({ campaign, sevaAreas }: { campaign: Campaign; sevaAreas: { id: string; name: string }[] }) {
   const [form, setForm] = useState({
     title: campaign.title,
     shortDescription: campaign.shortDescription,

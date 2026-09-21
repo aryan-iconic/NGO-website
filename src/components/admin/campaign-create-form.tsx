@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 
-export function CampaignCreateForm({ sevaAreas }: { sevaAreas: any[] }) {
+export function CampaignCreateForm({ sevaAreas }: { sevaAreas: { id: string; name: string }[] }) {
   const router = useRouter();
   const [form, setForm] = useState({
     title: "",

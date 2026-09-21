@@ -2,19 +2,20 @@ import Link from "next/link";
 import { MapPin, Calendar } from "lucide-react";
 import { db } from "@/lib/db";
 
-export default function EventsPage() {
-  const events = db.listPublishedEvents();
+export default async function EventsPage() {
+  const events = await db.listPublishedEvents();
 
   return (
     <div className="container-app py-14">
-      <h1 className="text-4xl">Events</h1>
-      <p className="text-muted mt-2">Join us in person — volunteers and visitors welcome.</p>
+      <div className="flex items-center justify-between mt-12 mb-8">
+        <h1 className="text-4xl">Our Initiatives</h1>
+      </div>
 
       {events.length === 0 ? (
-        <p className="mt-16 text-center text-muted">No upcoming events at the moment.</p>
+        <p className="mt-16 text-center text-muted">No upcoming initiatives at the moment.</p>
       ) : (
         <div className="mt-10 grid sm:grid-cols-2 gap-6">
-          {events.map((e) => (
+          {events.map((e: any) => (
             <Link
               key={e.id}
               href={`/events/${e.slug}`}

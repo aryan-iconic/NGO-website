@@ -26,12 +26,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     );
   }
 
-  const updated = db.updateCampaign(id, parsed.data);
+  const updated = await db.updateCampaign(id, parsed.data);
   if (!updated) {
     return NextResponse.json({ success: false, error: { code: "NOT_FOUND", message: "Campaign not found." } }, { status: 404 });
   }
 
-  db.logAudit({
+  await db.logAudit({
     actorType: "ADMIN",
     actorId: guard.admin!.id,
     actorName: guard.admin!.name,

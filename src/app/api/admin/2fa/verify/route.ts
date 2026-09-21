@@ -27,8 +27,8 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  db.confirmTwoFactor(admin.id);
-  db.logAudit({
+  await db.confirmTwoFactor(admin.id);
+  await db.logAudit({
     actorType: "ADMIN",
     actorId: admin.id,
     actorName: admin.name,

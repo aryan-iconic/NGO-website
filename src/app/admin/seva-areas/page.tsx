@@ -4,7 +4,7 @@ import { LinkButton } from "@/components/ui/button";
 
 export default async function SevaAreasPage() {
   // Uses direct DB call since it's a server component in admin
-  const sevaAreas = db.listSevaAreas();
+  const sevaAreas = await db.listSevaAreas();
 
   return (
     <div>
@@ -20,7 +20,7 @@ export default async function SevaAreasPage() {
           <div>Status</div>
           <div className="text-right">Actions</div>
         </div>
-        {sevaAreas.map((sa) => (
+        {sevaAreas.map((sa: any) => (
           <div key={sa.id} className="grid grid-cols-[3fr_2fr_1fr_1fr] items-center p-4">
             <div>
               <p className="font-medium text-maroon">{sa.name}</p>

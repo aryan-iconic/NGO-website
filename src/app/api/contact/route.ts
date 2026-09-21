@@ -10,6 +10,6 @@ export async function POST(req: NextRequest) {
       { status: 400 }
     );
   }
-  const msg = db.createContactMessage(parsed.data);
+  const msg = await db.createContactMessage(parsed.data);
   return NextResponse.json({ success: true, messageId: msg.id });
 }

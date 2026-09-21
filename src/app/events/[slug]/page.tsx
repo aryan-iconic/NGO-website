@@ -9,7 +9,7 @@ export default async function EventDetailPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const event = db.getEventBySlug(slug);
+  const event = await db.getEventBySlug(slug);
   if (!event || event.status !== "PUBLISHED") notFound();
 
   return (

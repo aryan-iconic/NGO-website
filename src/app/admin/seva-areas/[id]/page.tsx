@@ -8,7 +8,7 @@ export default async function EditSevaAreaPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const sevaArea = db.getSevaArea(id);
+  const sevaArea = await db.getSevaArea(id);
 
   if (!sevaArea) {
     notFound();

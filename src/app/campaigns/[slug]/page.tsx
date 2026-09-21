@@ -12,15 +12,14 @@ export default async function CampaignDetailPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const raw = db.getPublicCampaignBySlug(slug);
+  const raw = await db.getPublicCampaignBySlug(slug);
   if (!raw) notFound();
-  const campaign = toPublicCampaign(raw);
+  const campaign = await toPublicCampaign(raw);
 
-  const related = db
-    .listPublicCampaigns()
-    .filter((c) => c.id !== campaign.id)
-    .slice(0, 3)
-    .map(toPublicCampaign);
+  const campaignsList = await db.listPublicCampaigns(campaign.sevaArea?.slug);
+  const related = (await Promise.all(campaignsList.map(toPublicCampaign)))
+    .filter((c: any) => c.id !== campaign.id)
+    .slice(0, 3);
 
   return (
     <div className="pb-20">

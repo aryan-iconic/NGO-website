@@ -10,6 +10,6 @@ export async function POST(req: NextRequest) {
       { status: 400 }
     );
   }
-  const app = db.createVolunteerApplication(parsed.data);
+  const app = await db.createVolunteerApplication(parsed.data);
   return NextResponse.json({ success: true, applicationId: app.id });
 }

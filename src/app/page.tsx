@@ -15,11 +15,12 @@ const icons: Record<string, React.ComponentType<{ size?: number; className?: str
   Flame,
 };
 
-export default function HomePage() {
-  const sevaAreas = db.listSevaAreas();
-  const campaigns = db.listPublicCampaigns().map(toPublicCampaign);
+export default async function HomePage() {
+  const sevaAreas = await db.listSevaAreas();
+  const campaignsList = await db.listPublicCampaigns();
+  const campaigns = await Promise.all(campaignsList.map(toPublicCampaign));
   const featured = campaigns.filter((c) => c.isFeatured);
-  const events = db.listPublishedEvents().slice(0, 2);
+  const events = (await db.listPublishedEvents()).slice(0, 2);
 
   return (
     <>
@@ -65,7 +66,7 @@ export default function HomePage() {
         <div className="container-app">
           <h2 className="text-3xl text-center"><T k="home.seva" /></h2>
           <div className="mt-10 grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {sevaAreas.map((area) => {
+            {sevaAreas.map((area: any) => {
               const Icon = icons[area.icon ?? ""] ?? Users;
               return (
                 <Link
@@ -83,12 +84,12 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Upcoming events */}
+      {/* Upcoming Initiatives */}
       {events.length > 0 && (
-        <section className="container-app py-20">
-          <h2 className="text-3xl text-center">Upcoming Events</h2>
+        <section className="max-w-7xl mx-auto px-4 py-16">
+          <h2 className="text-3xl text-center">Upcoming Initiatives</h2>
           <div className="mt-10 grid sm:grid-cols-2 gap-6 max-w-3xl mx-auto">
-            {events.map((e) => (
+            {events.map((e: any) => (
               <Link
                 key={e.id}
                 href={`/events/${e.slug}`}

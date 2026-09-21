@@ -13,14 +13,14 @@ export async function POST(req: NextRequest) {
   }
   const { name, email, phone, password } = parsed.data;
 
-  if (db.findUserByEmail(email)) {
+  if (await db.findUserByEmail(email)) {
     return NextResponse.json(
       { success: false, error: { code: "EMAIL_IN_USE", message: "An account with this email already exists." } },
       { status: 409 }
     );
   }
 
-  const user = db.createUser(name, email, phone, password);
+  const user = await db.createUser(name, email, phone, password);
   await createUserSession(user.id);
 
   return NextResponse.json({ success: true, user: { id: user.id, name: user.name, email: user.email } });

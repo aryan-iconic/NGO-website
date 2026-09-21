@@ -5,5 +5,5 @@ import { requireAdmin } from "@/lib/require-admin";
 export async function GET() {
   const guard = await requireAdmin();
   if (guard.error) return guard.error;
-  return NextResponse.json({ success: true, applications: db.listVolunteerApplications() });
+  return NextResponse.json({ success: true, applications: await db.listVolunteerApplications() });
 }

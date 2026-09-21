@@ -7,7 +7,7 @@ export default async function BlogPostPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const post = db.getPostBySlug(slug);
+  const post = await db.getBlogPostBySlug(slug);
   if (!post || post.status !== "PUBLISHED") notFound();
 
   return (

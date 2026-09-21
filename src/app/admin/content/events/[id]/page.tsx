@@ -8,7 +8,7 @@ export default async function EditEventPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const event = db.getEventById(id);
+  const event = await db.getEventById(id);
   if (!event) notFound();
 
   return (

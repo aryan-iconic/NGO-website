@@ -17,7 +17,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   const guard = await requireAdmin();
   if (guard.error) return guard.error;
   const { id } = await params;
-  const event = db.getEventById(id);
+  const event = await db.getEventById(id);
   if (!event) return NextResponse.json({ success: false, error: { code: "NOT_FOUND", message: "Event not found." } }, { status: 404 });
   return NextResponse.json({ success: true, event });
 }
@@ -34,10 +34,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       { status: 400 }
     );
   }
-  const updated = db.updateEvent(id, parsed.data);
+  const updated = await db.updateEvent(id, parsed.data);
   if (!updated) return NextResponse.json({ success: false, error: { code: "NOT_FOUND", message: "Event not found." } }, { status: 404 });
 
-  db.logAudit({
+  await db.logAudit({
     actorType: "ADMIN",
     actorId: guard.admin!.id,
     actorName: guard.admin!.name,
@@ -53,10 +53,10 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   const guard = await requireAdmin();
   if (guard.error) return guard.error;
   const { id } = await params;
-  const ok = db.deleteEvent(id);
+  const ok = await db.deleteEvent(id);
   if (!ok) return NextResponse.json({ success: false, error: { code: "NOT_FOUND", message: "Event not found." } }, { status: 404 });
 
-  db.logAudit({
+  await db.logAudit({
     actorType: "ADMIN",
     actorId: guard.admin!.id,
     actorName: guard.admin!.name,

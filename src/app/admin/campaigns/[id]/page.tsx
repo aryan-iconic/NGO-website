@@ -10,14 +10,14 @@ export default async function AdminCampaignEditPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const campaign = db.getCampaignById(id);
+  const campaign = await db.getCampaignById(id);
   if (!campaign) notFound();
 
-  const financials = db.getCampaignFinancials(id);
-  const donations = db.listAllDonations().filter((d) => d.campaignId === id);
-  const totalReceived = donations.reduce((s, d) => s + d.totalPaise, 0);
-  const products = db.getCampaignProducts(id);
-  const sevaAreas = db.listSevaAreas();
+  const financials = await db.getCampaignFinancials(id);
+  const donations = (await db.listAllDonations()).filter((d: any) => d.campaignId === id);
+  const totalReceived = donations.reduce((s: number, d: any) => s + d.totalPaise, 0);
+  const products = await db.getCampaignProducts(id);
+  const sevaAreas = await db.listSevaAreas();
 
   return (
     <div className="max-w-3xl space-y-10">
@@ -66,7 +66,7 @@ export default async function AdminCampaignEditPage({
               </tr>
             </thead>
             <tbody>
-              {products.map((p) => (
+              {products.map((p: any) => (
                 <tr key={p.id} className="border-t border-border">
                   <td className="p-3">{p.name}</td>
                   <td className="p-3">{formatPaise(p.pricePaise)}</td>

@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
 
   let campaign = null;
   if (input.campaignId) {
-    campaign = db.getPublicCampaignBySlug(input.campaignId) ?? db.getCampaignById(input.campaignId);
+    campaign = await db.getPublicCampaignBySlug(input.campaignId) ?? await db.getCampaignById(input.campaignId);
     if (!campaign || campaign.status !== "ACTIVE") {
       return NextResponse.json(
         { success: false, error: { code: "CAMPAIGN_NOT_AVAILABLE", message: "This campaign is not currently accepting contributions." } },
@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
   const items = [];
   let itemsTotal = 0;
   for (const item of input.items) {
-    const product = item.productId ? db.getCampaignProducts(campaign?.id ?? "").find((p) => p.id === item.productId) : null;
+    const product = item.productId ? (await db.getCampaignProducts(campaign?.id ?? "")).find((p: any) => p.id === item.productId) : null;
     if (item.productId && !product) {
       return NextResponse.json(
         { success: false, error: { code: "PRODUCT_NOT_FOUND", message: "One of the selected items is no longer available." } },
@@ -87,7 +87,7 @@ export async function POST(req: NextRequest) {
 
   const userId = (await getCurrentUserId()) ?? undefined;
 
-  const { donation, receipt } = db.createDonation({
+  const { donation, receipt } = await db.createDonation({
     userId,
     campaignId: campaign?.id,
     donorName: input.donorName,

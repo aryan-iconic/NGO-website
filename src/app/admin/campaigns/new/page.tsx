@@ -2,7 +2,7 @@ import { db } from "@/lib/db";
 import { CampaignCreateForm } from "@/components/admin/campaign-create-form";
 
 export default async function NewCampaignPage() {
-  const sevaAreas = db.listSevaAreas();
+  const sevaAreas = await db.listSevaAreas();
   return (
     <div className="max-w-2xl">
       <h1 className="text-2xl font-serif text-maroon">Create Campaign</h1>

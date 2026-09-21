@@ -5,7 +5,7 @@ import { db } from "@/lib/db";
 // or any aggregate donation figures. See PublicCampaignDto in the spec.
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const campaign = db.getPublicCampaignBySlug(slug);
+  const campaign = await db.getPublicCampaignBySlug(slug);
   if (!campaign) {
     return NextResponse.json({ success: false, error: { code: "NOT_FOUND", message: "Campaign not found." } }, { status: 404 });
   }

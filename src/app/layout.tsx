@@ -11,6 +11,8 @@ import { I18nProvider } from "@/lib/i18n";
 // sandbox has no external network access to verify the build.
 const fontVars = "" as const;
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Shri Nityanikunj Ras Seva Sansthan Trust, Varanasi | Seva, Education, Healthcare & Social Welfare",
   description: "A commitment to Seva, Culture and Social Welfare. Shri Nityanikunj Ras Seva Sansthan Trust, Varanasi focuses on education, healthcare, social welfare, environment and animal welfare.",

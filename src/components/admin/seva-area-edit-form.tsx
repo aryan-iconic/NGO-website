@@ -4,7 +4,15 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 
-export function SevaAreaEditForm({ sevaArea, isNew = false }: { sevaArea?: any, isNew?: boolean }) {
+import { SevaArea } from "@/lib/db";
+
+export function SevaAreaEditForm({
+  sevaArea,
+  isNew = false,
+}: {
+  sevaArea?: SevaArea;
+  isNew?: boolean;
+}) {
   const router = useRouter();
   const [form, setForm] = useState({
     name: sevaArea?.name || "",
@@ -25,7 +33,7 @@ export function SevaAreaEditForm({ sevaArea, isNew = false }: { sevaArea?: any, 
     setSaving(true);
     setError(null);
 
-    const url = isNew ? "/api/admin/seva-areas" : `/api/admin/seva-areas/${sevaArea.id}`;
+    const url = isNew ? "/api/admin/seva-areas" : `/api/admin/seva-areas/${sevaArea?.id}`;
     const method = isNew ? "POST" : "PATCH";
 
     const res = await fetch(url, {

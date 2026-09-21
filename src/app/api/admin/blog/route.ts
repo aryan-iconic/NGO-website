@@ -18,7 +18,7 @@ function slugify(title: string) {
 export async function GET() {
   const guard = await requireAdmin();
   if (guard.error) return guard.error;
-  return NextResponse.json({ success: true, posts: db.listAllPosts() });
+  return NextResponse.json({ success: true, posts: await db.listBlogPosts() });
 }
 
 export async function POST(req: NextRequest) {
@@ -36,15 +36,15 @@ export async function POST(req: NextRequest) {
   const baseSlug = slugify(parsed.data.title);
   let slug = baseSlug;
   let n = 1;
-  while (db.listAllPosts().some((p) => p.slug === slug)) slug = `${baseSlug}-${++n}`;
+  while ((await db.listBlogPosts()).some((p: any) => p.slug === slug)) slug = `${baseSlug}-${++n}`;
 
-  const post = db.createPost({
+  const post = await db.createBlogPost({
     ...parsed.data,
     slug,
     publishedAt: parsed.data.status === "PUBLISHED" ? new Date().toISOString() : undefined,
   });
 
-  db.logAudit({
+  await db.logAudit({
     actorType: "ADMIN",
     actorId: guard.admin!.id,
     actorName: guard.admin!.name,
