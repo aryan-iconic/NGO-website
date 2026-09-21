@@ -43,29 +43,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Seva areas */}
-      <section className="container-app py-20">
-        <h2 className="text-3xl text-center"><T k="home.seva" /></h2>
-        <div className="mt-10 grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {sevaAreas.map((area) => {
-            const Icon = icons[area.icon ?? ""] ?? Users;
-            return (
-              <Link
-                key={area.id}
-                href={`/campaigns?sevaArea=${area.slug}`}
-                className="p-6 rounded-lg border border-border bg-surface hover:shadow-[var(--shadow-soft)] hover:border-primary/40 transition-all duration-300"
-              >
-                <Icon size={26} className="text-primary" />
-                <h3 className="mt-4 text-base font-semibold text-maroon">{area.name}</h3>
-                <h4 className="mt-1 text-sm font-medium text-maroon/70">{area.hindiName}</h4>
-              </Link>
-            );
-          })}
-        </div>
-      </section>
-
       {/* Featured campaigns */}
-      <section className="bg-background-alt py-20">
+      <section className="py-20">
         <div className="container-app">
           <div className="flex items-end justify-between mb-10">
             <h2 className="text-3xl"><T k="home.featured" /></h2>
@@ -77,6 +56,29 @@ export default function HomePage() {
             {featured.map((c) => (
               <CampaignCard key={c.id} campaign={c} />
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Seva areas */}
+      <section className="bg-background-alt py-20">
+        <div className="container-app">
+          <h2 className="text-3xl text-center"><T k="home.seva" /></h2>
+          <div className="mt-10 grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {sevaAreas.map((area) => {
+              const Icon = icons[area.icon ?? ""] ?? Users;
+              return (
+                <Link
+                  key={area.id}
+                  href={`/campaigns?sevaArea=${area.slug}`}
+                  className="p-6 rounded-lg border border-border bg-surface hover:shadow-[var(--shadow-soft)] hover:border-primary/40 transition-all duration-300"
+                >
+                  <Icon size={26} className="text-primary" />
+                  <h3 className="mt-4 text-base font-semibold text-maroon">{area.name}</h3>
+                  <h4 className="mt-1 text-sm font-medium text-maroon/70">{area.hindiName}</h4>
+                </Link>
+              );
+            })}
           </div>
         </div>
       </section>
