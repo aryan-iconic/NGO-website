@@ -59,7 +59,7 @@ h1,
 h2,
 h3 {
   font-family: var(--font-serif);
-  color: #e7d1d0;
+  color: var(--color-maroon);
 }
 
 @media (prefers-reduced-motion: reduce) {
