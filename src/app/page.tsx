@@ -128,8 +128,8 @@ export default async function HomePage() {
       {/* CTA */}
       <section className="bg-maroon text-white py-16">
         <div className="container-app text-center">
-          <h2 className="text-white text-3xl"><T k="home.ctaTitle" /></h2>
-          <p className="mt-3 text-white/80 max-w-lg mx-auto">
+          <h2 className="!text-[#ffffff] text-3xl"><T k="home.ctaTitle" /></h2>
+          <p className="mt-3 text-[#ffffff]/80 max-w-lg mx-auto">
             <T k="home.ctaBody" />
           </p>
           <div className="mt-7 flex justify-center gap-3">
