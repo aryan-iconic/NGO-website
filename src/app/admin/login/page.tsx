@@ -103,7 +103,7 @@ export default function AdminLoginPage() {
               </Button>
             </form>
             <p className="mt-5 text-xs text-muted text-center">
-              Demo credentials: admin@nityanikunj.org / Admin@12345
+              Demo credentials: admin@nityanikunj.org / password123
             </p>
           </>
         ) : (
