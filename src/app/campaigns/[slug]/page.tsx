@@ -5,6 +5,7 @@ import { toPublicCampaign } from "@/lib/view-models";
 import { LinkButton } from "@/components/ui/button";
 import { ProductCard } from "@/components/campaign/product-card";
 import { CampaignCard } from "@/components/campaign/campaign-card";
+import { ShareButtons } from "@/components/ui/share-buttons";
 
 export default async function CampaignDetailPage({
   params,
@@ -28,9 +29,12 @@ export default async function CampaignDetailPage({
         <div className="container-app py-12 grid md:grid-cols-[3fr_2fr] gap-10 items-start">
           <div className="aspect-[16/10] rounded-lg bg-gradient-to-br from-primary/20 to-maroon/10 border border-border" />
           <div>
-            <span className="text-xs font-medium text-primary uppercase tracking-wide">
-              {campaign.sevaArea?.name ?? campaign.category.name}
-            </span>
+            <div className="flex flex-wrap gap-4 items-center justify-between">
+              <span className="text-xs font-medium text-primary uppercase tracking-wide">
+                {campaign.sevaArea?.name ?? campaign.category.name}
+              </span>
+              <ShareButtons title={campaign.title} text={campaign.shortDescription} />
+            </div>
             <h1 className="mt-2 text-3xl md:text-4xl leading-tight">{campaign.title}</h1>
             {campaign.locationText && (
               <p className="mt-3 flex items-center gap-1.5 text-sm text-muted">
