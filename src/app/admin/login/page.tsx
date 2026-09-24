@@ -4,9 +4,11 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Logo } from "@/components/layout/logo";
 import { Button } from "@/components/ui/button";
+import { Eye, EyeOff } from "lucide-react";
 
 export default function AdminLoginPage() {
   const [form, setForm] = useState({ email: "admin@nityanikunj.org", password: "" });
+  const [showPassword, setShowPassword] = useState(false);
   const [code, setCode] = useState("");
   const [pendingToken, setPendingToken] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -75,16 +77,25 @@ export default function AdminLoginPage() {
                   className="mt-1.5 w-full rounded-lg border border-border px-4 py-2.5 bg-background"
                 />
               </div>
-              <div>
+              <div className="relative">
                 <label className="text-sm text-muted" htmlFor="password">Password</label>
-                <input
-                  id="password"
-                  type="password"
-                  required
-                  value={form.password}
-                  onChange={(e) => setForm({ ...form, password: e.target.value })}
-                  className="mt-1.5 w-full rounded-lg border border-border px-4 py-2.5 bg-background"
-                />
+                <div className="relative">
+                  <input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    required
+                    value={form.password}
+                    onChange={(e) => setForm({ ...form, password: e.target.value })}
+                    className="mt-1.5 w-full rounded-lg border border-border px-4 py-2.5 bg-background pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 mt-[3px] text-muted hover:text-text"
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
               </div>
               {error && <p className="text-sm text-red">{error}</p>}
               <Button type="submit" size="lg" className="w-full" disabled={loading}>
