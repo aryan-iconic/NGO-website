@@ -57,6 +57,22 @@ export function Footer() {
           </div>
         ))}
       </div>
+
+      <div className="container-app pb-10">
+        <div className="w-full h-[250px] rounded-lg overflow-hidden border border-border">
+          <iframe
+            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d115408.0979979313!2d82.9087067!3d25.3207397!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x398e2db74afd32cb%3A0x76eff6fe42404642!2sVaranasi%2C%20Uttar%20Pradesh!5e0!3m2!1sen!2sin!4v1714498305886!5m2!1sen!2sin"
+            width="100%"
+            height="100%"
+            style={{ border: 0 }}
+            allowFullScreen
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+            title="Shri Nityanikunj Ras Seva Sansthan Trust Location"
+          />
+        </div>
+      </div>
+
       <div className="border-t border-border py-5">
         <p className="container-app text-xs text-muted">
           © {new Date().getFullYear()} Shri Nityanikunj Ras Seva Sansthan Trust, Varanasi. Registration and legal details
