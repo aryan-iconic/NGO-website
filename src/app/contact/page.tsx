@@ -95,8 +95,7 @@ export default function ContactPage() {
           </form>
         )}
       </div>
-      </div>
-      
+
       {/* Map Embed */}
       <div className="lg:col-span-2 mt-8 rounded-lg overflow-hidden border border-border h-[400px]">
         <iframe
