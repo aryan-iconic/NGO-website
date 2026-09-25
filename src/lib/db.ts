@@ -227,6 +227,28 @@ export interface Faq {
   category?: string;
 }
 
+export interface InstagramPost {
+  id: string;
+  instagramUrl: string;
+  title?: string;
+  caption?: string;
+  displayOrder: number;
+  isPublished: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface YouTubeVideo {
+  id: string;
+  youtubeUrl: string;
+  title?: string;
+  description?: string;
+  displayOrder: number;
+  isPublished: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export type RecurringFrequency = "MONTHLY";
 export type RecurringStatus = "ACTIVE" | "PAUSED" | "CANCELLED";
 
@@ -559,4 +581,17 @@ export const db = {
   listAuditLogs: async () => mapDates(await prisma.auditLog.findMany({ orderBy: { createdAt: 'desc' } })),
   listPublishedEvents: async () => mapDates(await prisma.event.findMany({ where: { status: "PUBLISHED" }, orderBy: { eventDate: 'asc' } })),
   listDonationsForUser: async (userId: string) => mapDates(await prisma.donation.findMany({ where: { userId }, orderBy: { createdAt: 'desc' }, include: { items: true } })),
+
+  // Social Media
+  listInstagramPosts: async () => mapDates(await prisma.instagramPost.findMany({ orderBy: { displayOrder: 'asc' } })),
+  getInstagramPost: async (id: string) => mapDates(await prisma.instagramPost.findUnique({ where: { id } })),
+  createInstagramPost: async (data: any) => mapDates(await prisma.instagramPost.create({ data })),
+  updateInstagramPost: async (id: string, data: any) => mapDates(await prisma.instagramPost.update({ where: { id }, data })),
+  deleteInstagramPost: async (id: string) => { await prisma.instagramPost.delete({ where: { id } }); return true; },
+
+  listYouTubeVideos: async () => mapDates(await prisma.youtubeVideo.findMany({ orderBy: { displayOrder: 'asc' } })),
+  getYouTubeVideo: async (id: string) => mapDates(await prisma.youtubeVideo.findUnique({ where: { id } })),
+  createYouTubeVideo: async (data: any) => mapDates(await prisma.youtubeVideo.create({ data })),
+  updateYouTubeVideo: async (id: string, data: any) => mapDates(await prisma.youtubeVideo.update({ where: { id }, data })),
+  deleteYouTubeVideo: async (id: string) => { await prisma.youtubeVideo.delete({ where: { id } }); return true; },
 };

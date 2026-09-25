@@ -437,3 +437,29 @@ enum PaymentStatus {
   REFUNDED
   PARTIALLY_REFUNDED
 }
+
+model InstagramPost {
+  id           String   @id @default(uuid())
+  instagramUrl String   @map("instagram_url")
+  title        String?
+  caption      String?
+  displayOrder Int      @default(0) @map("display_order")
+  isPublished  Boolean  @default(true) @map("is_published")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("instagram_posts")
+}
+
+model YouTubeVideo {
+  id           String   @id @default(uuid())
+  youtubeUrl   String   @map("youtube_url")
+  title        String?
+  description  String?
+  displayOrder Int      @default(0) @map("display_order")
+  isPublished  Boolean  @default(true) @map("is_published")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("youtube_videos")
+}

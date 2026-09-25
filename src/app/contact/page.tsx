@@ -99,7 +99,7 @@ export default function ContactPage() {
       {/* Map Embed */}
       <div className="lg:col-span-2 mt-8 rounded-lg overflow-hidden border border-border h-[400px]">
         <iframe
-          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d115408.0979979313!2d82.9087067!3d25.3207397!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x398e2db74afd32cb%3A0x76eff6fe42404642!2sVaranasi%2C%20Uttar%20Pradesh!5e0!3m2!1sen!2sin!4v1714498305886!5m2!1sen!2sin"
+          src="https://maps.google.com/maps?q=Shri+Nityanikunj+Trust,+Vrindavan,+Susuwahi,+Varanasi,+Kandwa,+Uttar+Pradesh+221011&t=&z=15&ie=UTF8&iwloc=&output=embed"
           width="100%"
           height="100%"
           style={{ border: 0 }}

@@ -41,6 +41,25 @@ export function Footer() {
           <p className="text-sm text-muted mt-4 max-w-xs">
             <T k="footer.tagline" />
           </p>
+          <div className="flex gap-4 mt-6">
+            <a href="#" aria-label="Facebook" className="w-9 h-9 rounded-full bg-cream flex items-center justify-center text-maroon hover:bg-primary hover:text-white transition-colors">
+              <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
+              </svg>
+            </a>
+            <a href="#" aria-label="Twitter" className="w-9 h-9 rounded-full bg-cream flex items-center justify-center text-maroon hover:bg-primary hover:text-white transition-colors">
+              <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z" />
+              </svg>
+            </a>
+            <a href="#" aria-label="Instagram" className="w-9 h-9 rounded-full bg-cream flex items-center justify-center text-maroon hover:bg-primary hover:text-white transition-colors">
+              <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                <rect width="20" height="20" x="2" y="2" rx="5" ry="5"></rect>
+                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                <line x1="17.5" x2="17.51" y1="6.5" y2="6.5"></line>
+              </svg>
+            </a>
+          </div>
         </div>
         {columns.map((col) => (
           <div key={col.title}>
@@ -62,7 +81,7 @@ export function Footer() {
       <div className="container-app pb-14">
         <div className="w-full h-[250px] rounded-lg overflow-hidden border border-border">
           <iframe
-            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d115408.0979979313!2d82.9087067!3d25.3207397!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x398e2db74afd32cb%3A0x76eff6fe42404642!2sVaranasi%2C%20Uttar%20Pradesh!5e0!3m2!1sen!2sin!4v1714498305886!5m2!1sen!2sin"
+            src="https://maps.google.com/maps?q=Shri+Nityanikunj+Trust,+Vrindavan,+Susuwahi,+Varanasi,+Kandwa,+Uttar+Pradesh+221011&t=&z=15&ie=UTF8&iwloc=&output=embed"
             width="100%"
             height="100%"
             style={{ border: 0 }}

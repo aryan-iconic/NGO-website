@@ -21,6 +21,21 @@ export default async function HomePage() {
   const campaigns = await Promise.all(campaignsList.map(toPublicCampaign));
   const featured = campaigns.filter((c) => c.isFeatured);
   const events = (await db.listPublishedEvents()).slice(0, 2);
+  const instagramPosts = (await db.listInstagramPosts()).filter((p: any) => p.isPublished);
+  const youtubeVideos = (await db.listYouTubeVideos()).filter((p: any) => p.isPublished);
+
+  const getYoutubeEmbedUrl = (url: string) => {
+    let videoId = "";
+    if (url.includes("youtu.be/")) videoId = url.split("youtu.be/")[1]?.split("?")[0];
+    else if (url.includes("youtube.com/watch")) videoId = new URL(url).searchParams.get("v") || "";
+    else if (url.includes("youtube.com/shorts/")) videoId = url.split("shorts/")[1]?.split("?")[0];
+    return videoId ? `https://www.youtube.com/embed/${videoId}` : "";
+  };
+
+  const getInstagramEmbedUrl = (url: string) => {
+    const clean = url.split("?")[0].replace(/\/$/, "");
+    return `${clean}/embed`;
+  };
 
   return (
     <>
@@ -107,6 +122,69 @@ export default async function HomePage() {
       )}
 
 
+
+      {/* Instagram Section */}
+      {instagramPosts.length > 0 && (
+        <section className="py-20">
+          <div className="container-app">
+            <h2 className="text-3xl text-center font-serif text-maroon mb-10">Follow Our Journey</h2>
+            <div className="grid md:grid-cols-3 gap-6">
+              {instagramPosts.map((post: any) => (
+                <div key={post.id} className="bg-surface rounded-lg overflow-hidden border border-border shadow-[var(--shadow-soft)]">
+                  <iframe
+                    src={getInstagramEmbedUrl(post.instagramUrl)}
+                    width="100%"
+                    height="450"
+                    frameBorder="0"
+                    scrolling="no"
+                    allowTransparency={true}
+                    className="w-full"
+                    loading="lazy"
+                  />
+                  {(post.title || post.caption) && (
+                    <div className="p-4 border-t border-border">
+                      {post.title && <h3 className="font-semibold text-maroon text-lg">{post.title}</h3>}
+                      {post.caption && <p className="text-sm text-muted mt-1">{post.caption}</p>}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* YouTube Section */}
+      {youtubeVideos.length > 0 && (
+        <section className="bg-background-alt py-20">
+          <div className="container-app">
+            <h2 className="text-3xl text-center font-serif text-maroon mb-10">Watch Our Videos</h2>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {youtubeVideos.map((video: any) => (
+                <div key={video.id} className="bg-surface rounded-lg overflow-hidden border border-border shadow-[var(--shadow-soft)] flex flex-col">
+                  <div className="aspect-video w-full bg-black">
+                    <iframe
+                      src={getYoutubeEmbedUrl(video.youtubeUrl)}
+                      width="100%"
+                      height="100%"
+                      frameBorder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      loading="lazy"
+                    />
+                  </div>
+                  {(video.title || video.description) && (
+                    <div className="p-4 flex-1">
+                      {video.title && <h3 className="font-semibold text-maroon text-lg line-clamp-2">{video.title}</h3>}
+                      {video.description && <p className="text-sm text-muted mt-2 line-clamp-3">{video.description}</p>}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* How it works */}
       <section className="bg-background-alt py-20">

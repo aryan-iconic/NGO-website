@@ -19,6 +19,7 @@ const nav = [
   { href: "/admin/recurring", label: "Monthly Giving", icon: RefreshCw },
   { href: "/admin/people", label: "People", icon: Users },
   { href: "/admin/content", label: "Content", icon: ImageIcon },
+  { href: "/admin/social", label: "Social Media", icon: ImageIcon },
   { href: "/admin/audit-logs", label: "Audit Logs", icon: ScrollText },
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ];
