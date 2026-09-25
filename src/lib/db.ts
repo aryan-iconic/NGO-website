@@ -589,9 +589,9 @@ export const db = {
   updateInstagramPost: async (id: string, data: any) => mapDates(await prisma.instagramPost.update({ where: { id }, data })),
   deleteInstagramPost: async (id: string) => { await prisma.instagramPost.delete({ where: { id } }); return true; },
 
-  listYouTubeVideos: async () => mapDates(await prisma.youtubeVideo.findMany({ orderBy: { displayOrder: 'asc' } })),
-  getYouTubeVideo: async (id: string) => mapDates(await prisma.youtubeVideo.findUnique({ where: { id } })),
-  createYouTubeVideo: async (data: any) => mapDates(await prisma.youtubeVideo.create({ data })),
-  updateYouTubeVideo: async (id: string, data: any) => mapDates(await prisma.youtubeVideo.update({ where: { id }, data })),
-  deleteYouTubeVideo: async (id: string) => { await prisma.youtubeVideo.delete({ where: { id } }); return true; },
+  listYouTubeVideos: async () => mapDates(await prisma.youTubeVideo.findMany({ orderBy: { displayOrder: 'asc' } })),
+  getYouTubeVideo: async (id: string) => mapDates(await prisma.youTubeVideo.findUnique({ where: { id } })),
+  createYouTubeVideo: async (data: any) => mapDates(await prisma.youTubeVideo.create({ data })),
+  updateYouTubeVideo: async (id: string, data: any) => mapDates(await prisma.youTubeVideo.update({ where: { id }, data })),
+  deleteYouTubeVideo: async (id: string) => { await prisma.youTubeVideo.delete({ where: { id } }); return true; },
 };
