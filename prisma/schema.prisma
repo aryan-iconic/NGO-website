@@ -47,6 +47,7 @@ model Category {
   isActive  Boolean    @default(true) @map("is_active")
   campaigns Campaign[]
 
+  translations Json?  @map("translations")
   @@map("categories")
 }
 
@@ -66,6 +67,7 @@ model SevaArea {
   updatedAt   DateTime   @updatedAt @map("updated_at")
   campaigns   Campaign[]
 
+  translations Json?  @map("translations")
   @@map("seva_areas")
 }
 
@@ -108,6 +110,7 @@ model Campaign {
   donations            Donation[]
   favorites            Favorite[]
 
+  translations Json?  @map("translations")
   @@index([status, categoryId, publishedAt])
   @@map("campaigns")
 }
@@ -138,6 +141,7 @@ model CampaignProduct {
   campaign          Campaign       @relation(fields: [campaignId], references: [id])
   donationItems     DonationItem[]
 
+  translations Json?  @map("translations")
   @@index([campaignId, isActive])
   @@map("campaign_products")
 }
@@ -163,6 +167,7 @@ model CampaignUpdate {
   publishedAt DateTime @default(now()) @map("published_at")
   campaign    Campaign @relation(fields: [campaignId], references: [id])
 
+  translations Json?  @map("translations")
   @@map("campaign_updates")
 }
 
@@ -177,6 +182,7 @@ model CampaignMilestone {
   sortOrder   Int       @default(0) @map("sort_order")
   campaign    Campaign  @relation(fields: [campaignId], references: [id])
 
+  translations Json?  @map("translations")
   @@map("campaign_milestones")
 }
 
@@ -188,6 +194,7 @@ model CampaignFaq {
   sortOrder  Int      @default(0) @map("sort_order")
   campaign   Campaign @relation(fields: [campaignId], references: [id])
 
+  translations Json?  @map("translations")
   @@map("campaign_faqs")
 }
 
@@ -318,6 +325,7 @@ model Event {
   updatedAt           DateTime            @updatedAt @map("updated_at")
   registrations       EventRegistration[]
 
+  translations Json?  @map("translations")
   @@map("events")
 }
 
@@ -348,6 +356,7 @@ model BlogPost {
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
 
+  translations Json?  @map("translations")
   @@map("blog_posts")
 }
 
@@ -359,6 +368,7 @@ model Faq {
   sortOrder Int     @default(0) @map("sort_order")
   isActive  Boolean @default(true) @map("is_active")
 
+  translations Json?  @map("translations")
   @@map("faqs")
 }
 
@@ -448,6 +458,7 @@ model InstagramPost {
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
+  translations Json?  @map("translations")
   @@map("instagram_posts")
 }
 
@@ -461,5 +472,6 @@ model YouTubeVideo {
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
+  translations Json?  @map("translations")
   @@map("youtube_videos")
 }

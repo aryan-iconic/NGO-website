@@ -9,14 +9,14 @@ export interface Category {
   id: string;
   name: string;
   slug: string;
-  icon?: string;
+  icon?: string | null;
 }
 
 export interface CampaignProduct {
   id: string;
   name: string;
-  description?: string;
-  image?: string;
+  description?: string | null;
+  image?: string | null;
   unitName: string;
   pricePaise: number;
   available: boolean; // true unless fully sponsored — never exposes counts
@@ -25,8 +25,8 @@ export interface CampaignProduct {
 export interface CampaignMilestone {
   id: string;
   title: string;
-  value?: number;
-  unit?: string;
+  value?: number | null;
+  unit?: string | null;
   completed: boolean;
 }
 
@@ -46,9 +46,9 @@ export interface CampaignUpdate {
 export interface SevaAreaType {
   id: string;
   name: string;
-  hindiName?: string;
+  hindiName?: string | null;
   slug: string;
-  icon?: string;
+  icon?: string | null;
 }
 
 export interface PublicCampaign {

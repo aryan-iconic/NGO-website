@@ -35,13 +35,13 @@ export default function ContactPage() {
 
         <div className="mt-8 space-y-4 text-sm">
           <p className="flex items-center gap-3 text-muted">
-            <Mail size={16} className="text-primary" /> Contact email will appear here once provided by the Trust
+            <Mail size={16} className="text-primary" /> shrinitynikunj@gmail.com
           </p>
           <p className="flex items-center gap-3 text-muted">
-            <Phone size={16} className="text-primary" /> Contact phone will appear here once provided by the Trust
+            <Phone size={16} className="text-primary" /> 9450881090
           </p>
           <p className="flex items-center gap-3 text-muted">
-            <MapPin size={16} className="text-primary" /> Address will appear here once provided by the Trust
+            <MapPin size={16} className="text-primary" /> Vrindavan, Susuwahi, Varanasi - 221011
           </p>
         </div>
       </div>

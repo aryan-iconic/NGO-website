@@ -1,6 +1,8 @@
 import { prisma } from "./prisma";
 import bcrypt from "bcryptjs";
 import { Prisma } from "@prisma/client";
+import { getLocale } from "./get-locale";
+import { resolveLocalizedRecord, generateAllTranslations } from "./translation";
 
 
 // ---------------------------------------------------------------------------
@@ -287,17 +289,47 @@ function mapDates<T>(obj: T): any {
   return obj;
 }
 
+// Wrapper for read queries to automatically apply localization
+async function resolve<T>(promise: Promise<T>): Promise<any> {
+  const result = await promise;
+  if (!result) return mapDates(result);
+  
+  try {
+    const locale = await getLocale();
+    if (locale === "en") return mapDates(result);
+    
+    if (Array.isArray(result)) {
+      return result.map(item => mapDates(resolveLocalizedRecord(item, locale))) as any;
+    }
+    return mapDates(resolveLocalizedRecord(result as any, locale)) as any;
+  } catch (e) {
+    return mapDates(result);
+  }
+}
+
+// Fire-and-forget wrapper for triggering translation updates after write operations
+function triggerTranslation(model: string, id: string, record: any, fields: string[]) {
+  // We run this in the background to avoid blocking the Admin response
+  generateAllTranslations(record, fields).then(async (translations) => {
+    // Update the record with the generated translations JSON
+    await (prisma as any)[model].update({
+      where: { id },
+      data: { translations }
+    });
+  }).catch(e => console.error("Failed to generate translations for", model, id, e));
+}
+
 export const db = {
   // Categories & Seva Areas
-  listCategories: async () => mapDates(await prisma.category.findMany({ orderBy: { sortOrder: 'asc' } })),
-  listSevaAreas: async () => mapDates(await prisma.sevaArea.findMany({ orderBy: { sortOrder: 'asc' } })),
+  listCategories: async () => resolve(prisma.category.findMany({ orderBy: { sortOrder: 'asc' } })),
+  listSevaAreas: async () => resolve(prisma.sevaArea.findMany({ orderBy: { sortOrder: 'asc' } })),
   getSevaArea: async (id?: string) => {
     if (!id) return null;
-    return mapDates(await prisma.sevaArea.findUnique({ where: { id } }));
+    return resolve(prisma.sevaArea.findUnique({ where: { id } }));
   },
-  getSevaAreaBySlug: async (slug: string) => mapDates(await prisma.sevaArea.findUnique({ where: { slug } })),
+  getSevaAreaBySlug: async (slug: string) => resolve(prisma.sevaArea.findUnique({ where: { slug } })),
   createSevaArea: async (data: any) => {
-    return mapDates(await prisma.sevaArea.create({
+    const record = await prisma.sevaArea.create({
       data: {
         name: data.name ?? "New Seva Area",
         hindiName: data.hindiName,
@@ -310,10 +342,14 @@ export const db = {
         sortOrder: data.sortOrder ?? 0,
         isActive: data.isActive ?? true,
       }
-    }));
+    });
+    triggerTranslation("sevaArea", record.id, record, ["name", "description", "objectives"]);
+    return resolve(Promise.resolve(record));
   },
   updateSevaArea: async (id: string, data: any) => {
-    return mapDates(await prisma.sevaArea.update({ where: { id }, data }));
+    const record = await prisma.sevaArea.update({ where: { id }, data });
+    triggerTranslation("sevaArea", record.id, record, ["name", "description", "objectives"]);
+    return resolve(Promise.resolve(record));
   },
   deleteSevaArea: async (id: string) => {
     await prisma.sevaArea.delete({ where: { id } });
@@ -328,31 +364,31 @@ export const db = {
       if (cat) where.categoryId = cat.id;
       else if (sa) where.sevaAreaId = sa.id;
     }
-    return mapDates(await prisma.campaign.findMany({ where, orderBy: { createdAt: 'desc' } }));
+    return resolve(prisma.campaign.findMany({ where, orderBy: { createdAt: 'desc' } }));
   },
   getPublicCampaignBySlug: async (slug: string) => {
-    return mapDates(await prisma.campaign.findFirst({ where: { slug, status: "ACTIVE", deletedAt: null } }));
+    return resolve(prisma.campaign.findFirst({ where: { slug, status: "ACTIVE", deletedAt: null } }));
   },
   getCampaignProducts: async (campaignId: string) => {
-    return mapDates(await prisma.campaignProduct.findMany({ where: { campaignId, isActive: true } }));
+    return resolve(prisma.campaignProduct.findMany({ where: { campaignId, isActive: true } }));
   },
   getCampaignMilestones: async (campaignId: string) => {
-    return mapDates(await prisma.campaignMilestone.findMany({ where: { campaignId }, orderBy: { sortOrder: 'asc' } }));
+    return resolve(prisma.campaignMilestone.findMany({ where: { campaignId }, orderBy: { sortOrder: 'asc' } }));
   },
   getCampaignFaqs: async (campaignId: string) => {
-    return mapDates(await prisma.campaignFaq.findMany({ where: { campaignId }, orderBy: { sortOrder: 'asc' } }));
+    return resolve(prisma.campaignFaq.findMany({ where: { campaignId }, orderBy: { sortOrder: 'asc' } }));
   },
   getCampaignUpdates: async (campaignId: string) => {
-    return mapDates(await prisma.campaignUpdate.findMany({ where: { campaignId }, orderBy: { publishedAt: 'desc' } }));
+    return resolve(prisma.campaignUpdate.findMany({ where: { campaignId }, orderBy: { publishedAt: 'desc' } }));
   },
   getCategory: async (id?: string) => {
     if (!id) return null;
-    return mapDates(await prisma.category.findUnique({ where: { id } }));
+    return resolve(prisma.category.findUnique({ where: { id } }));
   },
 
   // Admin campaign management
-  listAllCampaigns: async () => mapDates(await prisma.campaign.findMany({ orderBy: { createdAt: 'desc' } })),
-  getCampaignById: async (id: string) => mapDates(await prisma.campaign.findUnique({ where: { id } })),
+  listAllCampaigns: async () => resolve(prisma.campaign.findMany({ orderBy: { createdAt: 'desc' } })),
+  getCampaignById: async (id: string) => resolve(prisma.campaign.findUnique({ where: { id } })),
   createCampaign: async (input: any) => {
     const campaign = await prisma.campaign.create({
       data: {
@@ -380,7 +416,8 @@ export const db = {
     await prisma.campaignFinancials.create({
       data: { campaignId: campaign.id, internalTargetPaise: null, internalBudgetPaise: null }
     });
-    const c = mapDates(campaign);
+    triggerTranslation("campaign", campaign.id, campaign, ["title", "shortDescription", "story", "beneficiaryInfo", "impactDescription", "locationText"]);
+    const c = await resolve(Promise.resolve(campaign));
     c.suggestedAmountsPaise = input.suggestedAmountsPaise || [];
     return c;
   },
@@ -390,7 +427,8 @@ export const db = {
       delete patch.suggestedAmountsPaise;
     }
     const updated = await prisma.campaign.update({ where: { id }, data: patch });
-    const c = mapDates(updated);
+    triggerTranslation("campaign", updated.id, updated, ["title", "shortDescription", "story", "beneficiaryInfo", "impactDescription", "locationText"]);
+    const c = await resolve(Promise.resolve(updated));
     c.suggestedAmountsPaise = c.suggestedAmountsJson ? JSON.parse(c.suggestedAmountsJson) : [];
     return c;
   },
@@ -523,8 +561,8 @@ export const db = {
   listContactMessages: async () => mapDates(await prisma.contactMessage.findMany({ orderBy: { createdAt: 'desc' } })),
 
   // Events
-  listEvents: async () => mapDates(await prisma.event.findMany({ orderBy: { eventDate: 'asc' } })),
-  getEventBySlug: async (slug: string) => mapDates(await prisma.event.findUnique({ where: { slug } })),
+  listEvents: async () => resolve(prisma.event.findMany({ orderBy: { eventDate: 'asc' } })),
+  getEventBySlug: async (slug: string) => resolve(prisma.event.findUnique({ where: { slug } })),
   getAdmin: async (email: string) => await prisma.admin.findUnique({ where: { email } }),
   getAdminById: async (id: string) => await prisma.admin.findUnique({ where: { id } }),
   createAdmin: async (data: any) => await prisma.admin.create({ data }),
@@ -534,29 +572,51 @@ export const db = {
     await prisma.admin.update({ where: { id: adminId }, data: { twoFactorEnabled: true } });
     return true;
   },
-  getEventById: async (id: string) => mapDates(await prisma.event.findUnique({ where: { id } })),
-  createEvent: async (data: any) => mapDates(await prisma.event.create({ data: { ...data, eventDate: new Date(data.eventDate) } })),
+  getEventById: async (id: string) => resolve(prisma.event.findUnique({ where: { id } })),
+  createEvent: async (data: any) => {
+    const record = await prisma.event.create({ data: { ...data, eventDate: new Date(data.eventDate) } });
+    triggerTranslation("event", record.id, record, ["title", "description", "venue", "location", "organizer"]);
+    return resolve(Promise.resolve(record));
+  },
   updateEvent: async (id: string, data: any) => {
     if (data.eventDate) data.eventDate = new Date(data.eventDate);
-    return mapDates(await prisma.event.update({ where: { id }, data }));
+    const record = await prisma.event.update({ where: { id }, data });
+    triggerTranslation("event", record.id, record, ["title", "description", "venue", "location", "organizer"]);
+    return resolve(Promise.resolve(record));
   },
   deleteEvent: async (id: string) => { await prisma.event.delete({ where: { id } }); return true; },
   createEventRegistration: async (data: any) => mapDates(await prisma.eventRegistration.create({ data })),
   listEventRegistrations: async (eventId: string) => mapDates(await prisma.eventRegistration.findMany({ where: { eventId } })),
 
   // Blog
-  listBlogPosts: async () => mapDates(await prisma.blogPost.findMany({ orderBy: { publishedAt: 'desc' } })),
-  getBlogPostBySlug: async (slug: string) => mapDates(await prisma.blogPost.findUnique({ where: { slug } })),
-  getBlogPostById: async (id: string) => mapDates(await prisma.blogPost.findUnique({ where: { id } })),
-  createBlogPost: async (data: any) => mapDates(await prisma.blogPost.create({ data })),
-  updateBlogPost: async (id: string, data: any) => mapDates(await prisma.blogPost.update({ where: { id }, data })),
+  listBlogPosts: async () => resolve(prisma.blogPost.findMany({ orderBy: { publishedAt: 'desc' } })),
+  getBlogPostBySlug: async (slug: string) => resolve(prisma.blogPost.findUnique({ where: { slug } })),
+  getBlogPostById: async (id: string) => resolve(prisma.blogPost.findUnique({ where: { id } })),
+  createBlogPost: async (data: any) => {
+    const record = await prisma.blogPost.create({ data });
+    triggerTranslation("blogPost", record.id, record, ["title", "excerpt", "content"]);
+    return resolve(Promise.resolve(record));
+  },
+  updateBlogPost: async (id: string, data: any) => {
+    const record = await prisma.blogPost.update({ where: { id }, data });
+    triggerTranslation("blogPost", record.id, record, ["title", "excerpt", "content"]);
+    return resolve(Promise.resolve(record));
+  },
   deleteBlogPost: async (id: string) => { await prisma.blogPost.delete({ where: { id } }); return true; },
 
   // FAQs
-  listFaqs: async () => mapDates(await prisma.faq.findMany({ orderBy: { sortOrder: 'asc' } })),
-  getFaq: async (id: string) => mapDates(await prisma.faq.findUnique({ where: { id } })),
-  createFaq: async (data: any) => mapDates(await prisma.faq.create({ data })),
-  updateFaq: async (id: string, data: any) => mapDates(await prisma.faq.update({ where: { id }, data })),
+  listFaqs: async () => resolve(prisma.faq.findMany({ orderBy: { sortOrder: 'asc' } })),
+  getFaq: async (id: string) => resolve(prisma.faq.findUnique({ where: { id } })),
+  createFaq: async (data: any) => {
+    const record = await prisma.faq.create({ data });
+    triggerTranslation("faq", record.id, record, ["question", "answer", "category"]);
+    return resolve(Promise.resolve(record));
+  },
+  updateFaq: async (id: string, data: any) => {
+    const record = await prisma.faq.update({ where: { id }, data });
+    triggerTranslation("faq", record.id, record, ["question", "answer", "category"]);
+    return resolve(Promise.resolve(record));
+  },
   deleteFaq: async (id: string) => { await prisma.faq.delete({ where: { id } }); return true; },
 
   // Recurring - Release 2 Boundary
@@ -583,15 +643,31 @@ export const db = {
   listDonationsForUser: async (userId: string) => mapDates(await prisma.donation.findMany({ where: { userId }, orderBy: { createdAt: 'desc' }, include: { items: true } })),
 
   // Social Media
-  listInstagramPosts: async () => mapDates(await prisma.instagramPost.findMany({ orderBy: { displayOrder: 'asc' } })),
-  getInstagramPost: async (id: string) => mapDates(await prisma.instagramPost.findUnique({ where: { id } })),
-  createInstagramPost: async (data: any) => mapDates(await prisma.instagramPost.create({ data })),
-  updateInstagramPost: async (id: string, data: any) => mapDates(await prisma.instagramPost.update({ where: { id }, data })),
+  listInstagramPosts: async () => resolve(prisma.instagramPost.findMany({ orderBy: { displayOrder: 'asc' } })),
+  getInstagramPost: async (id: string) => resolve(prisma.instagramPost.findUnique({ where: { id } })),
+  createInstagramPost: async (data: any) => {
+    const record = await prisma.instagramPost.create({ data });
+    triggerTranslation("instagramPost", record.id, record, ["title", "caption"]);
+    return resolve(Promise.resolve(record));
+  },
+  updateInstagramPost: async (id: string, data: any) => {
+    const record = await prisma.instagramPost.update({ where: { id }, data });
+    triggerTranslation("instagramPost", record.id, record, ["title", "caption"]);
+    return resolve(Promise.resolve(record));
+  },
   deleteInstagramPost: async (id: string) => { await prisma.instagramPost.delete({ where: { id } }); return true; },
 
-  listYouTubeVideos: async () => mapDates(await prisma.youTubeVideo.findMany({ orderBy: { displayOrder: 'asc' } })),
-  getYouTubeVideo: async (id: string) => mapDates(await prisma.youTubeVideo.findUnique({ where: { id } })),
-  createYouTubeVideo: async (data: any) => mapDates(await prisma.youTubeVideo.create({ data })),
-  updateYouTubeVideo: async (id: string, data: any) => mapDates(await prisma.youTubeVideo.update({ where: { id }, data })),
+  listYouTubeVideos: async () => resolve(prisma.youTubeVideo.findMany({ orderBy: { displayOrder: 'asc' } })),
+  getYouTubeVideo: async (id: string) => resolve(prisma.youTubeVideo.findUnique({ where: { id } })),
+  createYouTubeVideo: async (data: any) => {
+    const record = await prisma.youTubeVideo.create({ data });
+    triggerTranslation("youTubeVideo", record.id, record, ["title", "description"]);
+    return resolve(Promise.resolve(record));
+  },
+  updateYouTubeVideo: async (id: string, data: any) => {
+    const record = await prisma.youTubeVideo.update({ where: { id }, data });
+    triggerTranslation("youTubeVideo", record.id, record, ["title", "description"]);
+    return resolve(Promise.resolve(record));
+  },
   deleteYouTubeVideo: async (id: string) => { await prisma.youTubeVideo.delete({ where: { id } }); return true; },
 };
