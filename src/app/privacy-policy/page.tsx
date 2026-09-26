@@ -3,24 +3,24 @@ import { LegalPage } from "@/components/legal/legal-page";
 export default function PrivacyPolicyPage() {
   return (
     <LegalPage
-      title="Privacy Policy"
+      title="priv.title"
       updated="21 September 2026"
       sections={[
         {
-          heading: "What We Collect",
-          body: "Only what's needed to process a donation, volunteer application, or contact request: name, email, phone, and — only when a tax receipt is requested — address and PAN.",
+          heading: "priv.s1.h",
+          body: "priv.s1.p",
         },
         {
-          heading: "How We Use It",
-          body: "To generate receipts, respond to enquiries, and process volunteer applications. We do not sell or share personal data with third parties for marketing purposes.",
+          heading: "priv.s2.h",
+          body: "priv.s2.p",
         },
         {
-          heading: "Donor Privacy",
-          body: "Donor identities are never displayed publicly by default. Choosing to donate anonymously hides your name from any donor-facing display entirely.",
+          heading: "priv.s3.h",
+          body: "priv.s3.p",
         },
         {
-          heading: "Your Rights",
-          body: "You may request access to, correction of, or deletion of your personal data, subject to financial record-keeping requirements that may apply to completed donations.",
+          heading: "priv.s4.h",
+          body: "priv.s4.p",
         },
       ]}
     />

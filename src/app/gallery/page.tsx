@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { X } from "lucide-react";
+import { T } from "@/components/i18n/t";
 
 const categories = ["All", "Initiatives", "Seva", "Community", "Education", "Spiritual", "Volunteers"];
 
@@ -26,8 +27,8 @@ export default function GalleryPage() {
 
   return (
     <div className="container-app py-14">
-      <h1 className="text-4xl">Gallery</h1>
-      <p className="text-muted mt-2">Moments from campaigns, events and seva across the Trust.</p>
+      <h1 className="text-4xl"><T k="gal.title" /></h1>
+      <p className="text-muted mt-2"><T k="gal.subtitle" /></p>
 
       <div className="mt-8 flex flex-wrap gap-2">
         {categories.map((c) => (

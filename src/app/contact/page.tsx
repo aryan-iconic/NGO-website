@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Mail, Phone, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { T } from "@/components/i18n/t";
 
 export default function ContactPage() {
   const [form, setForm] = useState({ name: "", email: "", phone: "", subject: "", message: "" });
@@ -30,8 +31,8 @@ export default function ContactPage() {
   return (
     <div className="container-app py-14 grid lg:grid-cols-2 gap-14">
       <div>
-        <h1 className="text-4xl">Contact Us</h1>
-        <p className="text-muted mt-2">Questions about a campaign, donation, or volunteering? Reach out.</p>
+        <h1 className="text-4xl"><T k="contact.title" /></h1>
+        <p className="text-muted mt-2"><T k="contact.subtitle" /></p>
 
         <div className="mt-8 space-y-4 text-sm">
           <p className="flex items-center gap-3 text-muted">
@@ -49,7 +50,7 @@ export default function ContactPage() {
       <div>
         {status === "done" ? (
           <div className="p-6 rounded-lg bg-success/10 text-success">
-            Your message has been received — we&apos;ll respond soon.
+            <T k="contact.done" />
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -90,7 +91,7 @@ export default function ContactPage() {
             />
             {error && <p className="text-sm text-red">{error}</p>}
             <Button type="submit" size="lg" className="w-full" disabled={status === "loading"}>
-              {status === "loading" ? "Sending…" : "Send Message"}
+              {status === "loading" ? <T k="contact.submitting" /> : <T k="contact.submit" />}
             </Button>
           </form>
         )}

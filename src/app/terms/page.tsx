@@ -3,24 +3,24 @@ import { LegalPage } from "@/components/legal/legal-page";
 export default function TermsPage() {
   return (
     <LegalPage
-      title="Terms of Use"
+      title="terms.title"
       updated="21 September 2026"
       sections={[
         {
-          heading: "Platform Purpose",
-          body: "This platform is an admin-managed donation and seva platform. Campaigns are created and published only by Shri Nityanikunj Ras Seva Sansthan Trust, Varanasi administrators.",
+          heading: "terms.s1.h",
+          body: "terms.s1.p",
         },
         {
-          heading: "Accounts",
-          body: "You're responsible for keeping your account credentials secure. Guest checkout is available for donations without creating an account.",
+          heading: "terms.s2.h",
+          body: "terms.s2.p",
         },
         {
-          heading: "Donations",
-          body: "All donations are processed through our payment gateway. A donation is confirmed only once payment is verified server-side, not merely on your browser reporting success.",
+          heading: "terms.s3.h",
+          body: "terms.s3.p",
         },
         {
-          heading: "Content",
-          body: "Campaign content is provided by the Trust. We do not present unverifiable claims as fact.",
+          heading: "terms.s4.h",
+          body: "terms.s4.p",
         },
       ]}
     />

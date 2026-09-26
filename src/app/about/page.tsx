@@ -1,66 +1,67 @@
 import { LinkButton } from "@/components/ui/button";
+import { T } from "@/components/i18n/t";
 
 export default function AboutPage() {
   return (
     <div className="container-app py-16 max-w-3xl">
-      <h1 className="text-4xl">About Shri Nityanikunj Ras Seva Sansthan Trust, Varanasi</h1>
-      <p className="text-muted mt-3 text-lg font-serif">श्री नित्यानिकुंज रस सेवा संस्थान ट्रस्ट, वाराणसी</p>
+      <h1 className="text-4xl"><T k="about.title" /></h1>
+      <p className="text-muted mt-3 text-lg font-serif"><T k="about.subtitle" /></p>
 
       <div className="mt-12 space-y-12">
         <section>
-          <h2 className="text-2xl font-serif text-maroon">About the Trust</h2>
+          <h2 className="text-2xl font-serif text-maroon"><T k="about.s1.h" /></h2>
           <p className="mt-4 text-muted leading-relaxed">
-            Shri Nityanikunj Ras Seva Sansthan Trust, Varanasi is established with a broad vision of social welfare, service, education, healthcare, cultural preservation, environmental responsibility and humanitarian assistance. The Trust&apos;s objectives encompass service to communities in need while promoting education, Indian culture, Sanskrit, yoga, traditional knowledge and social responsibility.
+            <T k="about.s1.p" />
           </p>
         </section>
 
         <section>
-          <h2 className="text-2xl font-serif text-maroon">Our Vision</h2>
+          <h2 className="text-2xl font-serif text-maroon"><T k="about.s2.h" /></h2>
           <p className="mt-4 text-muted leading-relaxed">
-            To foster a community grounded in social welfare, offering service to disadvantaged communities through education, healthcare, cultural preservation, environmental responsibility, animal welfare, and immediate humanitarian assistance when needed.
+            <T k="about.s2.p" />
           </p>
         </section>
 
         <section>
-          <h2 className="text-2xl font-serif text-maroon">Our Mission</h2>
+          <h2 className="text-2xl font-serif text-maroon"><T k="about.s3.h" /></h2>
           <div className="mt-4 bg-cream border border-border p-6 rounded-lg text-center space-y-2 font-serif text-lg text-primary">
-            <p>सेवा (Service) • शिक्षा (Education) • स्वास्थ्य (Healthcare)</p>
-            <p>समाज कल्याण (Social Welfare) • संस्कृति (Culture)</p>
-            <p>पर्यावरण संरक्षण (Environmental Protection) • गौ एवं पशु सेवा (Animal Welfare)</p>
-            <p>आत्मनिर्भरता (Self-Reliance) • मानवीय सहायता (Humanitarian Aid)</p>
+            <p><T k="about.s3.p1" /></p>
+            <p><T k="about.s3.p2" /></p>
+            <p><T k="about.s3.p3" /></p>
+            <p><T k="about.s3.p4" /></p>
           </div>
         </section>
 
         <section>
-          <h2 className="text-2xl font-serif text-maroon">Founder / President</h2>
-          <p className="mt-4 text-lg font-medium text-text">श्री नित्यानन्द पाण्डेय</p>
-          <p className="text-muted">संस्थापक / अध्यक्ष (Founder / President)</p>
+          <h2 className="text-2xl font-serif text-maroon"><T k="about.s4.h" /></h2>
+          <p className="mt-4 text-lg font-medium text-text"><T k="about.s4.p1" /></p>
+          <p className="text-muted"><T k="about.s4.p2" /></p>
         </section>
 
         <section className="bg-background-alt border border-border p-8 rounded-lg mt-10">
-          <h2 className="text-2xl font-serif text-maroon">Our Objectives</h2>
+          <h2 className="text-2xl font-serif text-maroon"><T k="about.s5.h" /></h2>
           <p className="mt-4 text-muted leading-relaxed">
-            The Trust Deed sets out a broad range of charitable, social, educational, healthcare, cultural, environmental and humanitarian objectives.
+            <T k="about.s5.p" />
           </p>
           <div className="mt-4">
             <LinkButton href="/campaigns" variant="outline">
-              View Areas of Seva
+              <T k="about.s5.btn" />
             </LinkButton>
           </div>
 
           <div className="mt-10 border-t border-border pt-8">
-            <h3 className="text-xl font-serif text-maroon">Current Activities</h3>
+            <h3 className="text-xl font-serif text-maroon"><T k="about.s6.h" /></h3>
             <p className="mt-3 text-muted text-sm bg-surface p-4 rounded-md italic">
-              Only activities confirmed and published by the Trust will appear here. The Trust focuses its immediate resources on the most urgent needs while working toward its broader objectives over time.
+              <T k="about.s6.p" />
             </p>
           </div>
         </section>
       </div>
 
       <section id="transparency" className="mt-14 p-6 rounded-lg bg-cream border border-border">
-        <h2 className="text-xl font-serif text-maroon">Legal & Registration Information</h2>
+        <h2 className="text-xl font-serif text-maroon"><T k="about.s7.h" /></h2>
         <p className="mt-3 text-sm text-muted">
-          Official registration and compliance information (including PAN, 12A, 80G, FCRA, CSR Registration, Bank Details, and Address) will be published here after verification.
+          <T k="about.s7.p" />
         </p>
       </section>
     </div>

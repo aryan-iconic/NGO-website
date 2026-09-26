@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { T } from "@/components/i18n/t";
 
 export default async function FaqPage() {
   const faqs = await db.listFaqs();
@@ -6,7 +7,7 @@ export default async function FaqPage() {
 
   return (
     <div className="container-app py-14 max-w-2xl">
-      <h1 className="text-4xl">Frequently Asked Questions</h1>
+      <h1 className="text-4xl"><T k="faq.title" /></h1>
 
       <div className="mt-10 space-y-10">
         {categories.map((cat: any) => (

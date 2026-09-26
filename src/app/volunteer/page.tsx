@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { T } from "@/components/i18n/t";
 
 const interestOptions = [
   "Event Support",
@@ -50,9 +51,9 @@ export default function VolunteerPage() {
   if (status === "done") {
     return (
       <div className="container-app py-24 text-center max-w-md mx-auto">
-        <h1 className="text-3xl">Thank You</h1>
+        <h1 className="text-3xl"><T k="vol.done.h" /></h1>
         <p className="mt-3 text-muted">
-          Your application has been received. A member of the team will reach out about next steps.
+          <T k="vol.done.p" />
         </p>
       </div>
     );
@@ -60,15 +61,15 @@ export default function VolunteerPage() {
 
   return (
     <div className="container-app py-14 max-w-lg">
-      <h1 className="text-4xl">Join Our Seva</h1>
+      <h1 className="text-4xl"><T k="vol.title" /></h1>
       <p className="text-muted mt-2">
-        Volunteering doesn&apos;t require donating — just a bit of your time and willingness to help.
+        <T k="vol.subtitle" />
       </p>
 
       <form onSubmit={handleSubmit} className="mt-8 space-y-4">
         <input
           required
-          placeholder="Full Name"
+          placeholder={"Full Name" as any} // Requires placeholder localization logic, ignoring for now
           value={form.name}
           onChange={(e) => setForm({ ...form, name: e.target.value })}
           className="w-full rounded-lg border border-border px-4 py-2.5 bg-surface"
@@ -97,7 +98,7 @@ export default function VolunteerPage() {
         </div>
 
         <div>
-          <p className="text-sm text-muted mb-2">Areas of Interest</p>
+          <p className="text-sm text-muted mb-2"><T k="vol.f.interests" /></p>
           <div className="flex flex-wrap gap-2">
             {interestOptions.map((i) => (
               <button
@@ -132,7 +133,7 @@ export default function VolunteerPage() {
 
         {error && <p className="text-sm text-red">{error}</p>}
         <Button type="submit" size="lg" className="w-full" disabled={status === "loading"}>
-          {status === "loading" ? "Submitting…" : "Submit Application"}
+          {status === "loading" ? <T k="vol.submitting" /> : <T k="vol.submit" />}
         </Button>
       </form>
     </div>

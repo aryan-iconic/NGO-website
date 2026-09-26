@@ -3,24 +3,24 @@ import { LegalPage } from "@/components/legal/legal-page";
 export default function DonationPolicyPage() {
   return (
     <LegalPage
-      title="Donation Policy"
+      title="don.title"
       updated="21 September 2026"
       sections={[
         {
-          heading: "How Donations Are Used",
-          body: "Product-based contributions (e.g. a ration kit or school kit) go toward that specific item for the campaign. Custom amounts and general donations support the campaign or the Trust's general fund.",
+          heading: "don.s1.h",
+          body: "don.s1.p",
         },
         {
-          heading: "What We Don't Show",
-          body: "We deliberately don't display fundraising targets or amounts raised on public campaign pages. Instead, campaigns show milestones, updates and impact as work progresses.",
+          heading: "don.s2.h",
+          body: "don.s2.p",
         },
         {
-          heading: "Receipts",
-          body: "Every successful donation generates an immutable, uniquely numbered receipt, available for download from your dashboard and sent by email.",
+          heading: "don.s3.h",
+          body: "don.s3.p",
         },
         {
-          heading: "Tax Benefits",
-          body: "Tax-eligible status is shown only on campaigns where the Trust has explicitly enabled it in settings — never assumed or invented.",
+          heading: "don.s4.h",
+          body: "don.s4.p",
         },
       ]}
     />
