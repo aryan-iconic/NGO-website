@@ -97,8 +97,8 @@ const dictionary = {
     "footer.tagline": "Shri Nityanikunj Ras Seva Sansthan Trust, Varanasi",
   },
   hi: {
-    "hero.titleLine2": "__ब्रांड__ शिक्षा, स्वास्थ्य देखभाल, मानवीय सहायता, सांस्कृतिक संरक्षण, पर्यावरणीय जिम्मेदारी और समाज की सेवा को शामिल करने वाले दृष्टिकोण की दिशा में काम करता है।",
-    "home.giveOnce": "एक बार दीजिए",
+    "hero.titleLine2": "Shri Nityanikunj Ras Seva Sansthan Trust, Varanasi शिक्षा, स्वास्थ्य देखभाल, मानवीय सहायता, सांस्कृतिक संरक्षण, पर्यावरणीय जिम्मेदारी और समाज की सेवा को शामिल करने वाले दृष्टिकोण की दिशा में काम करता है।",
+    "home.giveOnce": "एक बार दान करें",
     "home.upcomingInitiatives": "आगामी पहल",
     "home.followOurJourney": "हमारी यात्रा का अनुसरण करें",
     "home.watchOurVideos": "हमारे वीडियो देखें",

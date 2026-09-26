@@ -7,10 +7,10 @@ const columns = [
     title: "Explore",
     titleKey: "footer.explore",
     links: [
-      { href: "/campaigns", label: "footer.campaigns" },
+      { href: "/campaigns", label: "nav.campaigns" },
       { href: "/donate", label: "donate" },
-      { href: "/gallery", label: "footer.gallery" },
-      { href: "/blog", label: "footer.blog" },
+      { href: "/gallery", label: "nav.gallery" },
+      { href: "/blog", label: "nav.blog" },
     ],
   },
   {
