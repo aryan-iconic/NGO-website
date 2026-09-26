@@ -47,11 +47,11 @@ export default async function HomePage() {
               <T k="hero.title" />
             </h1>
             <p className="mt-5 text-muted text-base md:text-lg max-w-md">
-              Shri Nityanikunj Ras Seva Sansthan Trust, Varanasi works towards a vision encompassing education, healthcare, humanitarian assistance, cultural preservation, environmental responsibility and service to society.
+              <T k="hero.titleLine2" />
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <LinkButton href="/donate" variant="outline" size="lg">
-                Give Once
+                <T k="home.giveOnce" />
               </LinkButton>
             </div>
           </div>
@@ -102,7 +102,7 @@ export default async function HomePage() {
       {/* Upcoming Initiatives */}
       {events.length > 0 && (
         <section className="max-w-7xl mx-auto px-4 py-16">
-          <h2 className="text-3xl text-center">Upcoming Initiatives</h2>
+          <h2 className="text-3xl text-center"><T k="home.upcomingInitiatives" /></h2>
           <div className="mt-10 grid sm:grid-cols-2 gap-6 max-w-3xl mx-auto">
             {events.map((e: any) => (
               <Link
@@ -127,7 +127,7 @@ export default async function HomePage() {
       {instagramPosts.length > 0 && (
         <section className="py-20">
           <div className="container-app">
-            <h2 className="text-3xl text-center font-serif text-maroon mb-10">Follow Our Journey</h2>
+            <h2 className="text-3xl text-center font-serif text-maroon mb-10"><T k="home.followOurJourney" /></h2>
             <div className="grid md:grid-cols-3 gap-6">
               {instagramPosts.map((post: any) => (
                 <div key={post.id} className="bg-surface rounded-lg overflow-hidden border border-border shadow-[var(--shadow-soft)]">
@@ -158,7 +158,7 @@ export default async function HomePage() {
       {youtubeVideos.length > 0 && (
         <section className="bg-background-alt py-20">
           <div className="container-app">
-            <h2 className="text-3xl text-center font-serif text-maroon mb-10">Watch Our Videos</h2>
+            <h2 className="text-3xl text-center font-serif text-maroon mb-10"><T k="home.watchOurVideos" /></h2>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {youtubeVideos.map((video: any) => (
                 <div key={video.id} className="bg-surface rounded-lg overflow-hidden border border-border shadow-[var(--shadow-soft)] flex flex-col">
@@ -191,12 +191,12 @@ export default async function HomePage() {
         <div className="container-app">
           <h2 className="text-3xl text-center"><T k="home.howItWorks" /></h2>
           <div className="mt-10 grid sm:grid-cols-2 lg:grid-cols-5 gap-6 text-center">
-            {["Discover", "Understand", "Choose", "Contribute", "See Impact"].map((step, i) => (
+            {["home.step1", "home.step2", "home.step3", "home.step4", "home.step5"].map((step, i) => (
               <div key={step}>
                 <div className="mx-auto w-10 h-10 rounded-full bg-primary/10 text-primary font-serif flex items-center justify-center">
                   {i + 1}
                 </div>
-                <p className="mt-3 text-sm font-medium text-maroon">{step}</p>
+                <p className="mt-3 text-sm font-medium text-maroon"><T k={step as any} /></p>
               </div>
             ))}
           </div>
@@ -212,7 +212,7 @@ export default async function HomePage() {
           </p>
           <div className="mt-7 flex justify-center gap-3">
             <LinkButton href="/donate" variant="primary" size="lg">
-              Donate
+              <T k="donate" />
             </LinkButton>
             <LinkButton
               href="/volunteer"
@@ -220,7 +220,7 @@ export default async function HomePage() {
               size="lg"
               className="border-white/40 text-white hover:bg-white/10"
             >
-              Volunteer
+              <T k="nav.volunteer" />
             </LinkButton>
           </div>
         </div>

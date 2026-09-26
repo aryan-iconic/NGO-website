@@ -5,29 +5,32 @@ import { T } from "@/components/i18n/t";
 const columns = [
   {
     title: "Explore",
+    titleKey: "footer.explore",
     links: [
-      { href: "/campaigns", label: "Campaigns" },
-      { href: "/donate", label: "Donate" },
-      { href: "/gallery", label: "Gallery" },
-      { href: "/blog", label: "Blog" },
+      { href: "/campaigns", label: "footer.campaigns" },
+      { href: "/donate", label: "donate" },
+      { href: "/gallery", label: "footer.gallery" },
+      { href: "/blog", label: "footer.blog" },
     ],
   },
   {
     title: "About",
+    titleKey: "footer.about",
     links: [
-      { href: "/about", label: "Our Story" },
-      { href: "/about#transparency", label: "Transparency" },
-      { href: "/volunteer", label: "Volunteer" },
-      { href: "/contact", label: "Contact" },
+      { href: "/about", label: "footer.ourStory" },
+      { href: "/about#transparency", label: "footer.transparency" },
+      { href: "/volunteer", label: "nav.volunteer" },
+      { href: "/contact", label: "nav.contact" },
     ],
   },
   {
     title: "Legal",
+    titleKey: "footer.legal",
     links: [
-      { href: "/privacy-policy", label: "Privacy Policy" },
-      { href: "/terms", label: "Terms" },
-      { href: "/donation-policy", label: "Donation Policy" },
-      { href: "/refund-policy", label: "Refund Policy" },
+      { href: "/privacy-policy", label: "footer.privacyPolicy" },
+      { href: "/terms", label: "footer.terms" },
+      { href: "/donation-policy", label: "footer.donationPolicy" },
+      { href: "/refund-policy", label: "footer.refundPolicy" },
     ],
   },
 ];
@@ -70,12 +73,12 @@ export function Footer() {
         </div>
         {columns.map((col) => (
           <div key={col.title}>
-            <h4 className="text-sm font-semibold text-maroon mb-3">{col.title}</h4>
+            <h4 className="text-sm font-semibold text-maroon mb-3"><T k={col.titleKey as any} /></h4>
             <ul className="space-y-2">
               {col.links.map((l) => (
                 <li key={l.href}>
                   <Link href={l.href} className="text-sm text-muted hover:text-primary transition-colors">
-                    {l.label}
+                    <T k={l.label as any} />
                   </Link>
                 </li>
               ))}
@@ -102,8 +105,7 @@ export function Footer() {
 
       <div className="border-t border-border py-5">
         <p className="container-app text-xs text-muted">
-          © {new Date().getFullYear()} Shri Nityanikunj Ras Seva Sansthan Trust, Varanasi. Registration and legal details
-          appear here once provided by the Trust.
+          © {new Date().getFullYear()} Shri Nityanikunj Ras Seva Sansthan Trust, Varanasi. <T k="footer.copyright" />
         </p>
       </div>
     </footer>
