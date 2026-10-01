@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 
+import { ImageUpload } from "@/components/ui/image-upload";
+
 export function CampaignCreateForm({ sevaAreas }: { sevaAreas: { id: string; name: string }[] }) {
   const router = useRouter();
   const [form, setForm] = useState({
@@ -16,6 +18,7 @@ export function CampaignCreateForm({ sevaAreas }: { sevaAreas: { id: string; nam
     allowCustomAmount: true,
     isFeatured: false,
     isUrgent: false,
+    coverImage: "",
   });
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -96,6 +99,15 @@ export function CampaignCreateForm({ sevaAreas }: { sevaAreas: { id: string; nam
           />
         </div>
       </div>
+      
+      <div className="pt-2">
+        <ImageUpload
+          label="Cover Image"
+          value={form.coverImage}
+          onChange={(url) => setForm({ ...form, coverImage: url })}
+        />
+      </div>
+
       <div>
         <label className="text-sm text-muted" htmlFor="donationMode">Donation Mode</label>
         <select
