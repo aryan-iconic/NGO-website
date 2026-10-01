@@ -7,6 +7,7 @@ import { LinkButton } from "@/components/ui/button";
 import { ProductCard } from "@/components/campaign/product-card";
 import { CampaignCard } from "@/components/campaign/campaign-card";
 import { ShareButtons } from "@/components/ui/share-buttons";
+import { getServerTranslator } from "@/lib/i18n-server";
 
 export default async function CampaignDetailPage({
   params,
@@ -23,6 +24,7 @@ export default async function CampaignDetailPage({
   const related = (await Promise.all(campaignsList.map(toPublicCampaign)))
     .filter((c: any) => c.id !== campaign.id)
     .slice(0, 3);
+  const { t } = await getServerTranslator();
 
   return (
     <div className="pb-20">
@@ -37,23 +39,23 @@ export default async function CampaignDetailPage({
           <div>
             <div className="flex flex-wrap gap-4 items-center justify-between">
               <span className="text-xs font-medium text-primary uppercase tracking-wide">
-                {campaign.sevaArea?.name ?? campaign.category.name}
+                {t(campaign.sevaArea?.name ?? campaign.category.name)}
               </span>
               <ShareButtons title={campaign.title} text={campaign.shortDescription} />
             </div>
-            <h1 className="mt-2 text-3xl md:text-4xl leading-tight">{campaign.title}</h1>
+            <h1 className="mt-2 text-3xl md:text-4xl leading-tight">{t(campaign.title)}</h1>
             {campaign.locationText && (
               <p className="mt-3 flex items-center gap-1.5 text-sm text-muted">
-                <MapPin size={14} /> {campaign.locationText}
+                <MapPin size={14} /> {t(campaign.locationText)}
               </p>
             )}
-            <p className="mt-4 text-muted">{campaign.shortDescription}</p>
+            <p className="mt-4 text-muted">{t(campaign.shortDescription)}</p>
             <div className="mt-6 flex gap-3">
               <LinkButton href={`/donate/checkout?campaign=${campaign.slug}`} size="lg">
-                Donate Now
+                {t("Donate Now")}
               </LinkButton>
               <LinkButton href="/volunteer" variant="outline" size="lg">
-                Volunteer
+                {t("Volunteer")}
               </LinkButton>
             </div>
           </div>
@@ -64,18 +66,18 @@ export default async function CampaignDetailPage({
         <div className="space-y-14">
           {/* Story */}
           <section>
-            <h2 className="text-2xl">The Story</h2>
-            <p className="mt-3 text-text leading-relaxed">{campaign.story}</p>
+            <h2 className="text-2xl">{t("The Story")}</h2>
+            <p className="mt-3 text-text leading-relaxed">{t(campaign.story)}</p>
             {campaign.beneficiaryInfo && (
               <>
-                <h3 className="mt-6 text-lg">Who It Supports</h3>
-                <p className="mt-2 text-muted">{campaign.beneficiaryInfo}</p>
+                <h3 className="mt-6 text-lg">{t("Who It Supports")}</h3>
+                <p className="mt-2 text-muted">{t(campaign.beneficiaryInfo)}</p>
               </>
             )}
             {campaign.impactDescription && (
               <>
-                <h3 className="mt-6 text-lg">What We&apos;re Doing</h3>
-                <p className="mt-2 text-muted">{campaign.impactDescription}</p>
+                <h3 className="mt-6 text-lg">{t("What We're Doing")}</h3>
+                <p className="mt-2 text-muted">{t(campaign.impactDescription)}</p>
               </>
             )}
           </section>
@@ -83,7 +85,7 @@ export default async function CampaignDetailPage({
           {/* Media Gallery */}
           {campaign.gallery.length > 0 && (
             <section>
-              <h2 className="text-2xl">Gallery & Media</h2>
+              <h2 className="text-2xl">{t("Gallery & Media")}</h2>
               <div className="mt-5 grid grid-cols-2 sm:grid-cols-3 gap-4">
                 {campaign.gallery.map((m, idx) => (
                   <div key={idx} className="aspect-square rounded-lg border border-border overflow-hidden bg-cream relative">
@@ -92,7 +94,7 @@ export default async function CampaignDetailPage({
                     ) : (
                       <div className="w-full h-full flex flex-col items-center justify-center p-4">
                         <span className="text-3xl mb-2">🎥</span>
-                        <a href={m.url} target="_blank" rel="noopener noreferrer" className="text-sm text-maroon hover:underline">Watch Video</a>
+                        <a href={m.url} target="_blank" rel="noopener noreferrer" className="text-sm text-maroon hover:underline">{t("Watch Video")}</a>
                       </div>
                     )}
                   </div>
@@ -104,9 +106,9 @@ export default async function CampaignDetailPage({
           {/* Products */}
           {campaign.products.length > 0 && (
             <section>
-              <h2 className="text-2xl">Support This Cause</h2>
+              <h2 className="text-2xl">{t("Support This Cause")}</h2>
               <p className="text-muted text-sm mt-1">
-                Choose what to sponsor — every item goes directly toward this campaign.
+                {t("Choose what to sponsor — every item goes directly toward this campaign.")}
               </p>
               <div className="mt-5 grid sm:grid-cols-2 gap-4">
                 {campaign.products.map((p) => (
@@ -125,13 +127,13 @@ export default async function CampaignDetailPage({
           {/* Custom amount */}
           {campaign.allowCustomAmount && (
             <section>
-              <h2 className="text-2xl">Or Give a Custom Amount</h2>
+              <h2 className="text-2xl">{t("Or Give a Custom Amount")}</h2>
               <LinkButton
                 href={`/donate/checkout?campaign=${campaign.slug}&custom=1`}
                 variant="outline"
                 className="mt-4"
               >
-                Donate any amount to this campaign
+                {t("Donate any amount to this campaign")}
               </LinkButton>
             </section>
           )}
@@ -139,7 +141,7 @@ export default async function CampaignDetailPage({
           {/* Timeline */}
           {campaign.milestones.length > 0 && (
             <section>
-              <h2 className="text-2xl">Timeline</h2>
+              <h2 className="text-2xl">{t("Timeline")}</h2>
               <ol className="mt-5 space-y-4">
                 {campaign.milestones.map((m) => (
                   <li key={m.id} className="flex items-start gap-3">
@@ -149,10 +151,10 @@ export default async function CampaignDetailPage({
                       <Circle size={20} className="text-muted shrink-0 mt-0.5" />
                     )}
                     <div>
-                      <p className="font-medium text-maroon">{m.title}</p>
+                      <p className="font-medium text-maroon">{t(m.title)}</p>
                       {m.value && (
                         <p className="text-sm text-muted">
-                          {m.value} {m.unit}
+                          {m.value} {t(m.unit || "")}
                         </p>
                       )}
                     </div>
@@ -165,13 +167,13 @@ export default async function CampaignDetailPage({
           {/* Updates */}
           {campaign.updates.length > 0 && (
             <section>
-              <h2 className="text-2xl">Updates</h2>
+              <h2 className="text-2xl">{t("Updates")}</h2>
               <div className="mt-5 space-y-6">
                 {campaign.updates.map((u) => (
                   <div key={u.id} className="border-l-2 border-primary/40 pl-4">
                     <p className="text-xs text-muted">{u.publishedAt}</p>
-                    <h3 className="text-lg font-semibold text-maroon mt-1">{u.title}</h3>
-                    <p className="text-muted mt-1">{u.content}</p>
+                    <h3 className="text-lg font-semibold text-maroon mt-1">{t(u.title)}</h3>
+                    <p className="text-muted mt-1">{t(u.content)}</p>
                   </div>
                 ))}
               </div>
@@ -181,15 +183,15 @@ export default async function CampaignDetailPage({
           {/* FAQs */}
           {campaign.faqs.length > 0 && (
             <section>
-              <h2 className="text-2xl">FAQs</h2>
+              <h2 className="text-2xl">{t("FAQs")}</h2>
               <div className="mt-5 divide-y divide-border border border-border rounded-lg">
                 {campaign.faqs.map((f) => (
                   <details key={f.id} className="p-4 group">
                     <summary className="cursor-pointer font-medium text-maroon list-none flex justify-between">
-                      {f.question}
+                      {t(f.question)}
                       <span className="text-muted group-open:rotate-45 transition-transform">+</span>
                     </summary>
-                    <p className="mt-2 text-sm text-muted">{f.answer}</p>
+                    <p className="mt-2 text-sm text-muted">{t(f.answer)}</p>
                   </details>
                 ))}
               </div>
@@ -200,10 +202,10 @@ export default async function CampaignDetailPage({
         {/* Sidebar */}
         <aside className="space-y-6">
           <div className="p-6 rounded-lg border border-border bg-cream sticky top-24">
-            <p className="text-sm text-muted">Status</p>
-            <p className="font-semibold text-maroon capitalize">{campaign.status.toLowerCase()}</p>
+            <p className="text-sm text-muted">{t("Status")}</p>
+            <p className="font-semibold text-maroon capitalize">{t(campaign.status.toLowerCase())}</p>
             <LinkButton href={`/donate/checkout?campaign=${campaign.slug}`} className="w-full mt-5">
-              Donate Now
+              {t("Donate Now")}
             </LinkButton>
           </div>
         </aside>
@@ -211,7 +213,7 @@ export default async function CampaignDetailPage({
 
       {/* Related */}
       <section className="container-app mt-20">
-        <h2 className="text-2xl mb-6">Related Campaigns</h2>
+        <h2 className="text-2xl mb-6">{t("Related Campaigns")}</h2>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {related.map((c) => (
             <CampaignCard key={c.id} campaign={c} />
