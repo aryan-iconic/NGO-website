@@ -96,7 +96,7 @@ export default async function AboutPage() {
         </div>
 
         <div className="grid sm:grid-cols-2 gap-6 mt-10">
-          {(await db.listStatutoryRegistrations()).map((reg) => (
+          {(await db.listStatutoryRegistrations()).map((reg: any) => (
             <div key={reg.id} className="bg-surface border border-border p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow">
               <h3 className="font-serif text-xl text-maroon">{reg.title}</h3>
               {reg.registrationNumber && (
@@ -132,3 +132,4 @@ export default async function AboutPage() {
     </div>
   );
 }
+
