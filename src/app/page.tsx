@@ -2,6 +2,7 @@ import Link from "next/link";
 import { UtensilsCrossed, GraduationCap, HeartPulse, Users, LifeBuoy, Flame } from "lucide-react";
 import { LinkButton } from "@/components/ui/button";
 import { CampaignCard } from "@/components/campaign/campaign-card";
+import { NewsletterSection } from "@/components/home/newsletter-section";
 import { db } from "@/lib/db";
 import { toPublicCampaign } from "@/lib/view-models";
 import { T } from "@/components/i18n/t";
@@ -241,6 +242,8 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+
+      <NewsletterSection />
     </>
   );
 }
