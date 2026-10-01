@@ -140,8 +140,9 @@ export default function EditTeamMemberPage({ params }: { params: { id: string } 
         </div>
 
         {error && <p className="text-red text-sm">{error}</p>}
-        <div className="flex justify-between">
-          <Button type="button" variant="outline" className="text-red border-red/30 hover:bg-red/10" onClick={handleDelete}>Delete</Button>
+        <div className="flex items-center gap-3">
+          <Button type="button" variant="outline" className="text-red border-red/30 hover:bg-red/10 mr-auto" onClick={handleDelete}>Delete</Button>
+          <Button type="button" variant="outline" onClick={() => router.back()} disabled={saving}>Cancel</Button>
           <Button type="submit" disabled={saving}>{saving ? "Saving..." : "Save Changes"}</Button>
         </div>
       </form>
