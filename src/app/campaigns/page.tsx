@@ -4,6 +4,8 @@ import { db } from "@/lib/db";
 import { toPublicCampaign } from "@/lib/view-models";
 import { Heart, SearchX } from "lucide-react";
 
+import { getServerTranslator } from "@/lib/i18n-server";
+
 export default async function CampaignsPage({
   searchParams,
 }: {
@@ -13,6 +15,7 @@ export default async function CampaignsPage({
   const categories = await db.listSevaAreas();
   const filteredList = await db.listPublicCampaigns(sevaArea);
   const filtered = await Promise.all(filteredList.map(toPublicCampaign));
+  const { t } = await getServerTranslator();
 
   return (
     <div className="bg-background min-h-screen pb-24">
@@ -21,13 +24,13 @@ export default async function CampaignsPage({
         <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white via-transparent to-transparent"></div>
         <div className="container-app relative z-10 text-center max-w-4xl mx-auto px-4">
           <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm px-5 py-2 rounded-full text-sm font-bold tracking-widest uppercase mb-6 border border-white/20">
-            <Heart size={16} /> Our Causes
+            <Heart size={16} /> {t("Our Causes")}
           </div>
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-serif font-bold leading-tight drop-shadow-md">
-            Explore Campaigns
+            {t("Explore Campaigns")}
           </h1>
           <p className="mt-6 text-xl text-cream/90 font-medium tracking-wide max-w-2xl mx-auto">
-            Every campaign here is created, verified, and executed directly by the Trust&apos;s administrators.
+            {t("Every campaign here is created, verified, and executed directly by the Trust's administrators.")}
           </p>
         </div>
         {/* Decorative bottom curve */}
@@ -43,17 +46,17 @@ export default async function CampaignsPage({
         {/* Filter Bar */}
         <div className="bg-white rounded-2xl shadow-lg border border-border p-4 md:p-6 mb-12 backdrop-blur-md">
           <div className="flex items-center gap-4 mb-4 md:hidden">
-            <span className="text-sm font-bold text-primary uppercase tracking-widest">Filter by Seva Area:</span>
+            <span className="text-sm font-bold text-primary uppercase tracking-widest">{t("Filter by Seva Area:")}</span>
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            <span className="hidden md:inline-block text-sm font-bold text-primary uppercase tracking-widest mr-2">Filter:</span>
+            <span className="hidden md:inline-block text-sm font-bold text-primary uppercase tracking-widest mr-2">{t("Filter:")}</span>
             <Link
               href="/campaigns"
               className={`px-5 py-2.5 rounded-full text-sm font-medium transition-all duration-300 ${
                 !sevaArea ? "bg-primary text-white shadow-md shadow-primary/30" : "bg-surface border border-border text-text hover:bg-cream hover:border-primary/50"
               }`}
             >
-              All Campaigns
+              {t("All Campaigns")}
             </Link>
             {categories.map((cat: any) => (
               <Link
@@ -65,7 +68,7 @@ export default async function CampaignsPage({
                     : "bg-surface border border-border text-text hover:bg-cream hover:border-primary/50"
                 }`}
               >
-                {cat.name}
+                {t(cat.name)}
               </Link>
             ))}
           </div>
@@ -77,12 +80,12 @@ export default async function CampaignsPage({
             <div className="w-20 h-20 bg-cream rounded-full flex items-center justify-center mx-auto mb-6">
               <SearchX size={36} className="text-maroon/50" />
             </div>
-            <h3 className="text-2xl font-serif text-maroon mb-3">No active campaigns found</h3>
+            <h3 className="text-2xl font-serif text-maroon mb-3">{t("No active campaigns found")}</h3>
             <p className="mt-2 text-muted max-w-md mx-auto text-lg leading-relaxed">
-              There are currently no active campaigns in this category. Please check back soon for our latest seva initiatives.
+              {t("There are currently no active campaigns in this category. Please check back soon for our latest seva initiatives.")}
             </p>
             <Link href="/campaigns" className="inline-block mt-8 text-primary font-bold hover:underline">
-              View All Campaigns →
+              {t("View All Campaigns →")}
             </Link>
           </div>
         ) : (
