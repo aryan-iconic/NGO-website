@@ -126,7 +126,7 @@ export default async function HomePage() {
           <div className="text-center max-w-2xl mx-auto mb-16">
             <p className="text-primary font-bold tracking-widest uppercase text-sm mb-2">Our Work</p>
             <h2 className="text-4xl font-serif text-maroon"><T k="home.seva" /></h2>
-            <p className="mt-4 text-text/80">Discover the diverse areas where we dedicate our efforts to uplift and support the community.</p>
+            <p className="mt-4 text-text/80"><T k="home.seva.subtitle" /></p>
           </div>
           
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
