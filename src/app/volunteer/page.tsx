@@ -73,7 +73,7 @@ export default function VolunteerPage() {
           </p>
           
           <Button onClick={() => window.location.href = '/'} variant="outline" className="mt-10 rounded-full">
-            Return to Home
+            {t("Return to Home")}
           </Button>
         </div>
       </div>
@@ -87,7 +87,7 @@ export default function VolunteerPage() {
         <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white via-transparent to-transparent"></div>
         <div className="container-app relative z-10 text-center max-w-3xl mx-auto px-4">
           <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm px-5 py-2 rounded-full text-sm font-bold tracking-widest uppercase mb-6 border border-white/20">
-            <Sparkles size={16} /> Be The Change
+            <Sparkles size={16} /> {t("Be The Change")}
           </div>
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-serif font-bold leading-tight drop-shadow-md">
             <T k="vol.title" />
@@ -113,9 +113,9 @@ export default function VolunteerPage() {
             
             <div className="lg:col-span-5 space-y-8">
               <div>
-                <h2 className="text-3xl font-serif text-maroon mb-4">Why Volunteer?</h2>
+                <h2 className="text-3xl font-serif text-maroon mb-4">{t("Why Volunteer?")}</h2>
                 <p className="text-text leading-relaxed text-lg">
-                  Volunteering with Shri Nityanikunj Trust is an opportunity to make a tangible difference in the lives of those who need it most. Whether you can offer a few hours a month or regular support, your time is invaluable.
+                  {t("Volunteering with Shri Nityanikunj Trust is an opportunity to make a tangible difference in the lives of those who need it most. Whether you can offer a few hours a month or regular support, your time is invaluable.")}
                 </p>
               </div>
               
@@ -128,14 +128,14 @@ export default function VolunteerPage() {
                 ].map((benefit, i) => (
                   <div key={i} className="flex items-start gap-3">
                     <CheckCircle2 className="text-primary shrink-0 mt-0.5" size={20} />
-                    <span className="font-medium text-text">{benefit}</span>
+                    <span className="font-medium text-text">{t(benefit)}</span>
                   </div>
                 ))}
               </div>
               
               <div className="bg-cream/50 border border-border/80 rounded-2xl p-6 mt-8">
                 <p className="font-serif italic text-maroon text-lg text-center">
-                  "The best way to find yourself is to lose yourself in the service of others."
+                  "{t("The best way to find yourself is to lose yourself in the service of others.")}"
                 </p>
               </div>
             </div>
@@ -193,7 +193,7 @@ export default function VolunteerPage() {
                 <div className="space-y-2.5">
                   <label className="text-sm font-medium text-text ml-1 flex items-center justify-between">
                     <span><T k="vol.f.interests" /> *</span>
-                    <span className="text-xs text-muted font-normal">Select multiple</span>
+                    <span className="text-xs text-muted font-normal">{t("Select multiple")}</span>
                   </label>
                   <div className="flex flex-wrap gap-2.5 p-4 bg-white rounded-xl border border-border">
                     {interestOptions.map((i) => (
@@ -207,7 +207,7 @@ export default function VolunteerPage() {
                             : "bg-surface border-border text-text hover:border-primary/50 hover:bg-cream"
                         }`}
                       >
-                        {i}
+                        {t(i)}
                       </button>
                     ))}
                   </div>
