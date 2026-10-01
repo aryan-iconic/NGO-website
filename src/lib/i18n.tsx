@@ -130,6 +130,7 @@ const dictionary = {
     "footer.terms": "Terms",
     "footer.donationPolicy": "Donation Policy",
     "footer.refundPolicy": "Refund Policy",
+    "footer.80g": "80G Tax Exemption",
     "footer.copyright": "Registration and legal details appear here once provided by the Trust.",
     "home": "Home",
     "about": "About",
