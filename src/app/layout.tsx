@@ -18,12 +18,28 @@ export const metadata: Metadata = {
   description: "A commitment to Seva, Culture and Social Welfare. Shri Nityanikunj Ras Seva Sansthan Trust, Varanasi focuses on education, healthcare, social welfare, environment and animal welfare.",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+import { prisma } from "@/lib/prisma";
+import { draftMode } from "next/headers";
+
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const settings = await prisma.setting.findMany();
+  const settingsMap = settings.reduce((acc: any, curr: any) => ({ ...acc, [curr.key]: { value: curr.value, translations: curr.translations } }), {});
+  const isDraftMode = (await draftMode()).isEnabled;
+
   return (
     <html lang="en">
       <body className={`${fontVars} antialiased`}>
-        <I18nProvider>
+        <I18nProvider settings={settingsMap}>
           <CartProvider>
+            {isDraftMode && (
+              <div className="bg-maroon text-white text-sm text-center py-2 flex justify-center items-center gap-4 relative z-50">
+                <span className="font-semibold">PREVIEW MODE ENABLED</span>
+                <span>You are currently viewing draft and unpublished content.</span>
+                <a href="/api/admin/preview/disable" className="bg-white text-maroon px-3 py-1 rounded-sm text-xs font-bold hover:bg-cream">
+                  Disable Preview
+                </a>
+              </div>
+            )}
             <Navbar />
             <main>{children}</main>
             <Footer />
