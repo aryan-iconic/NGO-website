@@ -55,7 +55,7 @@ export default function ContactMessagePage({ params }: { params: { id: string } 
             <><Circle size={16} className="mr-2" /> Mark as Unread</>
           )}
         </Button>
-        <Button variant="destructive" onClick={handleDelete}>
+        <Button variant="outline" onClick={handleDelete}>
           <Trash2 size={16} className="mr-2" /> Delete
         </Button>
       </div>
