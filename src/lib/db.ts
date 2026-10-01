@@ -742,4 +742,9 @@ export const db = {
   getDonorTaxInformation: async (id: string) => resolve(prisma.donorTaxInformation.findUnique({ where: { id }, include: { donation: true } })),
   getDonorTaxInformationByDonation: async (donationId: string) => resolve(prisma.donorTaxInformation.findUnique({ where: { donationId }, include: { donation: true } })),
   listDonorTaxInformation: async () => resolve(prisma.donorTaxInformation.findMany({ include: { donation: true }, orderBy: { createdAt: "desc" } })),
+
+  // --- Contact Messages ---
+  getContactMessage: async (id: string) => resolve(prisma.contactMessage.findUnique({ where: { id } })),
+  updateContactMessageStatus: async (id: string, status: string) => resolve(prisma.contactMessage.update({ where: { id }, data: { status } })),
+  deleteContactMessage: async (id: string) => { await prisma.contactMessage.delete({ where: { id } }); return true; },
 };
