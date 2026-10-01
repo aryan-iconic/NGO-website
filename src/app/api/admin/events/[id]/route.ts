@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/require-admin";
 import { z } from "zod";
@@ -11,6 +12,7 @@ const schema = z.object({
   location: z.string().optional(),
   registrationEnabled: z.boolean().optional(),
   status: z.enum(["DRAFT", "PUBLISHED", "CANCELLED", "COMPLETED"]).optional(),
+  coverImage: z.string().optional().nullable(),
 });
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -19,7 +21,9 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   const { id } = await params;
   const event = await db.getEventById(id);
   if (!event) return NextResponse.json({ success: false, error: { code: "NOT_FOUND", message: "Event not found." } }, { status: 404 });
-  return NextResponse.json({ success: true, event });
+  revalidatePath("/events");
+    revalidatePath("/");
+    return NextResponse.json({ success: true, event });
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -46,7 +50,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     entityId: updated.id,
   });
 
-  return NextResponse.json({ success: true, event: updated });
+  revalidatePath("/events");
+    revalidatePath("/");
+    return NextResponse.json({ success: true, event: updated });
 }
 
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -65,5 +71,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
     entityId: id,
   });
 
-  return NextResponse.json({ success: true });
+  revalidatePath("/events");
+    revalidatePath("/");
+    return NextResponse.json({ success: true });
 }
