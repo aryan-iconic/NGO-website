@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/require-admin";
 import { z } from "zod";
@@ -34,7 +35,8 @@ export async function PATCH(req: NextRequest, props: { params: Promise<{ id: str
     entityId: video.id,
   });
 
-  return NextResponse.json({ success: true, data: video });
+  revalidatePath("/");
+    return NextResponse.json({ success: true, data: video });
 }
 
 export async function DELETE(req: NextRequest, props: { params: Promise<{ id: string }> }) {
@@ -52,5 +54,6 @@ export async function DELETE(req: NextRequest, props: { params: Promise<{ id: st
     entityId: id,
   });
 
-  return NextResponse.json({ success: true });
+  revalidatePath("/");
+    return NextResponse.json({ success: true });
 }
