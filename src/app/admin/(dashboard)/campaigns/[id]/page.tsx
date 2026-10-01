@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { formatPaise } from "@/lib/types";
 import { StatusToggle } from "@/components/admin/status-toggle";
 import { CampaignEditForm } from "@/components/admin/campaign-edit-form";
+import { Eye } from "lucide-react";
 
 export default async function AdminCampaignEditPage({
   params,
@@ -21,12 +22,22 @@ export default async function AdminCampaignEditPage({
 
   return (
     <div className="max-w-3xl space-y-10">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-serif text-maroon">{campaign.title}</h1>
           <p className="text-sm text-muted mt-1">/campaigns/{campaign.slug}</p>
         </div>
-        <StatusToggle campaignId={campaign.id} status={campaign.status} />
+        <div className="flex items-center gap-4">
+          <a
+            href={`/api/admin/preview?type=campaign&slug=${campaign.slug}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 text-sm font-medium text-maroon hover:underline"
+          >
+            <Eye size={16} /> Preview
+          </a>
+          <StatusToggle campaignId={campaign.id} status={campaign.status} />
+        </div>
       </div>
 
       <CampaignEditForm campaign={campaign} sevaAreas={sevaAreas} />
