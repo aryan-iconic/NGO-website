@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/require-admin";
 import { z } from "zod";
@@ -11,6 +12,7 @@ const schema = z.object({
   location: z.string().optional(),
   registrationEnabled: z.boolean().default(true),
   status: z.enum(["DRAFT", "PUBLISHED", "CANCELLED", "COMPLETED"]).default("DRAFT"),
+  coverImage: z.string().optional().nullable(),
 });
 
 function slugify(title: string) {
@@ -20,7 +22,9 @@ function slugify(title: string) {
 export async function GET() {
   const guard = await requireAdmin();
   if (guard.error) return guard.error;
-  return NextResponse.json({ success: true, events: await db.listEvents() });
+  revalidatePath("/events");
+    revalidatePath("/");
+    return NextResponse.json({ success: true, events: await db.listEvents() });
 }
 
 export async function POST(req: NextRequest) {
@@ -51,5 +55,7 @@ export async function POST(req: NextRequest) {
     entityId: event.id,
   });
 
-  return NextResponse.json({ success: true, event });
+  revalidatePath("/events");
+    revalidatePath("/");
+    return NextResponse.json({ success: true, event });
 }
