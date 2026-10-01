@@ -39,16 +39,16 @@ export async function POST(req: NextRequest) {
     // Send welcome email
     await sendEmail({
       to: parsed.data.email,
-      subject: "Welcome to Charanvandan Newsletter",
+      subject: "Welcome to Shri Nityanikunj Trust Newsletter",
       html: `
         <h2>Receive a Little Divine Inspiration</h2>
         <p>Dear ${parsed.data.name},</p>
-        <p>Thank you for subscribing to the Charanvandan weekly newsletter. We will send you our latest stories, seva updates, and spiritual insights directly to your inbox.</p>
-        <p>Warm regards,<br>The Charanvandan Team</p>
+        <p>Thank you for subscribing to the Shri Nityanikunj Trust weekly newsletter. We will send you our latest stories, seva updates, and spiritual insights directly to your inbox.</p>
+        <p>Warm regards,<br>The Shri Nityanikunj Trust Team</p>
         <hr>
         <p style="font-size: 12px; color: #666;">
           You are receiving this because you subscribed on our website. 
-          <a href="${process.env.NEXT_PUBLIC_BASE_URL || "https://charanvandan.org"}/api/newsletter/unsubscribe?email=${encodeURIComponent(parsed.data.email)}">Unsubscribe here</a>
+          <a href="${process.env.NEXT_PUBLIC_BASE_URL || "https://shrinityanikunjtrust.org"}/api/newsletter/unsubscribe?email=${encodeURIComponent(parsed.data.email)}">Unsubscribe here</a>
         </p>
       `,
     });

@@ -61,7 +61,7 @@ export default async function HomePage() {
         <div className="container-app relative z-10 py-20 grid lg:grid-cols-[1.2fr_1fr] gap-12 lg:gap-20 items-center">
           <div className="max-w-2xl">
             <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md px-4 py-2 rounded-full text-sm font-bold tracking-widest text-cream uppercase mb-8 border border-white/20 shadow-lg">
-              <Sparkles size={16} className="text-primary" /> Charanvandan
+              <Sparkles size={16} className="text-primary" /> Shri Nityanikunj Trust
             </div>
             <h1 className="text-5xl md:text-6xl lg:text-7xl leading-[1.1] font-serif font-bold text-white drop-shadow-lg">
               <T k="home.hero.title" />
@@ -73,7 +73,7 @@ export default async function HomePage() {
               <LinkButton href="/donate" variant="primary" size="lg" className="h-14 px-8 text-lg rounded-full shadow-[0_0_40px_rgba(var(--color-primary),0.5)] hover:shadow-[0_0_60px_rgba(var(--color-primary),0.8)] transition-all">
                 <T k="home.giveOnce" /> <ArrowRight size={20} className="ml-2" />
               </LinkButton>
-              <LinkButton href="/about" variant="outline" size="lg" className="h-14 px-8 text-lg rounded-full border-white/30 text-white hover:bg-white/10 backdrop-blur-sm">
+              <LinkButton href="/about" variant="outline" size="lg" className="h-14 px-8 text-lg rounded-full border-white/30 bg-transparent text-white hover:bg-white/10 backdrop-blur-sm">
                 Explore Our Work
               </LinkButton>
             </div>
@@ -320,7 +320,7 @@ export default async function HomePage() {
               href="/volunteer"
               variant="outline"
               size="lg"
-              className="h-14 px-8 text-lg rounded-full border-white/40 text-white hover:bg-white/10 backdrop-blur-sm"
+              className="h-14 px-8 text-lg rounded-full border-white/40 bg-transparent text-white hover:bg-white/10 backdrop-blur-sm"
             >
               <T k="nav.volunteer" />
             </LinkButton>

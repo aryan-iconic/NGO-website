@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
   // 3. Send acknowledgement to user
   await sendEmail({
     to: parsed.data.email,
-    subject: "Thank you for contacting Charanvandan",
+    subject: "Thank you for contacting Shri Nityanikunj Trust",
     html: `
       <p>Dear ${parsed.data.name},</p>
       <p>Thank you for reaching out to us. We have received your inquiry and will get back to you shortly.</p>
@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
       <blockquote style="border-left: 4px solid #ccc; padding-left: 10px;">
         ${parsed.data.message.replace(/\n/g, "<br>")}
       </blockquote>
-      <p>Warm regards,<br>The Charanvandan Team</p>
+      <p>Warm regards,<br>The Shri Nityanikunj Trust Team</p>
     `,
   });
 

@@ -148,7 +148,7 @@ export default async function AboutPage() {
               </div>
               <h2 className="text-3xl md:text-4xl font-serif text-maroon">Registrations & Certifications</h2>
               <p className="mt-5 text-text max-w-2xl mx-auto text-lg leading-relaxed">
-                At Charanvandan, transparency and trust are the pillars of our foundation. We are officially registered and recognized by the Government of India, ensuring your contributions are utilized responsibly and legally.
+                At Shri Nityanikunj Trust, transparency and trust are the pillars of our foundation. We are officially registered and recognized by the Government of India, ensuring your contributions are utilized responsibly and legally.
               </p>
             </div>
 

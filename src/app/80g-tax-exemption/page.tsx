@@ -159,7 +159,7 @@ export default function TaxExemption80GPage() {
             </Button>
             
             <p className="text-xs text-muted text-center mt-4">
-              By submitting this form, you consent to Charanvandan using your PAN and address strictly for statutory tax compliance (Form 10BD/10BE).
+              By submitting this form, you consent to Shri Nityanikunj Trust using your PAN and address strictly for statutory tax compliance (Form 10BD/10BE).
             </p>
           </form>
         )}

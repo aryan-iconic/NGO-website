@@ -115,7 +115,7 @@ export default function VolunteerPage() {
               <div>
                 <h2 className="text-3xl font-serif text-maroon mb-4">Why Volunteer?</h2>
                 <p className="text-text leading-relaxed text-lg">
-                  Volunteering with Charanvandan is an opportunity to make a tangible difference in the lives of those who need it most. Whether you can offer a few hours a month or regular support, your time is invaluable.
+                  Volunteering with Shri Nityanikunj Trust is an opportunity to make a tangible difference in the lives of those who need it most. Whether you can offer a few hours a month or regular support, your time is invaluable.
                 </p>
               </div>
               

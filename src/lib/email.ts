@@ -31,7 +31,7 @@ export async function sendEmail({
 
   try {
     const info = await transporter.sendMail({
-      from: `"Charanvandan" <${fromAddress}>`,
+      from: `"Shri Nityanikunj Trust" <${fromAddress}>`,
       to,
       subject,
       html,
