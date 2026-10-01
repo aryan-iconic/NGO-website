@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/require-admin";
 import { z } from "zod";
@@ -9,6 +10,7 @@ const schema = z.object({
   content: z.string().min(20),
   author: z.string().optional(),
   status: z.enum(["DRAFT", "PUBLISHED", "ARCHIVED"]).default("DRAFT"),
+  coverImage: z.string().optional().nullable(),
 });
 
 function slugify(title: string) {
@@ -53,5 +55,7 @@ export async function POST(req: NextRequest) {
     entityId: post.id,
   });
 
+  revalidatePath("/blog");
+  revalidatePath("/");
   return NextResponse.json({ success: true, post });
 }
