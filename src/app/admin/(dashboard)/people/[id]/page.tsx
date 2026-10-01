@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button, LinkButton } from "@/components/ui/button";
 import { ImageUpload } from "@/components/ui/image-upload";
 import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 
 export default function EditTeamMemberPage({ params }: { params: { id: string } }) {
   const router = useRouter();
@@ -74,9 +75,13 @@ export default function EditTeamMemberPage({ params }: { params: { id: string } 
 
   return (
     <div className="max-w-3xl space-y-6">
+      <div className="mb-4">
+        <Link href="/admin/people" className="text-sm text-muted hover:text-maroon flex items-center gap-1.5 w-fit">
+          <ArrowLeft size={16} /> Back to Team
+        </Link>
+      </div>
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-serif text-maroon">Edit Team Member</h1>
-        <LinkButton variant="outline" href="/admin/people">Cancel</LinkButton>
       </div>
 
       <form onSubmit={handleSave} className="space-y-6">
