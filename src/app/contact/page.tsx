@@ -4,8 +4,10 @@ import { useState } from "react";
 import { Mail, Phone, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { T } from "@/components/i18n/t";
+import { useI18n } from "@/lib/i18n";
 
 export default function ContactPage() {
+  const { t } = useI18n();
   const [form, setForm] = useState({ name: "", email: "", phone: "", subject: "", message: "" });
   const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
@@ -56,7 +58,7 @@ export default function ContactPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <input
               required
-              placeholder="Full Name"
+              placeholder={t("contact.f.name") as string}
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
               className="w-full rounded-lg border border-border px-4 py-2.5 bg-surface"
@@ -64,19 +66,19 @@ export default function ContactPage() {
             <input
               required
               type="email"
-              placeholder="Email"
+              placeholder={t("contact.f.email") as string}
               value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
               className="w-full rounded-lg border border-border px-4 py-2.5 bg-surface"
             />
             <input
-              placeholder="Phone (optional)"
+              placeholder={t("contact.f.phone") as string}
               value={form.phone}
               onChange={(e) => setForm({ ...form, phone: e.target.value })}
               className="w-full rounded-lg border border-border px-4 py-2.5 bg-surface"
             />
             <input
-              placeholder="Subject"
+              placeholder={t("contact.f.sub") as string}
               value={form.subject}
               onChange={(e) => setForm({ ...form, subject: e.target.value })}
               className="w-full rounded-lg border border-border px-4 py-2.5 bg-surface"
@@ -84,7 +86,7 @@ export default function ContactPage() {
             <textarea
               required
               rows={5}
-              placeholder="Message"
+              placeholder={t("contact.f.msg") as string}
               value={form.message}
               onChange={(e) => setForm({ ...form, message: e.target.value })}
               className="w-full rounded-lg border border-border px-4 py-2.5 bg-surface"
