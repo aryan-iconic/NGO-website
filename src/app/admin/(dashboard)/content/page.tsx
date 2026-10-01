@@ -11,6 +11,9 @@ export default async function AdminContentPage() {
     { href: "/admin/content/blog", icon: FileText, label: "Blog Posts", count: posts.length },
     { href: "/admin/content/events", icon: Calendar, label: "Events", count: events.length },
     { href: "/admin/content/faqs", icon: HelpCircle, label: "FAQs", count: faqs.length },
+    { href: "/admin/content/homepage", icon: FileText, label: "Homepage CMS", count: null },
+    { href: "/admin/content/about", icon: FileText, label: "About Page CMS", count: null },
+    { href: "/admin/content/legal", icon: FileText, label: "Legal & Transparency", count: null },
     { href: "/gallery", icon: ImageIcon, label: "Gallery (view only)", count: null },
   ];
 
