@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { T } from "@/components/i18n/t";
+import { useI18n } from "@/lib/i18n";
 
 const interestOptions = [
   "Event Support",
@@ -15,6 +16,7 @@ const interestOptions = [
 ];
 
 export default function VolunteerPage() {
+  const { t } = useI18n();
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -69,7 +71,7 @@ export default function VolunteerPage() {
       <form onSubmit={handleSubmit} className="mt-8 space-y-4">
         <input
           required
-          placeholder={"Full Name" as any} // Requires placeholder localization logic, ignoring for now
+          placeholder={t("vol.f.name") as string}
           value={form.name}
           onChange={(e) => setForm({ ...form, name: e.target.value })}
           className="w-full rounded-lg border border-border px-4 py-2.5 bg-surface"
@@ -77,20 +79,20 @@ export default function VolunteerPage() {
         <input
           required
           type="email"
-          placeholder="Email"
+          placeholder={t("vol.f.email") as string}
           value={form.email}
           onChange={(e) => setForm({ ...form, email: e.target.value })}
           className="w-full rounded-lg border border-border px-4 py-2.5 bg-surface"
         />
         <div className="grid grid-cols-2 gap-4">
           <input
-            placeholder="Phone"
+            placeholder={t("vol.f.phone") as string}
             value={form.phone}
             onChange={(e) => setForm({ ...form, phone: e.target.value })}
             className="w-full rounded-lg border border-border px-4 py-2.5 bg-surface"
           />
           <input
-            placeholder="City"
+            placeholder={t("vol.f.city") as string}
             value={form.city}
             onChange={(e) => setForm({ ...form, city: e.target.value })}
             className="w-full rounded-lg border border-border px-4 py-2.5 bg-surface"
@@ -118,13 +120,13 @@ export default function VolunteerPage() {
         </div>
 
         <input
-          placeholder="Availability (e.g. weekends)"
+          placeholder={t("vol.f.avail") as string}
           value={form.availability}
           onChange={(e) => setForm({ ...form, availability: e.target.value })}
           className="w-full rounded-lg border border-border px-4 py-2.5 bg-surface"
         />
         <textarea
-          placeholder="Anything else you'd like us to know?"
+          placeholder={t("vol.f.msg") as string}
           rows={4}
           value={form.message}
           onChange={(e) => setForm({ ...form, message: e.target.value })}
