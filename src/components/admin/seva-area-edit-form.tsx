@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { ImageUpload } from "@/components/ui/image-upload";
 
 import { SevaArea } from "@/lib/db";
 
@@ -105,13 +106,11 @@ export function SevaAreaEditForm({
           className="mt-1.5 w-full rounded-lg border border-border px-4 py-2 bg-background"
         />
       </div>
-      <div>
-        <label className="text-sm text-muted" htmlFor="coverImage">Cover Image URL</label>
-        <input
-          id="coverImage"
+      <div className="pt-2">
+        <ImageUpload
+          label="Cover Image"
           value={form.coverImage}
-          onChange={(e) => setForm({ ...form, coverImage: e.target.value })}
-          className="mt-1.5 w-full rounded-lg border border-border px-4 py-2 bg-background"
+          onChange={(url) => setForm({ ...form, coverImage: url })}
         />
       </div>
       <div className="flex gap-4 items-center">
