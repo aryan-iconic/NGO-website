@@ -1,7 +1,9 @@
 import { LinkButton } from "@/components/ui/button";
 import { T } from "@/components/i18n/t";
+import { db } from "@/lib/db";
 
-export default function AboutPage() {
+export default async function AboutPage() {
+  const team = await db.listTeamMembers(false);
   return (
     <div className="container-app py-16 max-w-3xl">
       <h1 className="text-4xl"><T k="about.title" /></h1>
@@ -57,6 +59,32 @@ export default function AboutPage() {
           </div>
         </section>
       </div>
+
+      {team.length > 0 && (
+        <section className="mt-14">
+          <h2 className="text-3xl font-serif text-maroon text-center mb-8"><T k="about.team.title" /></h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
+            {team.map((member: any) => (
+              <div key={member.id} className="bg-surface rounded-lg border border-border p-6 text-center space-y-4">
+                {member.imageUrl ? (
+                  <img src={member.imageUrl} alt={member.name} className="w-24 h-24 mx-auto rounded-full object-cover shadow-sm" />
+                ) : (
+                  <div className="w-24 h-24 mx-auto rounded-full bg-cream flex items-center justify-center text-maroon text-2xl font-bold shadow-sm">
+                    {member.name.charAt(0)}
+                  </div>
+                )}
+                <div>
+                  <h3 className="font-medium text-lg text-text">{member.name}</h3>
+                  <p className="text-primary text-sm font-medium">{member.role}</p>
+                </div>
+                {member.bio && (
+                  <p className="text-sm text-muted">{member.bio}</p>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section id="transparency" className="mt-14 p-6 rounded-lg bg-cream border border-border">
         <h2 className="text-xl font-serif text-maroon"><T k="about.s7.h" /></h2>
