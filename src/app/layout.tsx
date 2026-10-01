@@ -24,9 +24,20 @@ import { draftMode } from "next/headers";
 import { RouteConditional } from "@/components/layout/route-conditional";
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const settings = await prisma.setting.findMany();
-  const settingsMap = settings.reduce((acc: any, curr: any) => ({ ...acc, [curr.key]: { value: curr.value, translations: curr.translations } }), {});
-  const isDraftMode = (await draftMode()).isEnabled;
+  let settingsMap = {};
+  try {
+    const settings = await prisma.setting.findMany();
+    settingsMap = settings.reduce((acc: any, curr: any) => ({ ...acc, [curr.key]: { value: curr.value, translations: curr.translations } }), {});
+  } catch (e) {
+    console.error("Failed to load settings in layout:", e);
+  }
+  
+  let isDraftMode = false;
+  try {
+    isDraftMode = (await draftMode()).isEnabled;
+  } catch (e) {
+    // ignore
+  }
 
   return (
     <html lang="en" suppressHydrationWarning>

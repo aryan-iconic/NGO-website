@@ -15,27 +15,35 @@ export async function getServerTranslator() {
   const saved = cookieStore.get("NEXT_LOCALE")?.value;
   const locale: Locale = isLocale(saved) ? saved : "en";
 
-  // Cache settings
-  const settingsRows = await prisma.setting.findMany();
-  const settings = settingsRows.reduce((acc: any, curr: any) => ({ 
-    ...acc, 
-    [curr.key]: { value: curr.value, translations: curr.translations } 
-  }), {});
+  let settings: Record<string, any> = {};
+  try {
+    const settingsRows = await prisma.setting.findMany();
+    settings = settingsRows.reduce((acc: any, curr: any) => ({ 
+      ...acc, 
+      [curr.key]: { value: curr.value, translations: curr.translations } 
+    }), {});
+  } catch (e) {
+    console.error("Failed to load settings in getServerTranslator:", e);
+  }
 
   // Check if we have a fresh cache for this locale
   const now = Date.now();
   const lastFetch = serverCache.lastFetch.get(locale) || 0;
   
   if (now - lastFetch > serverCache.TTL_MS) {
-    const dbTranslations = await prisma.translation.findMany({
-      where: { locale, status: { in: ["APPROVED", "AUTO", "REVIEW_REQUIRED"] } }
-    });
-    const map = dbTranslations.reduce((acc: Record<string, string>, curr: any) => {
-      acc[curr.sourceText] = curr.translatedText;
-      return acc;
-    }, {});
-    serverCache.translations.set(locale, map);
-    serverCache.lastFetch.set(locale, now);
+    try {
+      const dbTranslations = await prisma.translation.findMany({
+        where: { locale, status: { in: ["APPROVED", "AUTO", "REVIEW_REQUIRED"] } }
+      });
+      const map = dbTranslations.reduce((acc: Record<string, string>, curr: any) => {
+        acc[curr.sourceText] = curr.translatedText;
+        return acc;
+      }, {});
+      serverCache.translations.set(locale, map);
+      serverCache.lastFetch.set(locale, now);
+    } catch (e) {
+      console.error("Failed to fetch translations in getServerTranslator:", e);
+    }
   }
 
   const translationMap = serverCache.translations.get(locale) || {};
