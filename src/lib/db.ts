@@ -709,4 +709,37 @@ export const db = {
     const s = await prisma.setting.findUnique({ where: { key } });
     return s?.value ?? null;
   },
+
+
+  // --- Newsletter ---
+  createNewsletterSubscriber: async (data: any) => resolve(prisma.newsletterSubscriber.create({ data })),
+  listNewsletterSubscribers: async () => resolve(prisma.newsletterSubscriber.findMany({ orderBy: { createdAt: "desc" } })),
+  getNewsletterSubscriberByEmail: async (email: string) => resolve(prisma.newsletterSubscriber.findUnique({ where: { email } })),
+  updateNewsletterSubscriber: async (id: string, data: any) => resolve(prisma.newsletterSubscriber.update({ where: { id }, data })),
+  deleteNewsletterSubscriber: async (id: string) => { await prisma.newsletterSubscriber.delete({ where: { id } }); return true; },
+
+  // --- Statutory Registrations ---
+  listStatutoryRegistrations: async (includeDraft = false) => {
+    const p = includeDraft ? {} : { isPublished: true };
+    return resolve(prisma.statutoryRegistration.findMany({ where: p, orderBy: { displayOrder: "asc" } }));
+  },
+  getStatutoryRegistration: async (id: string) => resolve(prisma.statutoryRegistration.findUnique({ where: { id } })),
+  createStatutoryRegistration: async (data: any) => {
+    const record = await prisma.statutoryRegistration.create({ data });
+    triggerTranslation("statutoryRegistration", record.id, record, ["title", "description", "issuingAuthority"]);
+    return resolve(Promise.resolve(record));
+  },
+  updateStatutoryRegistration: async (id: string, data: any) => {
+    const record = await prisma.statutoryRegistration.update({ where: { id }, data });
+    triggerTranslation("statutoryRegistration", record.id, record, ["title", "description", "issuingAuthority"]);
+    return resolve(Promise.resolve(record));
+  },
+  deleteStatutoryRegistration: async (id: string) => { await prisma.statutoryRegistration.delete({ where: { id } }); return true; },
+
+  // --- 80G Tax Information ---
+  createDonorTaxInformation: async (data: any) => resolve(prisma.donorTaxInformation.create({ data })),
+  updateDonorTaxInformation: async (id: string, data: any) => resolve(prisma.donorTaxInformation.update({ where: { id }, data })),
+  getDonorTaxInformation: async (id: string) => resolve(prisma.donorTaxInformation.findUnique({ where: { id }, include: { donation: true } })),
+  getDonorTaxInformationByDonation: async (donationId: string) => resolve(prisma.donorTaxInformation.findUnique({ where: { donationId }, include: { donation: true } })),
+  listDonorTaxInformation: async () => resolve(prisma.donorTaxInformation.findMany({ include: { donation: true }, orderBy: { createdAt: "desc" } })),
 };
