@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/require-admin";
 import { z } from "zod";
@@ -57,7 +58,9 @@ export async function PATCH(
     entityId: id,
   });
 
-  return NextResponse.json({ success: true, sevaArea: updated });
+  revalidatePath("/");
+    revalidatePath("/campaigns");
+    return NextResponse.json({ success: true, sevaArea: updated });
 }
 
 export async function DELETE(
@@ -87,5 +90,7 @@ export async function DELETE(
     entityId: id,
   });
 
-  return NextResponse.json({ success: true });
+  revalidatePath("/");
+    revalidatePath("/campaigns");
+    return NextResponse.json({ success: true });
 }
