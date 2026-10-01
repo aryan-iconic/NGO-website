@@ -24,7 +24,7 @@ export default async function AdminTransparencyPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
-            {registrations.map((reg) => (
+            {registrations.map((reg: any) => (
               <tr key={reg.id} className="hover:bg-cream/50 transition-colors">
                 <td className="p-4 text-center font-medium text-muted">{reg.displayOrder}</td>
                 <td className="p-4">
@@ -57,3 +57,4 @@ export default async function AdminTransparencyPage() {
     </div>
   );
 }
+
