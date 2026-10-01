@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/require-admin";
 import { z } from "zod";
@@ -11,6 +12,7 @@ const patchSchema = z.object({
   isFeatured: z.boolean().optional(),
   isUrgent: z.boolean().optional(),
   sevaAreaId: z.string().optional(),
+  coverImage: z.string().optional().nullable(),
 });
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -40,5 +42,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     entityId: updated.id,
   });
 
-  return NextResponse.json({ success: true, campaign: updated });
+  revalidatePath("/campaigns");
+    revalidatePath("/donate");
+    revalidatePath("/");
+    return NextResponse.json({ success: true, campaign: updated });
 }
