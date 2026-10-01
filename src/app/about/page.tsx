@@ -86,11 +86,48 @@ export default async function AboutPage() {
         </section>
       )}
 
-      <section id="transparency" className="mt-14 p-6 rounded-lg bg-cream border border-border">
-        <h2 className="text-xl font-serif text-maroon"><T k="about.s7.h" /></h2>
-        <p className="mt-3 text-sm text-muted">
-          <T k="about.s7.p" />
-        </p>
+      <section id="transparency" className="mt-14 pt-10 border-t border-border">
+        <div className="text-center mb-8">
+          <p className="text-sm font-bold tracking-widest text-primary uppercase mb-2">✦ Statutory Transparency</p>
+          <h2 className="text-3xl font-serif text-maroon">Registrations & Certifications</h2>
+          <p className="mt-3 text-muted max-w-2xl mx-auto">
+            At Charanvandan, transparency and trust are the pillars of our foundation. We are officially registered and recognized by the Government of India, ensuring your contributions are utilized responsibly and legally.
+          </p>
+        </div>
+
+        <div className="grid sm:grid-cols-2 gap-6 mt-10">
+          {(await db.listStatutoryRegistrations()).map((reg) => (
+            <div key={reg.id} className="bg-surface border border-border p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+              <h3 className="font-serif text-xl text-maroon">{reg.title}</h3>
+              {reg.registrationNumber && (
+                <p className="mt-2 text-sm text-text font-medium bg-cream inline-block px-2 py-1 rounded">
+                  {reg.registrationNumber}
+                </p>
+              )}
+              {reg.issuingAuthority && (
+                <p className="mt-2 text-sm text-muted">Issued by: <span className="font-medium text-text">{reg.issuingAuthority}</span></p>
+              )}
+              {reg.description && (
+                <p className="mt-3 text-sm text-muted">{reg.description}</p>
+              )}
+              
+              {(reg.documentUrl || reg.verificationUrl) && (
+                <div className="mt-4 pt-4 border-t border-border flex gap-3 flex-wrap">
+                  {reg.documentUrl && (
+                    <a href={reg.documentUrl} target="_blank" rel="noreferrer" className="text-sm text-primary hover:underline font-medium">
+                      View Document →
+                    </a>
+                  )}
+                  {reg.verificationUrl && (
+                    <a href={reg.verificationUrl} target="_blank" rel="noreferrer" className="text-sm text-primary hover:underline font-medium">
+                      Verify Online →
+                    </a>
+                  )}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
       </section>
     </div>
   );
