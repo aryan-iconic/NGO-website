@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { Locale, isLocale, LOCALES } from "./locales";
 import { dictionary, TranslationKey } from "./i18n-dictionary";
 
+export type { Locale, TranslationKey };
+
 // Client-side translation cache
 const translationCache: Record<string, Record<string, string>> = {};
 
