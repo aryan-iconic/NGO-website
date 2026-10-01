@@ -1,12 +1,26 @@
 "use client";
 
-import { useI18n, TranslationKey } from "@/lib/i18n";
+import { useI18n } from "@/lib/i18n";
 
-// Lets a server component drop a translated string into otherwise
-// server-rendered markup without converting the whole page to a client
-// component (which would break its direct db.ts usage — see lib/i18n.tsx
-// for why this whole approach is a lightweight stand-in for next-intl).
-export function T({ k }: { k: TranslationKey }) {
+export function T({ 
+  children, 
+  k, 
+  vars, 
+  dangerouslySetInnerHTML,
+  isSensitive
+}: { 
+  children?: string; 
+  k?: string; 
+  vars?: Record<string, any>; 
+  dangerouslySetInnerHTML?: boolean;
+  isSensitive?: boolean;
+}) {
   const { t } = useI18n();
-  return <>{t(k)}</>;
+  const text = k ? t(k, vars, { isSensitive }) : children ? t(children, vars, { isSensitive }) : "";
+
+  if (dangerouslySetInnerHTML) {
+    return <span dangerouslySetInnerHTML={{ __html: text }} />;
+  }
+
+  return <>{text}</>;
 }
