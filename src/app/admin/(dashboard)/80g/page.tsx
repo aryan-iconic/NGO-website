@@ -1,7 +1,6 @@
 import { db } from "@/lib/db";
 import { format } from "date-fns";
 import Link from "next/link";
-import { formatCurrency } from "@/lib/utils";
 
 export default async function Admin80GPage() {
   const records = await db.listDonorTaxInformation();
@@ -35,7 +34,7 @@ export default async function Admin80GPage() {
                 <td className="p-4">
                   {record.donation ? (
                     <>
-                      <div className="font-medium text-text">{formatCurrency(record.donation.totalPaise)}</div>
+                      <div className="font-medium text-text">₹{(record.donation.totalPaise / 100).toFixed(2)}</div>
                       <div className="text-muted text-xs">{format(new Date(record.donation.createdAt), "MMM d, yyyy")}</div>
                     </>
                   ) : (
