@@ -63,7 +63,7 @@ export interface PublicCampaign {
   sevaArea?: SevaAreaType;
   locationText?: string;
   coverImage: string;
-  gallery: string[];
+  gallery: { type: string; url: string }[];
   status: CampaignStatus;
   isFeatured: boolean;
   isUrgent: boolean;
