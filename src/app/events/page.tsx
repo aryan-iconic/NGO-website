@@ -21,6 +21,11 @@ export default async function EventsPage() {
               href={`/events/${e.slug}`}
               className="p-6 rounded-lg border border-border bg-surface hover:shadow-[var(--shadow-soft)] transition-shadow"
             >
+              {e.coverImage && (
+                <div className="mb-4 -mx-6 -mt-6">
+                  <img src={e.coverImage} alt={e.title} className="w-full aspect-[2/1] object-cover rounded-t-lg" />
+                </div>
+              )}
               <p className="flex items-center gap-1.5 text-xs text-primary font-medium">
                 <Calendar size={13} />
                 {new Date(e.eventDate).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}
