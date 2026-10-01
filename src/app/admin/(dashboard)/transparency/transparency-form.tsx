@@ -137,7 +137,7 @@ export function TransparencyForm({ initialData }: { initialData?: any }) {
 
       <div className="flex items-center justify-between pt-6 border-t border-border">
         {initialData ? (
-          <Button type="button" variant="destructive" onClick={handleDelete} disabled={loading}>
+          <Button type="button" variant="outline" onClick={handleDelete} disabled={loading}>
             <Trash2 size={16} className="mr-2" /> Delete
           </Button>
         ) : <div />}
@@ -150,3 +150,4 @@ export function TransparencyForm({ initialData }: { initialData?: any }) {
     </form>
   );
 }
+
