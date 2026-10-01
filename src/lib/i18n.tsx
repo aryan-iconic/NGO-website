@@ -15,7 +15,8 @@
 // to action; per-campaign Hindi copy is Release 2 per the spec's own phase
 // table.
 
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, ReactNode, useTransition } from "react";
+import { useRouter } from "next/navigation";
 
 export type Locale = "en" | "hi" | "te" | "ta";
 
@@ -42,6 +43,7 @@ const dictionary = {
     "about.s6.p": "Only activities confirmed and published by the Trust will appear here. The Trust focuses its immediate resources on the most urgent needs while working toward its broader objectives over time.",
     "about.s7.h": "Legal & Registration Information",
     "about.s7.p": "Official registration and compliance information (including PAN, 12A, 80G, FCRA, CSR Registration, Bank Details, and Address) will be published here after verification.",
+    "about.team.title": "Our Team",
     "vol.title": "Join Our Seva",
     "vol.subtitle": "Volunteering doesn't require donating — just a bit of your time and willingness to help.",
     "vol.options.1": "Event Support",
@@ -110,7 +112,6 @@ const dictionary = {
     "priv.s3.p": "Donor identities are never displayed publicly by default. Choosing to donate anonymously hides your name from any donor-facing display entirely.",
     "priv.s4.h": "Your Rights",
     "priv.s4.p": "You may request access to, correction of, or deletion of your personal data, subject to financial record-keeping requirements that may apply to completed donations.",
-    "hero.titleLine2": "Shri Nityanikunj Ras Seva Sansthan Trust, Varanasi works towards a vision encompassing education, healthcare, humanitarian assistance, cultural preservation, environmental responsibility and service to society.",
     "home.giveOnce": "Give Once",
     "home.upcomingInitiatives": "Upcoming Initiatives",
     "home.followOurJourney": "Follow Our Journey",
@@ -171,7 +172,8 @@ const dictionary = {
     "nav.contact": "Contact",
     "nav.login": "Login",
     "nav.donate": "Donate",
-    "hero.title": "A commitment to Seva, Culture and Social Welfare",
+    "home.hero.title": "A commitment to Seva, Culture and Social Welfare",
+    "home.hero.subtitle": "Shri Nityanikunj Ras Seva Sansthan Trust, Varanasi works towards a vision encompassing education, healthcare, humanitarian assistance, cultural preservation, environmental responsibility and service to society.",
     "hero.donateNow": "Donate Now",
     "hero.joinSeva": "Join Our Seva",
     "home.seva": "Our Areas of Seva",
@@ -207,6 +209,7 @@ const dictionary = {
     "about.s6.p": "केवल ट्रस्ट द्वारा पुष्टि और प्रकाशित गतिविधियाँ ही यहाँ दिखाई देंगी। ट्रस्ट समय के साथ अपने व्यापक उद्देश्यों की दिशा में काम करते हुए अपने तात्कालिक संसाधनों को सबसे जरूरी जरूरतों पर केंद्रित करता है।",
     "about.s7.h": "कानूनी एवं पंजीकरण जानकारी",
     "about.s7.p": "सत्यापन के बाद आधिकारिक पंजीकरण और अनुपालन जानकारी (पैन, 12ए, 80जी, एफसीआरए, सीएसआर पंजीकरण, बैंक विवरण और पता सहित) यहां प्रकाशित की जाएगी।",
+    "about.team.title": "हमारी टीम",
     "vol.title": "हमारी सेवा से जुड़ें",
     "vol.subtitle": "स्वयंसेवा के लिए दान की आवश्यकता नहीं है - बस आपका थोड़ा सा समय और मदद करने की इच्छा।",
     "vol.options.1": "इवेंट समर्थन",
@@ -275,7 +278,7 @@ const dictionary = {
     "priv.s3.p": "दाता की पहचान डिफ़ॉल्ट रूप से कभी भी सार्वजनिक रूप से प्रदर्शित नहीं की जाती है। गुमनाम रूप से दान करने का चयन करने से आपका नाम किसी भी दाता-सामना वाले प्रदर्शन से पूरी तरह छिप जाता है।",
     "priv.s4.h": "आपके अधिकार",
     "priv.s4.p": "आप वित्तीय रिकॉर्ड-रखने की आवश्यकताओं के अधीन अपने व्यक्तिगत डेटा तक पहुंच, सुधार या हटाने का अनुरोध कर सकते हैं, जो पूर्ण दान पर लागू हो सकता है।",
-    "hero.titleLine2": "Shri Nityanikunj Ras Seva Sansthan Trust, Varanasi शिक्षा, स्वास्थ्य देखभाल, मानवीय सहायता, सांस्कृतिक संरक्षण, पर्यावरणीय जिम्मेदारी और समाज की सेवा को शामिल करने वाले दृष्टिकोण की दिशा में काम करता है।",
+    "home.hero.subtitle": "Shri Nityanikunj Ras Seva Sansthan Trust, Varanasi शिक्षा, स्वास्थ्य देखभाल, मानवीय सहायता, सांस्कृतिक संरक्षण, पर्यावरणीय जिम्मेदारी और समाज की सेवा को शामिल करने वाले दृष्टिकोण की दिशा में काम करता है।",
     "home.giveOnce": "एक बार दान करें",
     "home.upcomingInitiatives": "आगामी पहल",
     "home.followOurJourney": "हमारी यात्रा का अनुसरण करें",
@@ -336,7 +339,7 @@ const dictionary = {
     "nav.contact": "संपर्क करें",
     "nav.login": "लॉगिन",
     "nav.donate": "दान करें",
-    "hero.title": "सेवा, संस्कार और समाज कल्याण की ओर एक संकल्प",
+    "home.hero.title": "सेवा, संस्कार और समाज कल्याण की ओर एक संकल्प",
     "hero.donateNow": "अभी दान करें",
     "hero.joinSeva": "हमारी सेवा में जुड़ें",
     "home.seva": "हमारी सेवा के क्षेत्र",
@@ -372,6 +375,7 @@ const dictionary = {
     "about.s6.p": "ట్రస్ట్ ధృవీకరించిన మరియు ప్రచురించిన కార్యకలాపాలు మాత్రమే ఇక్కడ కనిపిస్తాయి. ట్రస్ట్ కాలక్రమేణా దాని విస్తృత లక్ష్యాల కోసం పని చేస్తున్నప్పుడు అత్యంత అత్యవసర అవసరాలపై దాని తక్షణ వనరులను కేంద్రీకరిస్తుంది.",
     "about.s7.h": "చట్టపరమైన & నమోదు సమాచారం",
     "about.s7.p": "అధికారిక నమోదు మరియు సమ్మతి సమాచారం (PAN, 12A, 80G, FCRA, CSR రిజిస్ట్రేషన్, బ్యాంక్ వివరాలు మరియు చిరునామాతో సహా) ధృవీకరణ తర్వాత ఇక్కడ ప్రచురించబడుతుంది.",
+    "about.team.title": "మా బృందం",
     "vol.title": "మా సేవలో చేరండి",
     "vol.subtitle": "స్వయంసేవకంగా విరాళం ఇవ్వాల్సిన అవసరం లేదు — మీ సమయం మరియు సహాయం చేయడానికి సుముఖత మాత్రమే.",
     "vol.options.1": "ఈవెంట్ సపోర్ట్",
@@ -440,7 +444,7 @@ const dictionary = {
     "priv.s3.p": "దాత గుర్తింపులు డిఫాల్ట్‌గా ఎప్పుడూ పబ్లిక్‌గా ప్రదర్శించబడవు. అనామకంగా విరాళం ఇవ్వడానికి ఎంచుకోవడం వలన ఏదైనా దాత-ముఖంగా ఉన్న డిస్‌ప్లే నుండి మీ పేరు పూర్తిగా దాచబడుతుంది.",
     "priv.s4.h": "మీ హక్కులు",
     "priv.s4.p": "మీరు పూర్తి చేసిన విరాళాలకు వర్తించే ఆర్థిక రికార్డ్ కీపింగ్ అవసరాలకు లోబడి మీ వ్యక్తిగత డేటాకు యాక్సెస్, దిద్దుబాటు లేదా తొలగింపును అభ్యర్థించవచ్చు.",
-    "hero.titleLine2": "Shri Nityanikunj Ras Seva Sansthan Trust, Varanasi విద్య, ఆరోగ్య సంరక్షణ, మానవతా సహాయం, సాంస్కృతిక పరిరక్షణ, పర్యావరణ బాధ్యత మరియు సమాజానికి సేవను కలిగి ఉన్న ఒక దృష్టి కోసం పని చేస్తుంది.",
+    "home.hero.subtitle": "Shri Nityanikunj Ras Seva Sansthan Trust, Varanasi విద్య, ఆరోగ్య సంరక్షణ, మానవతా సహాయం, సాంస్కృతిక పరిరక్షణ, పర్యావరణ బాధ్యత మరియు సమాజానికి సేవను కలిగి ఉన్న ఒక దృష్టి కోసం పని చేస్తుంది.",
     "home.giveOnce": "ఒకసారి ఇవ్వండి",
     "home.upcomingInitiatives": "రాబోయే కార్యక్రమాలు",
     "home.followOurJourney": "మా జర్నీని అనుసరించండి",
@@ -501,7 +505,7 @@ const dictionary = {
     "nav.contact": "సంప్రదించండి",
     "nav.login": "లాగిన్",
     "nav.donate": "విరాళం",
-    "hero.title": "సేవ, సంస్కృతి మరియు సమాజ సంక్షేమానికి ఒక నిబద్ధత",
+    "home.hero.title": "సేవ, సంస్కృతి మరియు సమాజ సంక్షేమానికి ఒక నిబద్ధత",
     "hero.donateNow": "ఇప్పుడే విరాళం ఇవ్వండి",
     "hero.joinSeva": "మా సేవలో చేరండి",
     "home.seva": "మా సేవా విభాగాలు",
@@ -537,6 +541,7 @@ const dictionary = {
     "about.s6.p": "அறக்கட்டளையால் உறுதிப்படுத்தப்பட்ட மற்றும் வெளியிடப்பட்ட செயல்பாடுகள் மட்டுமே இங்கு தோன்றும். அறக்கட்டளை அதன் உடனடி ஆதாரங்களை மிக அவசரத் தேவைகளில் கவனம் செலுத்துகிறது, அதே நேரத்தில் காலப்போக்கில் அதன் பரந்த நோக்கங்களை நோக்கிச் செயல்படுகிறது.",
     "about.s7.h": "சட்ட & பதிவு தகவல்",
     "about.s7.p": "அதிகாரப்பூர்வ பதிவு மற்றும் இணக்கத் தகவல் (PAN, 12A, 80G, FCRA, CSR பதிவு, வங்கி விவரங்கள் மற்றும் முகவரி உட்பட) சரிபார்த்த பிறகு இங்கே வெளியிடப்படும்.",
+    "about.team.title": "எங்கள் குழு",
     "vol.title": "எங்கள் சேவையில் இணையுங்கள்",
     "vol.subtitle": "தன்னார்வத் தொண்டுக்கு நன்கொடை தேவையில்லை - உங்கள் நேரமும், உதவி செய்ய விருப்பமும் இருந்தால் போதும்.",
     "vol.options.1": "நிகழ்வு ஆதரவு",
@@ -605,7 +610,7 @@ const dictionary = {
     "priv.s3.p": "நன்கொடையாளர் அடையாளங்கள் இயல்பாகவே பொதுவில் காட்டப்படாது. அநாமதேயமாக நன்கொடை அளிப்பதைத் தேர்ந்தெடுப்பது, நன்கொடையாளர் எதிர்கொள்ளும் காட்சியிலிருந்து உங்கள் பெயரை முழுவதுமாக மறைக்கிறது.",
     "priv.s4.h": "உங்கள் உரிமைகள்",
     "priv.s4.p": "பூர்த்தி செய்யப்பட்ட நன்கொடைகளுக்குப் பொருந்தக்கூடிய நிதிப் பதிவுகளை வைத்திருக்கும் தேவைகளுக்கு உட்பட்டு, உங்கள் தனிப்பட்ட தரவை அணுக, திருத்தம் செய்ய அல்லது நீக்குவதற்கு நீங்கள் கோரலாம்.",
-    "hero.titleLine2": "Shri Nityanikunj Ras Seva Sansthan Trust, Varanasi கல்வி, சுகாதாரம், மனிதாபிமான உதவி, கலாச்சார பாதுகாப்பு, சுற்றுச்சூழல் பொறுப்பு மற்றும் சமூகத்திற்கான சேவை ஆகியவற்றை உள்ளடக்கிய ஒரு பார்வையை நோக்கி செயல்படுகிறது.",
+    "home.hero.subtitle": "Shri Nityanikunj Ras Seva Sansthan Trust, Varanasi கல்வி, சுகாதாரம், மனிதாபிமான உதவி, கலாச்சார பாதுகாப்பு, சுற்றுச்சூழல் பொறுப்பு மற்றும் சமூகத்திற்கான சேவை ஆகியவற்றை உள்ளடக்கிய ஒரு பார்வையை நோக்கி செயல்படுகிறது.",
     "home.giveOnce": "ஒருமுறை கொடுங்கள்",
     "home.upcomingInitiatives": "வரவிருக்கும் முயற்சிகள்",
     "home.followOurJourney": "எங்கள் பயணத்தை பின்பற்றவும்",
@@ -666,7 +671,7 @@ const dictionary = {
     "nav.contact": "தொடர்பு",
     "nav.login": "உள்நுழைக",
     "nav.donate": "நன்கொடை",
-    "hero.title": "சேவை, கலாச்சாரம் மற்றும் சமூக நலனுக்கான ஒரு அர்ப்பணிப்பு",
+    "home.hero.title": "சேவை, கலாச்சாரம் மற்றும் சமூக நலனுக்கான ஒரு அர்ப்பணிப்பு",
     "hero.donateNow": "இப்போது நன்கொடை அளியுங்கள்",
     "hero.joinSeva": "எங்கள் சேவையில் இணையுங்கள்",
     "home.seva": "எங்கள் சேவையின் பகுதிகள்",
@@ -693,8 +698,9 @@ interface I18nContextValue {
 const I18nContext = createContext<I18nContextValue | null>(null);
 const STORAGE_KEY = "snt_locale";
 
-export function I18nProvider({ children }: { children: ReactNode }) {
+export function I18nProvider({ children, settings = {} }: { children: ReactNode, settings?: Record<string, any> }) {
   const [locale, setLocaleState] = useState<Locale>("en");
+  const router = useRouter();
 
   useEffect(() => {
     // Read from cookie first, then fallback
@@ -707,16 +713,28 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     if (saved === "en" || saved === "hi" || saved === "te" || saved === "ta") setLocaleState(saved as Locale);
   }, []);
 
+  const [isPending, startTransition] = useTransition();
+
   const setLocale = (l: Locale) => {
-    setLocaleState(l);
     localStorage.setItem(STORAGE_KEY, l);
     // Set cookie that expires in 1 year
     document.cookie = `NEXT_LOCALE=${l}; path=/; max-age=31536000; SameSite=Lax`;
-    // Reload to allow server components to re-render in the new language
-    window.location.reload();
+    
+    startTransition(() => {
+      setLocaleState(l);
+      // Soft reload to allow server components to re-render in the new language
+      router.refresh();
+    });
   };
 
-  const t = (key: TranslationKey) => dictionary[locale][key] ?? dictionary.en[key] ?? key;
+  const t = (key: TranslationKey) => {
+    const setting = settings[key];
+    if (setting) {
+      if (locale === "en") return setting.value;
+      if (setting.translations && setting.translations[locale]) return setting.translations[locale];
+    }
+    return dictionary[locale]?.[key] ?? dictionary.en[key] ?? key;
+  };
 
   return <I18nContext.Provider value={{ locale, setLocale, t }}>{children}</I18nContext.Provider>;
 }
