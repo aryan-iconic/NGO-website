@@ -5,7 +5,6 @@ import { LinkButton } from "@/components/ui/button";
 export default async function AdminPeoplePage() {
   const teamMembers = await db.listTeamMembers(true);
   const volunteers = await db.listVolunteerApplications();
-  const messages = await db.listContactMessages();
 
   return (
     <div className="space-y-12 max-w-5xl">
@@ -87,22 +86,6 @@ export default async function AdminPeoplePage() {
         </div>
       </section>
 
-      <section>
-        <h2 className="text-2xl font-serif text-maroon">Contact Messages</h2>
-        <div className="mt-4 space-y-3">
-          {messages.map((m: any) => (
-            <div key={m.id} className="p-4 rounded-lg border border-border bg-surface">
-              <div className="flex justify-between">
-                <p className="font-medium text-maroon">{m.name} <span className="text-muted font-normal">— {m.email}</span></p>
-                <span className="text-xs text-muted">{new Date(m.createdAt).toLocaleDateString("en-IN")}</span>
-              </div>
-              {m.subject && <p className="text-sm font-medium mt-1">{m.subject}</p>}
-              <p className="text-sm text-muted mt-1">{m.message}</p>
-            </div>
-          ))}
-          {messages.length === 0 && <p className="text-muted">No messages yet.</p>}
-        </div>
-      </section>
     </div>
   );
 }
