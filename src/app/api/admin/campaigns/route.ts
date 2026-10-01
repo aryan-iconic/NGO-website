@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/require-admin";
 import { z } from "zod";
@@ -15,6 +16,7 @@ const createCampaignSchema = z.object({
   isFeatured: z.boolean().default(false),
   isUrgent: z.boolean().default(false),
   sevaAreaId: z.string().optional(),
+  coverImage: z.string().optional(),
 });
 
 function slugify(title: string) {
@@ -28,7 +30,10 @@ function slugify(title: string) {
 export async function GET() {
   const guard = await requireAdmin();
   if (guard.error) return guard.error;
-  return NextResponse.json({ success: true, campaigns: await db.listAllCampaigns() });
+  revalidatePath("/campaigns");
+    revalidatePath("/donate");
+    revalidatePath("/");
+    return NextResponse.json({ success: true, campaigns: await db.listAllCampaigns() });
 }
 
 export async function POST(req: NextRequest) {
@@ -67,5 +72,8 @@ export async function POST(req: NextRequest) {
     entityId: campaign.id,
   });
 
-  return NextResponse.json({ success: true, campaign });
+  revalidatePath("/campaigns");
+    revalidatePath("/donate");
+    revalidatePath("/");
+    return NextResponse.json({ success: true, campaign });
 }
