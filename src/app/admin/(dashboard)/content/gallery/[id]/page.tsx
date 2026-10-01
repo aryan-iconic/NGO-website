@@ -1,5 +1,7 @@
 import { db } from "@/lib/db";
 import { notFound } from "next/navigation";
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 import { GalleryForm } from "@/components/admin/gallery-form";
 
 export default async function AdminGalleryEditPage({ params }: { params: Promise<{ id: string }> }) {
@@ -9,6 +11,11 @@ export default async function AdminGalleryEditPage({ params }: { params: Promise
 
   return (
     <div>
+      <div className="mb-4">
+        <Link href="/admin/content/gallery" className="text-sm text-muted hover:text-maroon flex items-center gap-1.5 w-fit">
+          <ArrowLeft size={16} /> Back to Gallery
+        </Link>
+      </div>
       <h1 className="text-2xl font-serif text-maroon mb-6">Edit Gallery Image</h1>
       <GalleryForm
         mode="edit"
