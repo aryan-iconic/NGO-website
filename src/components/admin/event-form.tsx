@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 
+import { ImageUpload } from "@/components/ui/image-upload";
+
 interface EventFormValues {
   title: string;
   description: string;
@@ -12,6 +14,7 @@ interface EventFormValues {
   location: string;
   registrationEnabled: boolean;
   status: "DRAFT" | "PUBLISHED" | "CANCELLED" | "COMPLETED";
+  coverImage: string;
 }
 
 export function EventForm({
@@ -31,6 +34,7 @@ export function EventForm({
     location: initial?.location ?? "",
     registrationEnabled: initial?.registrationEnabled ?? true,
     status: initial?.status ?? "DRAFT",
+    coverImage: initial?.coverImage ?? "",
   });
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -141,6 +145,14 @@ export function EventForm({
           />
           Registration enabled
         </label>
+      </div>
+
+      <div className="pt-2">
+        <ImageUpload
+          label="Cover Image"
+          value={form.coverImage}
+          onChange={(url) => setForm({ ...form, coverImage: url })}
+        />
       </div>
 
       {error && <p className="text-sm text-red">{error}</p>}
