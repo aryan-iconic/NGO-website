@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/require-admin";
 import { z } from "zod";
@@ -14,7 +15,8 @@ const createSchema = z.object({
 export async function GET() {
   const guard = await requireAdmin();
   if (guard.error) return guard.error;
-  return NextResponse.json({ success: true, data: await db.listYouTubeVideos() });
+  revalidatePath("/");
+    return NextResponse.json({ success: true, data: await db.listYouTubeVideos() });
 }
 
 export async function POST(req: NextRequest) {
@@ -39,5 +41,6 @@ export async function POST(req: NextRequest) {
     entityId: video.id,
   });
 
-  return NextResponse.json({ success: true, data: video });
+  revalidatePath("/");
+    return NextResponse.json({ success: true, data: video });
 }
