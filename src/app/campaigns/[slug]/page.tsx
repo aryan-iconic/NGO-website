@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { draftMode } from "next/headers";
 import { MapPin, CheckCircle2, Circle } from "lucide-react";
 import { db } from "@/lib/db";
 import { toPublicCampaign } from "@/lib/view-models";
@@ -13,7 +14,8 @@ export default async function CampaignDetailPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const raw = await db.getPublicCampaignBySlug(slug);
+  const isDraftMode = (await draftMode()).isEnabled;
+  const raw = await db.getPublicCampaignBySlug(slug, isDraftMode);
   if (!raw) notFound();
   const campaign = await toPublicCampaign(raw);
 
@@ -27,7 +29,11 @@ export default async function CampaignDetailPage({
       {/* Hero */}
       <section className="bg-background-alt">
         <div className="container-app py-12 grid md:grid-cols-[3fr_2fr] gap-10 items-start">
-          <div className="aspect-[16/10] rounded-lg bg-gradient-to-br from-primary/20 to-maroon/10 border border-border" />
+          {campaign.coverImage ? (
+            <img src={campaign.coverImage} alt={campaign.title} className="aspect-[16/10] rounded-lg border border-border object-cover w-full" />
+          ) : (
+            <div className="aspect-[16/10] rounded-lg bg-gradient-to-br from-primary/20 to-maroon/10 border border-border" />
+          )}
           <div>
             <div className="flex flex-wrap gap-4 items-center justify-between">
               <span className="text-xs font-medium text-primary uppercase tracking-wide">
@@ -73,6 +79,27 @@ export default async function CampaignDetailPage({
               </>
             )}
           </section>
+
+          {/* Media Gallery */}
+          {campaign.gallery.length > 0 && (
+            <section>
+              <h2 className="text-2xl">Gallery & Media</h2>
+              <div className="mt-5 grid grid-cols-2 sm:grid-cols-3 gap-4">
+                {campaign.gallery.map((m, idx) => (
+                  <div key={idx} className="aspect-square rounded-lg border border-border overflow-hidden bg-cream relative">
+                    {m.type === "IMAGE" ? (
+                      <img src={m.url} alt="Campaign Media" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex flex-col items-center justify-center p-4">
+                        <span className="text-3xl mb-2">🎥</span>
+                        <a href={m.url} target="_blank" rel="noopener noreferrer" className="text-sm text-maroon hover:underline">Watch Video</a>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
 
           {/* Products */}
           {campaign.products.length > 0 && (
