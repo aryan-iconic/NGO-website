@@ -3,8 +3,10 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { T } from "@/components/i18n/t";
+import { useI18n } from "@/lib/i18n";
 
 export default function TaxExemption80GPage() {
+  const { t } = useI18n();
   const [form, setForm] = useState({
     receiptNumber: "",
     email: "",
@@ -39,25 +41,25 @@ export default function TaxExemption80GPage() {
 
   return (
     <div className="container-app py-16 max-w-3xl">
-      <h1 className="text-4xl font-serif text-maroon">80G Tax Exemption</h1>
+      <h1 className="text-4xl font-serif text-maroon">{t("80G Tax Exemption", undefined, { isSensitive: true })}</h1>
       <p className="mt-4 text-muted text-lg">
-        Submit your PAN and address details to receive an 80G tax exemption certificate for your eligible donation. Your information is kept secure and is only used for statutory Form 10BD reporting.
+        {t("Submit your PAN and address details to receive an 80G tax exemption certificate for your eligible donation. Your information is kept secure and is only used for statutory Form 10BD reporting.", undefined, { isSensitive: true })}
       </p>
 
       <div className="mt-10">
         {status === "done" ? (
           <div className="bg-success/10 border border-success/20 p-8 rounded-lg text-center">
-            <h2 className="text-2xl text-success font-serif mb-2">Information Submitted Successfully</h2>
+            <h2 className="text-2xl text-success font-serif mb-2">{t("Information Submitted Successfully")}</h2>
             <p className="text-muted">
-              We have securely received your 80G tax information. It will be verified against your donation receipt and included in our statutory filings. You will be notified once your Form 10BE certificate is available.
+              {t("We have securely received your 80G tax information. It will be verified against your donation receipt and included in our statutory filings. You will be notified once your Form 10BE certificate is available.")}
             </p>
-            <Button className="mt-6" onClick={() => setStatus("idle")}>Submit Another</Button>
+            <Button className="mt-6" onClick={() => setStatus("idle")}>{t("Submit Another")}</Button>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-6 bg-surface p-8 rounded-xl border border-border shadow-[var(--shadow-soft)]">
             <div className="grid md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium mb-1">Donation Receipt Number *</label>
+                <label className="block text-sm font-medium mb-1">{t("Donation Receipt Number *")}</label>
                 <input
                   required
                   placeholder="e.g. RCT-12345678"
@@ -67,7 +69,7 @@ export default function TaxExemption80GPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Email Address *</label>
+                <label className="block text-sm font-medium mb-1">{t("Email Address *")}</label>
                 <input
                   required
                   type="email"
@@ -81,7 +83,7 @@ export default function TaxExemption80GPage() {
 
             <div className="grid md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium mb-1">Full Name (as per PAN) *</label>
+                <label className="block text-sm font-medium mb-1">{t("Full Name (as per PAN) *")}</label>
                 <input
                   required
                   value={form.donorName}
@@ -90,7 +92,7 @@ export default function TaxExemption80GPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">PAN Number *</label>
+                <label className="block text-sm font-medium mb-1">{t("PAN Number *")}</label>
                 <input
                   required
                   placeholder="ABCDE1234F"
@@ -103,7 +105,7 @@ export default function TaxExemption80GPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">Address Line 1 *</label>
+              <label className="block text-sm font-medium mb-1">{t("Address Line 1 *")}</label>
               <input
                 required
                 value={form.addressLine1}
@@ -113,7 +115,7 @@ export default function TaxExemption80GPage() {
             </div>
             
             <div>
-              <label className="block text-sm font-medium mb-1">Address Line 2 (Optional)</label>
+              <label className="block text-sm font-medium mb-1">{t("Address Line 2 (Optional)")}</label>
               <input
                 value={form.addressLine2}
                 onChange={e => setForm({...form, addressLine2: e.target.value})}
@@ -123,7 +125,7 @@ export default function TaxExemption80GPage() {
 
             <div className="grid grid-cols-3 gap-6">
               <div>
-                <label className="block text-sm font-medium mb-1">City *</label>
+                <label className="block text-sm font-medium mb-1">{t("City *")}</label>
                 <input
                   required
                   value={form.city}
@@ -132,7 +134,7 @@ export default function TaxExemption80GPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">State *</label>
+                <label className="block text-sm font-medium mb-1">{t("State *")}</label>
                 <input
                   required
                   value={form.state}
@@ -141,7 +143,7 @@ export default function TaxExemption80GPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Pincode *</label>
+                <label className="block text-sm font-medium mb-1">{t("Pincode *")}</label>
                 <input
                   required
                   maxLength={6}
@@ -155,11 +157,11 @@ export default function TaxExemption80GPage() {
             {error && <div className="p-4 bg-red/10 text-red text-sm rounded-lg border border-red/20">{error}</div>}
 
             <Button type="submit" size="lg" className="w-full" disabled={status === "loading"}>
-              {status === "loading" ? "Submitting..." : "Submit 80G Information"}
+              {status === "loading" ? t("Submitting...") : t("Submit 80G Information")}
             </Button>
             
             <p className="text-xs text-muted text-center mt-4">
-              By submitting this form, you consent to Shri Nityanikunj Trust using your PAN and address strictly for statutory tax compliance (Form 10BD/10BE).
+              {t("By submitting this form, you consent to Shri Nityanikunj Trust using your PAN and address strictly for statutory tax compliance (Form 10BD/10BE).", undefined, { isSensitive: true })}
             </p>
           </form>
         )}
