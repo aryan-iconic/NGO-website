@@ -569,3 +569,22 @@ model DonorTaxInformation {
   donation       Donation @relation(fields: [donationId], references: [id])
   @@map("donor_tax_information")
 }
+
+model Translation {
+  id             String   @id @default(uuid())
+  sourceText     String   @map("source_text") // The English string
+  sourceHash     String   @map("source_hash") // hash(sourceText + locale)
+  locale         String
+  translatedText String   @map("translated_text")
+  sourceType     String   @default("STATIC") @map("source_type")
+  sourceId       String?  @map("source_id")
+  status         String   @default("AUTO") // AUTO, REVIEW_REQUIRED, APPROVED, REJECTED
+  provider       String   @default("google")
+  isManual       Boolean  @default(false) @map("is_manual")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@unique([sourceHash])
+  @@index([locale, sourceHash])
+  @@map("translations")
+}
