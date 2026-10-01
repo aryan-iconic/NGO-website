@@ -31,6 +31,7 @@ const columns = [
       { href: "/terms", label: "footer.terms" },
       { href: "/donation-policy", label: "footer.donationPolicy" },
       { href: "/refund-policy", label: "footer.refundPolicy" },
+      { href: "/80g-tax-exemption", label: "footer.80g" },
     ],
   },
 ];
