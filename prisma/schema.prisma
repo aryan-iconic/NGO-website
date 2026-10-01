@@ -475,3 +475,44 @@ model YouTubeVideo {
   translations Json?  @map("translations")
   @@map("youtube_videos")
 }
+
+model GalleryItem {
+  id          String   @id @default(uuid())
+  title       String?
+  caption     String?
+  description String?
+  category    String   @default("All")
+  imageUrl    String   @map("image_url")
+  altText     String?  @map("alt_text")
+  isPublished Boolean  @default(true) @map("is_published")
+  displayOrder Int     @default(0) @map("display_order")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  translations Json?  @map("translations")
+  @@map("gallery_items")
+}
+
+model Setting {
+  id    String @id @default(uuid())
+  key   String @unique
+  value String
+
+  translations Json?  @map("translations")
+  @@map("settings")
+}
+
+model TeamMember {
+  id          String   @id @default(uuid())
+  name        String
+  role        String
+  bio         String?
+  imageUrl    String?
+  displayOrder Int      @default(0)
+  isPublished Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  translations Json?  @map("translations")
+  @@map("team_members")
+}
