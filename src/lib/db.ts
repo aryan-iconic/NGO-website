@@ -366,11 +366,15 @@ export const db = {
     }
     return resolve(prisma.campaign.findMany({ where, orderBy: { createdAt: 'desc' } }));
   },
-  getPublicCampaignBySlug: async (slug: string) => {
-    return resolve(prisma.campaign.findFirst({ where: { slug, status: "ACTIVE", deletedAt: null } }));
+  getPublicCampaignBySlug: async (slug: string, includeDraft = false) => {
+    const statusFilter = includeDraft ? { in: ["ACTIVE", "DRAFT", "COMPLETED"] as any[] } : "ACTIVE";
+    return resolve(prisma.campaign.findFirst({ where: { slug, status: statusFilter, deletedAt: null } }));
   },
   getCampaignProducts: async (campaignId: string) => {
     return resolve(prisma.campaignProduct.findMany({ where: { campaignId, isActive: true } }));
+  },
+  getCampaignMedia: async (campaignId: string) => {
+    return resolve(prisma.campaignMedia.findMany({ where: { campaignId }, orderBy: { sortOrder: 'asc' } }));
   },
   getCampaignMilestones: async (campaignId: string) => {
     return resolve(prisma.campaignMilestone.findMany({ where: { campaignId }, orderBy: { sortOrder: 'asc' } }));
@@ -670,4 +674,39 @@ export const db = {
     return resolve(Promise.resolve(record));
   },
   deleteYouTubeVideo: async (id: string) => { await prisma.youTubeVideo.delete({ where: { id } }); return true; },
+
+  // Gallery
+  listGalleryItems: async (includeUnpublished = false) => resolve(prisma.galleryItem.findMany({ where: includeUnpublished ? {} : { isPublished: true }, orderBy: { displayOrder: 'asc' } })),
+  getGalleryItem: async (id: string) => resolve(prisma.galleryItem.findUnique({ where: { id } })),
+  createGalleryItem: async (data: any) => {
+    const record = await prisma.galleryItem.create({ data });
+    triggerTranslation("galleryItem", record.id, record, ["title", "caption", "description", "category", "altText"]);
+    return resolve(Promise.resolve(record));
+  },
+  updateGalleryItem: async (id: string, data: any) => {
+    const record = await prisma.galleryItem.update({ where: { id }, data });
+    triggerTranslation("galleryItem", record.id, record, ["title", "caption", "description", "category", "altText"]);
+    return resolve(Promise.resolve(record));
+  },
+  deleteGalleryItem: async (id: string) => { await prisma.galleryItem.delete({ where: { id } }); return true; },
+
+  // Team
+  listTeamMembers: async (includeUnpublished = false) => resolve(prisma.teamMember.findMany({ where: includeUnpublished ? {} : { isPublished: true }, orderBy: { displayOrder: 'asc' } })),
+  getTeamMember: async (id: string) => resolve(prisma.teamMember.findUnique({ where: { id } })),
+  createTeamMember: async (data: any) => {
+    const record = await prisma.teamMember.create({ data });
+    triggerTranslation("teamMember", record.id, record, ["name", "role", "bio"]);
+    return resolve(Promise.resolve(record));
+  },
+  updateTeamMember: async (id: string, data: any) => {
+    const record = await prisma.teamMember.update({ where: { id }, data });
+    triggerTranslation("teamMember", record.id, record, ["name", "role", "bio"]);
+    return resolve(Promise.resolve(record));
+  },
+  deleteTeamMember: async (id: string) => { await prisma.teamMember.delete({ where: { id } }); return true; },
+
+  getSetting: async (key: string) => {
+    const s = await prisma.setting.findUnique({ where: { key } });
+    return s?.value ?? null;
+  },
 };
