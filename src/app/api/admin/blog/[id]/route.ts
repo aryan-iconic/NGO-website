@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/require-admin";
 import { z } from "zod";
@@ -9,6 +10,7 @@ const schema = z.object({
   content: z.string().min(20).optional(),
   author: z.string().optional(),
   status: z.enum(["DRAFT", "PUBLISHED", "ARCHIVED"]).optional(),
+  coverImage: z.string().optional().nullable(),
 });
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -17,7 +19,9 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   const { id } = await params;
   const post = await db.getBlogPostById(id);
   if (!post) return NextResponse.json({ success: false, error: { code: "NOT_FOUND", message: "Post not found." } }, { status: 404 });
-  return NextResponse.json({ success: true, post });
+  revalidatePath("/blog");
+    revalidatePath("/");
+    return NextResponse.json({ success: true, post });
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -53,7 +57,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     entityId: updated.id,
   });
 
-  return NextResponse.json({ success: true, post: updated });
+  revalidatePath("/blog");
+    revalidatePath("/");
+    return NextResponse.json({ success: true, post: updated });
 }
 
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -72,5 +78,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
     entityId: id,
   });
 
-  return NextResponse.json({ success: true });
+  revalidatePath("/blog");
+    revalidatePath("/");
+    return NextResponse.json({ success: true });
 }
