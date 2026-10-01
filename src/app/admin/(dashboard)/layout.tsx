@@ -9,6 +9,7 @@ import {
   Image as ImageIcon,
   Settings,
   ScrollText,
+  Languages,
 } from "lucide-react";
 
 const nav = [
@@ -21,6 +22,7 @@ const nav = [
   { href: "/admin/content", label: "Content", icon: ImageIcon },
   { href: "/admin/social", label: "Social Media", icon: ImageIcon },
   { href: "/admin/audit-logs", label: "Audit Logs", icon: ScrollText },
+  { href: "/admin/translations", label: "Translations", icon: Languages },
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ];
 
