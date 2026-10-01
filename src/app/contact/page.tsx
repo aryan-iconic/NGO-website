@@ -59,7 +59,7 @@ export default function ContactPage() {
             <div className="bg-surface rounded-2xl p-8 border border-border shadow-xl backdrop-blur-sm relative overflow-hidden group">
               <div className="absolute -top-10 -right-10 w-32 h-32 bg-cream rounded-full opacity-50 group-hover:scale-150 transition-transform duration-500 pointer-events-none"></div>
               
-              <h2 className="text-2xl font-serif text-maroon mb-8 relative z-10">Get in Touch</h2>
+              <h2 className="text-2xl font-serif text-maroon mb-8 relative z-10">{t("Get in Touch")}</h2>
               
               <div className="space-y-8 relative z-10">
                 <a href="mailto:shrinitynikunj@gmail.com" className="flex items-start gap-5 group/item">
@@ -67,7 +67,7 @@ export default function ContactPage() {
                     <Mail size={20} />
                   </div>
                   <div>
-                    <p className="text-sm font-bold tracking-widest text-primary uppercase mb-1">Email Us</p>
+                    <p className="text-sm font-bold tracking-widest text-primary uppercase mb-1">{t("Email Us")}</p>
                     <p className="text-text font-medium group-hover/item:text-primary transition-colors">shrinitynikunj@gmail.com</p>
                   </div>
                 </a>
@@ -77,7 +77,7 @@ export default function ContactPage() {
                     <Phone size={20} />
                   </div>
                   <div>
-                    <p className="text-sm font-bold tracking-widest text-primary uppercase mb-1">Call Us</p>
+                    <p className="text-sm font-bold tracking-widest text-primary uppercase mb-1">{t("Call Us")}</p>
                     <p className="text-text font-medium group-hover/item:text-primary transition-colors">+91 94508 81090</p>
                   </div>
                 </a>
@@ -87,8 +87,8 @@ export default function ContactPage() {
                     <MapPin size={20} />
                   </div>
                   <div>
-                    <p className="text-sm font-bold tracking-widest text-primary uppercase mb-1">Visit Us</p>
-                    <p className="text-text font-medium leading-relaxed">Shri Nityanikunj Trust, Vrindavan, Susuwahi, Varanasi - 221011, Uttar Pradesh, India</p>
+                    <p className="text-sm font-bold tracking-widest text-primary uppercase mb-1">{t("Visit Us")}</p>
+                    <p className="text-text font-medium leading-relaxed">{t("Shri Nityanikunj Trust, Vrindavan, Susuwahi, Varanasi - 221011, Uttar Pradesh, India")}</p>
                   </div>
                 </div>
               </div>
@@ -102,7 +102,7 @@ export default function ContactPage() {
               
               <div className="flex items-center gap-3 mb-8">
                 <MessageSquare className="text-primary" size={28} />
-                <h2 className="text-2xl font-serif text-maroon">Send a Message</h2>
+                <h2 className="text-2xl font-serif text-maroon">{t("Send a Message")}</h2>
               </div>
 
               {status === "done" ? (
@@ -110,7 +110,7 @@ export default function ContactPage() {
                   <div className="w-20 h-20 bg-success/10 rounded-full flex items-center justify-center mx-auto mb-6">
                     <Send size={32} className="text-success" />
                   </div>
-                  <h3 className="text-2xl font-serif text-success mb-2">Message Sent!</h3>
+                  <h3 className="text-2xl font-serif text-success mb-2">{t("Message Sent!")}</h3>
                   <p className="text-success/80 max-w-md mx-auto"><T k="contact.done" /></p>
                 </div>
               ) : (
@@ -203,7 +203,7 @@ export default function ContactPage() {
         {/* Map Embed */}
         <div className="mt-16 rounded-2xl overflow-hidden border border-border shadow-lg h-[500px] relative">
           <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm px-4 py-2 rounded-lg shadow-md font-serif text-maroon font-bold z-10 border border-white">
-            Our Location
+            {t("Our Location")}
           </div>
           <iframe
             src="https://maps.google.com/maps?q=Shri+Nityanikunj+Trust,+Vrindavan,+Susuwahi,+Varanasi,+Kandwa,+Uttar+Pradesh+221011&t=&z=15&ie=UTF8&iwloc=&output=embed"
