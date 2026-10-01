@@ -220,6 +220,7 @@ model Donation {
   user            User?          @relation(fields: [userId], references: [id])
   payments        Payment[]
   receipt         Receipt?
+  taxInformation  DonorTaxInformation?
 
   @@index([userId, campaignId, status, createdAt])
   @@map("donations")
@@ -515,4 +516,56 @@ model TeamMember {
   
   translations Json?  @map("translations")
   @@map("team_members")
+}
+
+model NewsletterSubscriber {
+  id             String    @id @default(uuid())
+  name           String
+  email          String    @unique
+  city           String?
+  status         String    @default("SUBSCRIBED")
+  subscribedAt   DateTime  @default(now()) @map("subscribed_at")
+  unsubscribedAt DateTime? @map("unsubscribed_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  @@map("newsletter_subscribers")
+}
+
+model StatutoryRegistration {
+  id                 String   @id @default(uuid())
+  title              String
+  registrationNumber String?  @map("registration_number")
+  issuingAuthority   String?  @map("issuing_authority")
+  description        String?
+  documentUrl        String?  @map("document_url")
+  verificationUrl    String?  @map("verification_url")
+  isPublished        Boolean  @default(true) @map("is_published")
+  displayOrder       Int      @default(0) @map("display_order")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  translations Json?  @map("translations")
+  @@map("statutory_registrations")
+}
+
+model DonorTaxInformation {
+  id             String   @id @default(uuid())
+  donationId     String   @unique @map("donation_id")
+  donorName      String   @map("donor_name")
+  email          String
+  pan            String
+  addressLine1   String   @map("address_line_1")
+  addressLine2   String?  @map("address_line_2")
+  city           String
+  state          String
+  pincode        String
+  status         String   @default("PENDING")
+  form10bdStatus String?  @map("form_10bd_status")
+  form10beRef    String?  @map("form_10be_ref")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+  
+  donation       Donation @relation(fields: [donationId], references: [id])
+  @@map("donor_tax_information")
 }
