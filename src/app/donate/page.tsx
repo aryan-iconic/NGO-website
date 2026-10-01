@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { formatPaise } from "@/lib/types";
 import { useCart } from "@/lib/cart-context";
+import { useI18n } from "@/lib/i18n";
 
 const presets = [10100, 50100, 100100, 250100];
 
@@ -13,6 +14,7 @@ export default function DonatePage() {
   const [custom, setCustom] = useState("");
   const { addItem } = useCart();
   const router = useRouter();
+  const { t } = useI18n();
 
   const selected = custom ? Math.round(parseFloat(custom || "0") * 100) : amount;
 
@@ -28,9 +30,9 @@ export default function DonatePage() {
 
   return (
     <div className="container-app py-16 max-w-lg">
-      <h1 className="text-3xl">General Donation</h1>
+      <h1 className="text-3xl">{t("donate.title" as any) || "General Donation"}</h1>
       <p className="text-muted mt-2 leading-relaxed">
-        Your contribution can support initiatives aligned with the Trust&apos;s objectives across education, healthcare, humanitarian assistance, community welfare, environmental conservation, cultural activities and other areas of seva.
+        {t("donate.desc" as any) || "Your contribution can support initiatives aligned with the Trust's objectives across education, healthcare, humanitarian assistance, community welfare, environmental conservation, cultural activities and other areas of seva."}
       </p>
 
       <div className="mt-8 grid grid-cols-2 gap-3">
