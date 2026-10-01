@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
-import { Eye } from "lucide-react";
+import Link from "next/link";
+import { Eye, ArrowLeft } from "lucide-react";
 import { db } from "@/lib/db";
 import { EventForm } from "@/components/admin/event-form";
 
@@ -14,6 +15,11 @@ export default async function EditEventPage({
 
   return (
     <div>
+      <div className="mb-4">
+        <Link href="/admin/content/events" className="text-sm text-muted hover:text-maroon flex items-center gap-1.5 w-fit">
+          <ArrowLeft size={16} /> Back to Events
+        </Link>
+      </div>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <h1 className="text-2xl font-serif text-maroon">Edit Event</h1>
         <a
