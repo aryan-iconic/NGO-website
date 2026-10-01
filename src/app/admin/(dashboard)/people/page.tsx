@@ -1,13 +1,63 @@
 import { db } from "@/lib/db";
+import Link from "next/link";
+import { LinkButton } from "@/components/ui/button";
 
 export default async function AdminPeoplePage() {
+  const teamMembers = await db.listTeamMembers(true);
   const volunteers = await db.listVolunteerApplications();
   const messages = await db.listContactMessages();
 
   return (
-    <div className="space-y-12">
+    <div className="space-y-12 max-w-5xl">
       <section>
-        <h1 className="text-2xl font-serif text-maroon">Volunteer Applications</h1>
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="text-2xl font-serif text-maroon">Team / Board Members</h1>
+          <LinkButton href="/admin/people/new">Add Team Member</LinkButton>
+        </div>
+        <div className="bg-surface border border-border rounded-lg overflow-hidden">
+          <table className="w-full text-sm">
+            <thead className="bg-cream">
+              <tr className="text-left">
+                <th className="p-3 font-medium">Name</th>
+                <th className="p-3 font-medium">Role</th>
+                <th className="p-3 font-medium">Status</th>
+                <th className="p-3 font-medium text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {teamMembers.map((member: any) => (
+                <tr key={member.id} className="border-t border-border hover:bg-background/50">
+                  <td className="p-3 font-medium">
+                    <div className="flex items-center gap-3">
+                      {member.imageUrl ? (
+                        <img src={member.imageUrl} alt={member.name} className="w-8 h-8 rounded-full object-cover" />
+                      ) : (
+                        <div className="w-8 h-8 rounded-full bg-cream flex items-center justify-center text-maroon font-bold">
+                          {member.name.charAt(0)}
+                        </div>
+                      )}
+                      {member.name}
+                    </div>
+                  </td>
+                  <td className="p-3 text-muted">{member.role}</td>
+                  <td className="p-3">
+                    <span className={`px-2 py-0.5 rounded-full text-xs ${member.isPublished ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-700"}`}>
+                      {member.isPublished ? "Published" : "Draft"}
+                    </span>
+                  </td>
+                  <td className="p-3 text-right">
+                    <Link href={`/admin/people/${member.id}`} className="text-primary hover:underline text-sm">Edit</Link>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {teamMembers.length === 0 && <p className="p-8 text-center text-muted">No team members yet.</p>}
+        </div>
+      </section>
+
+      <section>
+        <h2 className="text-2xl font-serif text-maroon">Volunteer Applications</h2>
         <div className="mt-4 bg-surface border border-border rounded-lg overflow-hidden">
           <table className="w-full text-sm">
             <thead className="bg-cream">
