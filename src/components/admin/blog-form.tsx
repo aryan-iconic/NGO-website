@@ -131,12 +131,15 @@ export function BlogForm({
       </div>
 
       {error && <p className="text-sm text-red">{error}</p>}
-      <div className="flex gap-3">
+      <div className="flex gap-3 items-center">
+        <Button type="button" variant="outline" onClick={() => router.back()} disabled={loading}>
+          Cancel
+        </Button>
         <Button type="submit" disabled={loading}>
           {loading ? "Saving…" : mode === "create" ? "Create Post" : "Save Changes"}
         </Button>
         {mode === "edit" && (
-          <Button type="button" variant="outline" onClick={handleDelete}>
+          <Button type="button" variant="outline" onClick={handleDelete} className="ml-auto">
             Delete
           </Button>
         )}
