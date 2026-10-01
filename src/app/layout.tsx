@@ -27,8 +27,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const isDraftMode = (await draftMode()).isEnabled;
 
   return (
-    <html lang="en">
-      <body className={`${fontVars} antialiased`}>
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${fontVars} antialiased`} suppressHydrationWarning>
         <I18nProvider settings={settingsMap}>
           <CartProvider>
             {isDraftMode && (
