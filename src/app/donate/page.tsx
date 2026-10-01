@@ -21,7 +21,7 @@ export default function DonatePage() {
   const handleContinue = () => {
     if (!selected || selected <= 0) return;
     addItem({
-      name: "General Donation",
+      name: t("General Donation"),
       unitPricePaise: selected,
       quantity: 1,
     });
@@ -56,7 +56,7 @@ export default function DonatePage() {
 
       <div className="mt-4">
         <label className="text-sm text-muted" htmlFor="custom-amount">
-          Or enter a custom amount (₹)
+          {t("Or enter a custom amount (₹)")}
         </label>
         <input
           id="custom-amount"
@@ -64,18 +64,18 @@ export default function DonatePage() {
           min={101}
           value={custom}
           onChange={(e) => setCustom(e.target.value)}
-          placeholder="e.g. 750"
+          placeholder={t("e.g. 750")}
           className="mt-1.5 w-full rounded-lg border border-border px-4 py-2.5 bg-surface"
         />
       </div>
 
       <div className="mt-8 p-4 rounded-lg bg-cream flex items-center justify-between">
-        <span className="text-sm text-muted">Your contribution</span>
+        <span className="text-sm text-muted">{t("Your contribution")}</span>
         <span className="font-semibold text-maroon text-lg">{formatPaise(selected || 0)}</span>
       </div>
 
       <Button size="lg" className="w-full mt-6" disabled={!selected} onClick={handleContinue}>
-        Continue to Donor Details
+        {t("Continue to Donor Details")}
       </Button>
     </div>
   );
