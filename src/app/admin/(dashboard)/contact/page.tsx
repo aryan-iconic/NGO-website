@@ -22,7 +22,7 @@ export default async function AdminContactPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
-            {inquiries.map((inquiry) => (
+            {inquiries.map((inquiry: any) => (
               <tr key={inquiry.id} className="hover:bg-cream/50 transition-colors">
                 <td className="p-4 whitespace-nowrap">
                   {format(new Date(inquiry.createdAt), "MMM d, yyyy")}
@@ -58,3 +58,4 @@ export default async function AdminContactPage() {
     </div>
   );
 }
+
