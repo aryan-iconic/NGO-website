@@ -4,7 +4,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { statutoryRegistrationSchema } from "@/lib/schemas";
 
 export async function POST(req: NextRequest) {
-  await requireAdmin(req);
+  const adminRes = await requireAdmin(); if (adminRes.error) return adminRes.error;
   const parsed = statutoryRegistrationSchema.safeParse(await req.json());
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.issues[0]?.message }, { status: 400 });
@@ -13,3 +13,4 @@ export async function POST(req: NextRequest) {
   const reg = await db.createStatutoryRegistration(parsed.data);
   return NextResponse.json({ success: true, reg });
 }
+
