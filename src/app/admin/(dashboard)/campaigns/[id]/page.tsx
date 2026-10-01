@@ -1,9 +1,10 @@
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import { db } from "@/lib/db";
 import { formatPaise } from "@/lib/types";
 import { StatusToggle } from "@/components/admin/status-toggle";
 import { CampaignEditForm } from "@/components/admin/campaign-edit-form";
-import { Eye } from "lucide-react";
+import { Eye, ArrowLeft } from "lucide-react";
 
 export default async function AdminCampaignEditPage({
   params,
@@ -22,6 +23,11 @@ export default async function AdminCampaignEditPage({
 
   return (
     <div className="max-w-3xl space-y-10">
+      <div className="mb-4">
+        <Link href="/admin/campaigns" className="text-sm text-muted hover:text-maroon flex items-center gap-1.5 w-fit">
+          <ArrowLeft size={16} /> Back to Campaigns
+        </Link>
+      </div>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-serif text-maroon">{campaign.title}</h1>
