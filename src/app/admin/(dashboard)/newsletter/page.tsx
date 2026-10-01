@@ -20,7 +20,7 @@ export default async function AdminNewsletterPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
-            {subscribers.map((sub) => (
+            {subscribers.map((sub: any) => (
               <tr key={sub.id} className="hover:bg-cream/50 transition-colors">
                 <td className="p-4 whitespace-nowrap">
                   {format(new Date(sub.subscribedAt), "MMM d, yyyy")}
@@ -53,3 +53,4 @@ export default async function AdminNewsletterPage() {
     </div>
   );
 }
+
