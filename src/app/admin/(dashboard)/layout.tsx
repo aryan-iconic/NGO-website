@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Logo } from "@/components/layout/logo";
+import { LogoutButton } from "@/components/admin/logout-button";
 import {
   LayoutDashboard,
   Megaphone,
@@ -52,8 +53,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </aside>
       <div className="flex-1 min-w-0">
         <header className="h-16 border-b border-border bg-surface flex items-center px-6 justify-between">
-          <span className="text-sm text-muted">Admin</span>
-          <span className="text-sm font-medium text-maroon">admin@nityanikunj.org</span>
+          <span className="text-sm text-muted font-semibold">Admin Dashboard</span>
+          <div className="flex items-center gap-4">
+            <span className="text-sm font-medium text-maroon hidden sm:inline-block">admin@nityanikunj.org</span>
+            <LogoutButton />
+          </div>
         </header>
         <main className="p-6 md:p-8">{children}</main>
       </div>

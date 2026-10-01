@@ -21,6 +21,8 @@ export const metadata: Metadata = {
 import { prisma } from "@/lib/prisma";
 import { draftMode } from "next/headers";
 
+import { RouteConditional } from "@/components/layout/route-conditional";
+
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const settings = await prisma.setting.findMany();
   const settingsMap = settings.reduce((acc: any, curr: any) => ({ ...acc, [curr.key]: { value: curr.value, translations: curr.translations } }), {});
@@ -40,9 +42,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 </a>
               </div>
             )}
-            <Navbar />
-            <main>{children}</main>
-            <Footer />
+            <RouteConditional navbar={<Navbar />} footer={<Footer />}>
+              {children}
+            </RouteConditional>
           </CartProvider>
         </I18nProvider>
       </body>
