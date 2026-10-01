@@ -2,10 +2,12 @@ import { LinkButton } from "@/components/ui/button";
 import { T } from "@/components/i18n/t";
 import { db } from "@/lib/db";
 import { ShieldCheck, Target, Heart, Eye, FileText, CheckCircle2 } from "lucide-react";
+import { getServerTranslator } from "@/lib/i18n-server";
 
 export default async function AboutPage() {
   const team = await db.listTeamMembers(false);
   const registrations = await db.listStatutoryRegistrations();
+  const { t } = await getServerTranslator();
 
   return (
     <div className="bg-background min-h-screen pb-20">
@@ -123,10 +125,10 @@ export default async function AboutPage() {
                       </div>
                     )}
                   </div>
-                  <h3 className="font-serif font-bold text-2xl text-maroon mb-2">{member.name}</h3>
-                  <p className="text-primary text-sm font-semibold uppercase tracking-widest mb-4 bg-primary/5 inline-block px-3 py-1 rounded-full">{member.role}</p>
+                  <h3 className="font-serif font-bold text-2xl text-maroon mb-2">{t(member.name)}</h3>
+                  <p className="text-primary text-sm font-semibold uppercase tracking-widest mb-4 bg-primary/5 inline-block px-3 py-1 rounded-full">{t(member.role)}</p>
                   {member.bio && (
-                    <p className="text-sm text-text/80 leading-relaxed group-hover:text-text transition-colors">{member.bio}</p>
+                    <p className="text-sm text-text/80 leading-relaxed group-hover:text-text transition-colors">{t(member.bio)}</p>
                   )}
                 </div>
               ))}
@@ -144,11 +146,11 @@ export default async function AboutPage() {
             <div className="text-center mb-14">
               <div className="inline-flex items-center justify-center gap-2 bg-white text-maroon px-5 py-2 rounded-full text-sm font-bold tracking-widest uppercase mb-6 shadow-sm border border-border">
                 <ShieldCheck size={18} className="text-primary" />
-                Statutory Transparency
+                {t("Statutory Transparency")}
               </div>
-              <h2 className="text-3xl md:text-4xl font-serif text-maroon">Registrations & Certifications</h2>
+              <h2 className="text-3xl md:text-4xl font-serif text-maroon">{t("Registrations & Certifications")}</h2>
               <p className="mt-5 text-text max-w-2xl mx-auto text-lg leading-relaxed">
-                At Shri Nityanikunj Trust, transparency and trust are the pillars of our foundation. We are officially registered and recognized by the Government of India, ensuring your contributions are utilized responsibly and legally.
+                {t("At Shri Nityanikunj Trust, transparency and trust are the pillars of our foundation. We are officially registered and recognized by the Government of India, ensuring your contributions are utilized responsibly and legally.")}
               </p>
             </div>
 
@@ -163,7 +165,7 @@ export default async function AboutPage() {
                         <FileText size={24} />
                       </div>
                       <div className="flex-1">
-                        <h3 className="font-serif text-xl font-bold text-maroon leading-tight mb-3">{reg.title}</h3>
+                        <h3 className="font-serif text-xl font-bold text-maroon leading-tight mb-3">{t(reg.title, undefined, { isSensitive: true })}</h3>
                         
                         <div className="flex flex-col gap-2.5 mb-5">
                           {reg.registrationNumber && (
@@ -175,25 +177,25 @@ export default async function AboutPage() {
                           )}
                           {reg.issuingAuthority && (
                             <p className="text-sm text-muted font-medium bg-white border border-border px-3 py-1.5 rounded-lg inline-block self-start">
-                              Issued by: <span className="text-text font-bold">{reg.issuingAuthority}</span>
+                              {t("Issued by:", undefined, { isSensitive: true })} <span className="text-text font-bold">{t(reg.issuingAuthority, undefined, { isSensitive: true })}</span>
                             </p>
                           )}
                         </div>
                         
                         {reg.description && (
-                          <p className="text-sm text-text/90 leading-relaxed mb-6 font-medium">{reg.description}</p>
+                          <p className="text-sm text-text/90 leading-relaxed mb-6 font-medium">{t(reg.description, undefined, { isSensitive: true })}</p>
                         )}
                         
                         {(reg.documentUrl || reg.verificationUrl) && (
                           <div className="flex gap-3 flex-wrap pt-2 border-t border-border/60">
                             {reg.documentUrl && (
                               <a href={reg.documentUrl} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center gap-2 text-sm bg-maroon text-white px-4 py-2 rounded-full hover:bg-primary transition-colors font-medium shadow-sm">
-                                View Document
+                                {t("View Document")}
                               </a>
                             )}
                             {reg.verificationUrl && (
                               <a href={reg.verificationUrl} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center gap-2 text-sm bg-surface border-2 border-border px-4 py-1.5 rounded-full text-maroon hover:border-primary hover:text-primary transition-colors font-bold shadow-sm">
-                                Verify Online
+                                {t("Verify Online")}
                               </a>
                             )}
                           </div>
