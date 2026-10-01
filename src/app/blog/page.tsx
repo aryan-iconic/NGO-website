@@ -2,7 +2,7 @@ import Link from "next/link";
 import { db } from "@/lib/db";
 
 export default async function BlogPage() {
-  const posts = await db.listBlogPosts();
+  const posts = (await db.listBlogPosts()).filter((p: any) => p.status === "PUBLISHED");
 
   return (
     <div className="container-app py-14 max-w-3xl">
@@ -12,6 +12,11 @@ export default async function BlogPage() {
       <div className="mt-10 space-y-8">
         {posts.map((p: any) => (
           <Link key={p.id} href={`/blog/${p.slug}`} className="block group">
+            {p.coverImage && (
+              <div className="mb-4">
+                <img src={p.coverImage} alt={p.title} className="w-full aspect-video object-cover rounded-lg border border-border" />
+              </div>
+            )}
             <p className="text-xs text-muted">
               {p.publishedAt && new Date(p.publishedAt).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}
               {p.author ? ` · ${p.author}` : ""}
