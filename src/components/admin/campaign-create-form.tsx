@@ -138,9 +138,14 @@ export function CampaignCreateForm({ sevaAreas }: { sevaAreas: { id: string; nam
       </div>
 
       {error && <p className="text-sm text-red">{error}</p>}
-      <Button type="submit" disabled={submitting}>
-        {submitting ? "Creating…" : "Create Campaign (Draft)"}
-      </Button>
+      <div className="flex gap-3 items-center">
+        <Button type="button" variant="outline" onClick={() => router.back()} disabled={submitting}>
+          Cancel
+        </Button>
+        <Button type="submit" disabled={submitting}>
+          {submitting ? "Creating…" : "Create Campaign (Draft)"}
+        </Button>
+      </div>
     </form>
   );
 }
