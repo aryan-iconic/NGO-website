@@ -8,6 +8,7 @@ export async function toPublicCampaign(c: Campaign): Promise<PublicCampaign> {
   const milestones = await db.getCampaignMilestones(c.id);
   const faqs = await db.getCampaignFaqs(c.id);
   const updates = await db.getCampaignUpdates(c.id);
+  const media = await db.getCampaignMedia(c.id);
 
   return {
     id: c.id,
@@ -25,7 +26,7 @@ export async function toPublicCampaign(c: Campaign): Promise<PublicCampaign> {
       : undefined,
     locationText: c.locationText,
     coverImage: c.coverImage ?? "",
-    gallery: [],
+    gallery: media.map((m: any) => ({ type: m.type, url: m.url })),
     status: c.status,
     isFeatured: c.isFeatured,
     isUrgent: c.isUrgent,
