@@ -3,10 +3,12 @@
 import { useState } from "react";
 import { X } from "lucide-react";
 import { T } from "@/components/i18n/t";
+import { useI18n } from "@/lib/i18n";
 
 export function GalleryView({ items, categories }: { items: any[], categories: string[] }) {
   const [filter, setFilter] = useState("All");
   const [open, setOpen] = useState<string | null>(null);
+  const { t } = useI18n();
 
   const filtered = filter === "All" ? items : items.filter((i) => i.category === filter);
   const openItem = items.find(i => i.id === open);
@@ -25,7 +27,7 @@ export function GalleryView({ items, categories }: { items: any[], categories: s
               filter === c ? "bg-primary text-white border-primary" : "border-border text-text"
             }`}
           >
-            {c}
+            {t(c)}
           </button>
         ))}
       </div>
@@ -47,12 +49,12 @@ export function GalleryView({ items, categories }: { items: any[], categories: s
               />
             )}
             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4">
-              <span className="text-sm text-white font-medium">{item.category}</span>
+              <span className="text-sm text-white font-medium">{t(item.category)}</span>
             </div>
           </button>
         ))}
         {filtered.length === 0 && (
-          <p className="text-muted mt-4">No gallery items found for this category.</p>
+          <p className="text-muted mt-4">{t("No gallery items found for this category.")}</p>
         )}
       </div>
 
@@ -76,8 +78,8 @@ export function GalleryView({ items, categories }: { items: any[], categories: s
             )}
             {(openItem.caption || openItem.description) && (
               <div className="bg-black/60 p-4 rounded-lg text-center max-w-2xl">
-                {openItem.caption && <p className="text-white font-serif text-xl">{openItem.caption}</p>}
-                {openItem.description && <p className="text-white/80 text-sm mt-2">{openItem.description}</p>}
+                {openItem.caption && <p className="text-white font-serif text-xl">{t(openItem.caption)}</p>}
+                {openItem.description && <p className="text-white/80 text-sm mt-2">{t(openItem.description)}</p>}
               </div>
             )}
           </div>
