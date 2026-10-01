@@ -40,7 +40,7 @@ export async function getServerTranslator() {
 
   const translationMap = serverCache.translations.get(locale) || {};
 
-  const t = (textOrKey: string, vars?: Record<string, any>) => {
+  const t = (textOrKey: string, vars?: Record<string, any>, options?: { isSensitive?: boolean }) => {
     if (!textOrKey) return "";
     
     // 1. Check settings overrides
