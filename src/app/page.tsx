@@ -37,6 +37,8 @@ export default async function HomePage() {
     return `${clean}/embed`;
   };
 
+  const heroImage = (await db.getSetting("home.hero.image")) || null;
+
   return (
     <>
       {/* Hero */}
@@ -44,10 +46,10 @@ export default async function HomePage() {
         <div className="container-app py-20 md:py-28 grid md:grid-cols-2 gap-12 items-center">
           <div>
             <h1 className="text-4xl md:text-5xl leading-tight">
-              <T k="hero.title" />
+              <T k="home.hero.title" />
             </h1>
             <p className="mt-5 text-muted text-base md:text-lg max-w-md">
-              <T k="hero.titleLine2" />
+              <T k="home.hero.subtitle" />
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <LinkButton href="/donate" variant="outline" size="lg">
@@ -55,7 +57,13 @@ export default async function HomePage() {
               </LinkButton>
             </div>
           </div>
-          <div className="aspect-[4/3] rounded-lg bg-gradient-to-br from-primary/20 via-gold/15 to-maroon/10 border border-border" />
+          <div className="aspect-[4/3] rounded-lg border border-border overflow-hidden bg-background-alt relative">
+            {heroImage ? (
+              <img src={heroImage} alt="Hero" className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-primary/20 via-gold/15 to-maroon/10" />
+            )}
+          </div>
         </div>
       </section>
 
@@ -87,11 +95,19 @@ export default async function HomePage() {
                 <Link
                   key={area.id}
                   href={`/campaigns?sevaArea=${area.slug}`}
-                  className="p-6 rounded-lg border border-border bg-surface hover:shadow-[var(--shadow-soft)] hover:border-primary/40 transition-all duration-300"
+                  className="rounded-lg border border-border bg-surface hover:shadow-[var(--shadow-soft)] hover:border-primary/40 transition-all duration-300 overflow-hidden flex flex-col"
                 >
-                  <Icon size={26} className="text-primary" />
-                  <h3 className="mt-4 text-base font-semibold text-maroon">{area.name}</h3>
-                  <h4 className="mt-1 text-sm font-medium text-maroon/70">{area.hindiName}</h4>
+                  {area.coverImage ? (
+                    <img src={area.coverImage} alt={area.name} className="w-full aspect-[2/1] object-cover" />
+                  ) : (
+                    <div className="pt-6 px-6">
+                      <Icon size={26} className="text-primary" />
+                    </div>
+                  )}
+                  <div className="p-6 pt-4 flex-1">
+                    <h3 className="text-base font-semibold text-maroon">{area.name}</h3>
+                    <h4 className="mt-1 text-sm font-medium text-maroon/70">{area.hindiName}</h4>
+                  </div>
                 </Link>
               );
             })}
