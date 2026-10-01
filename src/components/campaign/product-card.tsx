@@ -6,6 +6,7 @@ import { Minus, Plus, Check } from "lucide-react";
 import { CampaignProduct, formatPaise } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/lib/cart-context";
+import { useI18n } from "@/lib/i18n";
 
 export function ProductCard({
   product,
@@ -22,13 +23,14 @@ export function ProductCard({
   const [added, setAdded] = useState(false);
   const { addItem } = useCart();
   const router = useRouter();
+  const { t } = useI18n();
 
   if (!product.available) {
     return (
       <div className="p-5 rounded-lg border border-border bg-cream/60">
-        <h4 className="font-semibold text-maroon">{product.name}</h4>
-        <p className="text-sm text-muted mt-1">{product.description}</p>
-        <p className="mt-3 text-sm font-medium text-muted">Currently fully sponsored</p>
+        <h4 className="font-semibold text-maroon">{t(product.name)}</h4>
+        <p className="text-sm text-muted mt-1">{t(product.description || "")}</p>
+        <p className="mt-3 text-sm font-medium text-muted">{t("Currently fully sponsored")}</p>
       </div>
     );
   }
@@ -39,7 +41,7 @@ export function ProductCard({
       campaignSlug,
       campaignTitle,
       productId: product.id,
-      name: product.name,
+      name: product.name, // the backend/cart needs the original English name, UI shows translation
       unitPricePaise: product.pricePaise,
       quantity: qty,
     });
@@ -49,10 +51,10 @@ export function ProductCard({
 
   return (
     <div className="p-5 rounded-lg border border-border bg-surface">
-      <h4 className="font-semibold text-maroon">{product.name}</h4>
-      {product.description && <p className="text-sm text-muted mt-1">{product.description}</p>}
+      <h4 className="font-semibold text-maroon">{t(product.name)}</h4>
+      {product.description && <p className="text-sm text-muted mt-1">{t(product.description)}</p>}
       <p className="mt-3 text-sm font-medium text-primary">
-        {formatPaise(product.pricePaise)} / {product.unitName}
+        {formatPaise(product.pricePaise)} / {t(product.unitName)}
       </p>
       <div className="mt-4 flex items-center justify-between">
         <div className="flex items-center gap-3 border border-border rounded-full px-1">
@@ -79,10 +81,10 @@ export function ProductCard({
         >
           {added ? (
             <>
-              <Check size={14} /> Added
+              <Check size={14} /> {t("Added")}
             </>
           ) : (
-            "Sponsor"
+            t("Sponsor")
           )}
         </Button>
       </div>
@@ -91,7 +93,7 @@ export function ProductCard({
           onClick={() => router.push("/donate/checkout")}
           className="mt-3 w-full text-center text-xs text-primary hover:text-secondary"
         >
-          Go to checkout →
+          {t("Go to checkout →")}
         </button>
       )}
     </div>
