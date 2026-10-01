@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { MapPin, Calendar, Clock, ArrowRight, CalendarDays, Ticket } from "lucide-react";
 import { db } from "@/lib/db";
+import { getServerTranslator } from "@/lib/i18n-server";
 
 export default async function EventsPage() {
   const events = await db.listPublishedEvents();
+  const { t } = await getServerTranslator();
 
   return (
     <div className="bg-background min-h-screen pb-24">
@@ -12,13 +14,13 @@ export default async function EventsPage() {
         <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white via-transparent to-transparent"></div>
         <div className="container-app relative z-10 text-center max-w-4xl mx-auto px-4">
           <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm px-5 py-2 rounded-full text-sm font-bold tracking-widest uppercase mb-6 border border-white/20">
-            <CalendarDays size={16} /> Community
+            <CalendarDays size={16} /> {t("Community")}
           </div>
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-serif font-bold leading-tight drop-shadow-md">
-            Our Initiatives & Events
+            {t("Our Initiatives & Events")}
           </h1>
           <p className="mt-6 text-xl text-cream/90 font-medium tracking-wide max-w-2xl mx-auto">
-            Join us in our upcoming community service activities, cultural events, and on-ground initiatives.
+            {t("Join us in our upcoming community service activities, cultural events, and on-ground initiatives.")}
           </p>
         </div>
         {/* Decorative bottom curve */}
@@ -35,9 +37,9 @@ export default async function EventsPage() {
             <div className="w-20 h-20 bg-cream rounded-full flex items-center justify-center mx-auto mb-6">
               <Calendar size={36} className="text-maroon/50" />
             </div>
-            <h3 className="text-2xl font-serif text-maroon mb-3">No upcoming initiatives</h3>
+            <h3 className="text-2xl font-serif text-maroon mb-3">{t("No upcoming initiatives")}</h3>
             <p className="mt-2 text-muted max-w-md mx-auto text-lg leading-relaxed">
-              We are currently planning our next events. Please check back soon or join our newsletter to stay updated.
+              {t("We are currently planning our next events. Please check back soon or join our newsletter to stay updated.")}
             </p>
           </div>
         ) : (
@@ -76,7 +78,7 @@ export default async function EventsPage() {
                   
                   <div className="p-8 flex-1 flex flex-col">
                     <h2 className="text-2xl font-serif font-bold text-maroon mb-4 group-hover:text-primary transition-colors line-clamp-2">
-                      {e.title}
+                      {t(e.title)}
                     </h2>
                     
                     <div className="space-y-3 mb-6">
@@ -92,18 +94,18 @@ export default async function EventsPage() {
                           <span className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0">
                             <MapPin size={16} />
                           </span>
-                          <span className="line-clamp-1">{e.venue ? `${e.venue}, ` : ""}{e.location}</span>
+                          <span className="line-clamp-1">{e.venue ? `${t(e.venue)}, ` : ""}{t(e.location)}</span>
                         </p>
                       )}
                     </div>
                     
                     <p className="text-text/70 line-clamp-3 leading-relaxed mb-8">
-                      {e.description}
+                      {t(e.description)}
                     </p>
                     
                     <div className="mt-auto pt-6 border-t border-border flex items-center justify-between">
                       <span className="text-sm font-bold text-primary flex items-center gap-2 group-hover:gap-3 transition-all">
-                        View Details <ArrowRight size={16} />
+                        {t("View Details")} <ArrowRight size={16} />
                       </span>
                       <span className="w-10 h-10 rounded-full bg-surface border border-border flex items-center justify-center text-maroon group-hover:bg-primary group-hover:text-white transition-colors">
                         <Ticket size={18} />
