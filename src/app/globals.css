@@ -45,21 +45,23 @@
   --color-white: #FFFFFF;
 }
 
-* {
-  border-color: var(--color-border);
-}
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
 
-body {
-  background: var(--color-background);
-  color: var(--color-text);
-  font-family: var(--font-sans);
-}
+  body {
+    background: var(--color-background);
+    color: var(--color-text);
+    font-family: var(--font-sans);
+  }
 
-h1,
-h2,
-h3 {
-  font-family: var(--font-serif);
-  color: var(--color-maroon);
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-serif);
+    color: var(--color-maroon);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
