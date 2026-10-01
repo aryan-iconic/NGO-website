@@ -100,7 +100,8 @@ export function CampaignEditForm({ campaign, sevaAreas }: { campaign: Campaign; 
             </label>
           ))}
         </div>
-        <div className="pt-4">
+        <div className="pt-4 flex gap-3 items-center">
+          <Button type="button" variant="outline" onClick={() => router.back()}>Cancel</Button>
           <Button onClick={handleSave}>{saved ? "Saved ✓" : "Save Changes"}</Button>
         </div>
       </section>
