@@ -4,12 +4,15 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 
+import { ImageUpload } from "@/components/ui/image-upload";
+
 interface BlogFormValues {
   title: string;
   excerpt: string;
   content: string;
   author: string;
   status: "DRAFT" | "PUBLISHED" | "ARCHIVED";
+  coverImage: string;
 }
 
 export function BlogForm({
@@ -27,6 +30,7 @@ export function BlogForm({
     content: initial?.content ?? "",
     author: initial?.author ?? "",
     status: initial?.status ?? "DRAFT",
+    coverImage: initial?.coverImage ?? "",
   });
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -116,6 +120,14 @@ export function BlogForm({
             <option value="ARCHIVED">Archived</option>
           </select>
         </div>
+      </div>
+
+      <div className="pt-2">
+        <ImageUpload
+          label="Cover Image"
+          value={form.coverImage}
+          onChange={(url) => setForm({ ...form, coverImage: url })}
+        />
       </div>
 
       {error && <p className="text-sm text-red">{error}</p>}
