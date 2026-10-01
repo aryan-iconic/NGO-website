@@ -107,7 +107,12 @@ export default function NewTeamMemberPage() {
         </div>
 
         {error && <p className="text-red text-sm">{error}</p>}
-        <Button type="submit" disabled={loading}>{loading ? "Saving..." : "Save Team Member"}</Button>
+        <div className="flex gap-3 items-center">
+          <Button type="button" variant="outline" onClick={() => router.back()} disabled={loading}>
+            Cancel
+          </Button>
+          <Button type="submit" disabled={loading}>{loading ? "Saving..." : "Save Team Member"}</Button>
+        </div>
       </form>
     </div>
   );
