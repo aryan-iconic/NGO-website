@@ -71,12 +71,25 @@ export default function ContactPage() {
               onChange={(e) => setForm({ ...form, email: e.target.value })}
               className="w-full rounded-lg border border-border px-4 py-2.5 bg-surface"
             />
-            <input
-              placeholder={t("contact.f.phone") as string}
-              value={form.phone}
-              onChange={(e) => setForm({ ...form, phone: e.target.value })}
-              className="w-full rounded-lg border border-border px-4 py-2.5 bg-surface"
-            />
+            <div className="flex gap-2">
+              <select 
+                className="w-24 rounded-lg border border-border px-2 py-2.5 bg-surface text-sm"
+                defaultValue="+91"
+              >
+                <option value="+91">🇮🇳 +91</option>
+                <option value="+1">🇺🇸 +1</option>
+                <option value="+44">🇬🇧 +44</option>
+                <option value="+971">🇦🇪 +971</option>
+                <option value="+61">🇦🇺 +61</option>
+              </select>
+              <input
+                required
+                placeholder={t("contact.f.phone") as string}
+                value={form.phone}
+                onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                className="flex-1 rounded-lg border border-border px-4 py-2.5 bg-surface"
+              />
+            </div>
             <input
               placeholder={t("contact.f.sub") as string}
               value={form.subject}
