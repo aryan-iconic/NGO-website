@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/require-admin";
 import { z } from "zod";
@@ -18,7 +19,9 @@ const createSevaAreaSchema = z.object({
 export async function GET() {
   const guard = await requireAdmin();
   if (guard.error) return guard.error;
-  return NextResponse.json({ success: true, sevaAreas: await db.listSevaAreas() });
+  revalidatePath("/");
+    revalidatePath("/campaigns");
+    return NextResponse.json({ success: true, sevaAreas: await db.listSevaAreas() });
 }
 
 export async function POST(req: NextRequest) {
@@ -52,5 +55,7 @@ export async function POST(req: NextRequest) {
     entityId: sevaArea.id,
   });
 
-  return NextResponse.json({ success: true, sevaArea });
+  revalidatePath("/");
+    revalidatePath("/campaigns");
+    return NextResponse.json({ success: true, sevaArea });
 }
