@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { draftMode } from "next/headers";
 import { MapPin, Calendar } from "lucide-react";
 import { db } from "@/lib/db";
 import { EventRegisterForm } from "@/components/events/register-form";
@@ -10,7 +11,8 @@ export default async function EventDetailPage({
 }) {
   const { slug } = await params;
   const event = await db.getEventBySlug(slug);
-  if (!event || event.status !== "PUBLISHED") notFound();
+  const isDraftMode = (await draftMode()).isEnabled;
+  if (!event || (!isDraftMode && event.status !== "PUBLISHED")) notFound();
 
   return (
     <div className="container-app py-14 grid lg:grid-cols-[2fr_1fr] gap-12">
@@ -20,6 +22,9 @@ export default async function EventDetailPage({
           {new Date(event.eventDate).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}
         </p>
         <h1 className="mt-2 text-4xl">{event.title}</h1>
+        {event.coverImage && (
+          <img src={event.coverImage} alt={event.title} className="mt-6 w-full aspect-video rounded-lg object-cover border border-border" />
+        )}
         {(event.venue || event.location) && (
           <p className="mt-3 flex items-center gap-1.5 text-sm text-muted">
             <MapPin size={14} /> {event.venue ? `${event.venue}, ` : ""}{event.location}
