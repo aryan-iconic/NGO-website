@@ -101,7 +101,7 @@ verified by curl during testing for campaigns, blog, events, and FAQs alike.
   fully wired)
 - Refunds, offline donation recording, CSV report export
 - Per-content-field translations (see i18n note above)
-
+  
 ## Project structure
 
 ```
