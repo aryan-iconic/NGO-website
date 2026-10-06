@@ -2,6 +2,7 @@ import Link from "next/link";
 import { db } from "@/lib/db";
 import { LinkButton } from "@/components/ui/button";
 import { StatusToggle } from "@/components/admin/status-toggle";
+import { CampaignDeleteButton } from "@/components/admin/campaign-delete-button";
 
 export default async function AdminCampaignsPage() {
   const campaigns = await db.listAllCampaigns();
@@ -52,9 +53,12 @@ async function CampaignRow({ c }: { c: any }) {
       </td>
       <td className="p-3 text-muted">{new Date(c.updatedAt).toLocaleDateString("en-IN")}</td>
       <td className="p-3 text-right">
-        <Link href={`/admin/campaigns/${c.id}`} className="text-primary text-sm hover:text-secondary">
-          Edit
-        </Link>
+        <div className="flex items-center justify-end gap-3">
+          <Link href={`/admin/campaigns/${c.id}`} className="text-primary text-sm hover:text-secondary">
+            Edit
+          </Link>
+          <CampaignDeleteButton id={c.id} />
+        </div>
       </td>
     </tr>
   );
