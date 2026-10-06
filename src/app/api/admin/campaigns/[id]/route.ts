@@ -43,7 +43,29 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   });
 
   revalidatePath("/campaigns");
-    revalidatePath("/donate");
-    revalidatePath("/");
-    return NextResponse.json({ success: true, campaign: updated });
+  revalidatePath("/donate");
+  revalidatePath("/");
+  return NextResponse.json({ success: true, campaign: updated });
+}
+
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const guard = await requireAdmin();
+  if (guard.error) return guard.error;
+
+  const { id } = await params;
+  await db.deleteCampaign(id);
+
+  await db.logAudit({
+    actorType: "ADMIN",
+    actorId: guard.admin!.id,
+    actorName: guard.admin!.name,
+    action: "CAMPAIGN_DELETED",
+    entity: "campaign",
+    entityId: id,
+  });
+
+  revalidatePath("/campaigns");
+  revalidatePath("/donate");
+  revalidatePath("/");
+  return NextResponse.json({ success: true });
 }

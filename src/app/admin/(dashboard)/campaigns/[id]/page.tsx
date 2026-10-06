@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { formatPaise } from "@/lib/types";
 import { StatusToggle } from "@/components/admin/status-toggle";
 import { CampaignEditForm } from "@/components/admin/campaign-edit-form";
+import { CampaignDeleteButton } from "@/components/admin/campaign-delete-button";
 import { Eye, ArrowLeft } from "lucide-react";
 
 export default async function AdminCampaignEditPage({
@@ -42,6 +43,7 @@ export default async function AdminCampaignEditPage({
           >
             <Eye size={16} /> Preview
           </a>
+          <CampaignDeleteButton id={campaign.id} />
           <StatusToggle campaignId={campaign.id} status={campaign.status} />
         </div>
       </div>

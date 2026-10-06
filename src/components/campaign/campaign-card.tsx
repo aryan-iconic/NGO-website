@@ -13,6 +13,11 @@ export async function CampaignCard({ campaign }: { campaign: PublicCampaign }) {
       className="group block rounded-lg overflow-hidden bg-surface border border-border shadow-[var(--shadow-soft)] hover:shadow-[var(--shadow-lift)] transition-shadow duration-300"
     >
       <div className="aspect-[4/3] bg-cream relative overflow-hidden">
+        {campaign.coverImage ? (
+          <img src={campaign.coverImage} alt={campaign.title} className="w-full h-full object-cover" />
+        ) : (
+          <div className="w-full h-full bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-primary/20 via-maroon to-[#2d0000]" />
+        )}
         <div className="absolute inset-0 bg-gradient-to-br from-primary/15 to-maroon/10 group-hover:scale-105 transition-transform duration-500" />
         <div className="absolute top-3 left-3 flex gap-2">
           {campaign.isUrgent && (

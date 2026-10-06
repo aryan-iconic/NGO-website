@@ -391,7 +391,7 @@ export const db = {
   },
 
   // Admin campaign management
-  listAllCampaigns: async () => resolve(prisma.campaign.findMany({ orderBy: { createdAt: 'desc' } })),
+  listAllCampaigns: async () => resolve(prisma.campaign.findMany({ where: { deletedAt: null }, orderBy: { createdAt: 'desc' } })),
   getCampaignById: async (id: string) => resolve(prisma.campaign.findUnique({ where: { id } })),
   createCampaign: async (input: any) => {
     const campaign = await prisma.campaign.create({
@@ -435,6 +435,11 @@ export const db = {
     const c = await resolve(Promise.resolve(updated));
     c.suggestedAmountsPaise = c.suggestedAmountsJson ? JSON.parse(c.suggestedAmountsJson) : [];
     return c;
+  },
+  deleteCampaign: async (id: string) => {
+    // Soft delete by setting deletedAt
+    await prisma.campaign.update({ where: { id }, data: { deletedAt: new Date().toISOString() } });
+    return true;
   },
   getCampaignFinancials: async (campaignId: string) => mapDates(await prisma.campaignFinancials.findUnique({ where: { campaignId } })),
 
