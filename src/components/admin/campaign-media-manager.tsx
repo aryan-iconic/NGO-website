@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { ImageUpload } from "@/components/ui/image-upload";
 
 interface Media {
   id: string;
@@ -30,16 +29,7 @@ export function CampaignMediaManager({ campaignId }: { campaignId: string }) {
     loadMedia();
   }, [campaignId]);
 
-  const handleAddImage = async (url: string) => {
-    if (!url) return;
-    setLoading(true);
-    await fetch(`/api/admin/campaigns/${campaignId}/media`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ type: "IMAGE", url }),
-    });
-    loadMedia();
-  };
+
 
   const handleAddVideo = async () => {
     if (!videoUrl) return;
@@ -68,8 +58,51 @@ export function CampaignMediaManager({ campaignId }: { campaignId: string }) {
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-sm font-medium mb-3">Add Image</h3>
-        <ImageUpload value="" onChange={handleAddImage} label="" />
+        <h3 className="text-sm font-medium mb-3">Add Images</h3>
+        <input 
+          type="file" 
+          accept="image/*" 
+          multiple 
+          onChange={async (e) => {
+            const files = Array.from(e.target.files || []);
+            if (files.length === 0) return;
+            setLoading(true);
+            
+            // Upload sequentially or in parallel
+            for (const file of files) {
+              try {
+                const formData = new FormData();
+                formData.append("file", file);
+                const res = await fetch("/api/admin/media/upload", {
+                  method: "POST",
+                  body: formData,
+                });
+                const data = await res.json();
+                if (data.success && data.url) {
+                  await fetch(`/api/admin/campaigns/${campaignId}/media`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ type: "IMAGE", url: data.url }),
+                  });
+                }
+              } catch (err) {
+                console.error("Failed to upload file", file.name, err);
+              }
+            }
+            
+            // Clear input and reload media
+            e.target.value = "";
+            loadMedia();
+          }}
+          className="block w-full text-sm text-muted
+            file:mr-4 file:py-2 file:px-4
+            file:rounded-full file:border-0
+            file:text-sm file:font-semibold
+            file:bg-cream file:text-primary
+            hover:file:bg-cream/80"
+          disabled={loading}
+        />
+        {loading && <p className="text-xs text-muted mt-2">Uploading...</p>}
       </div>
 
       <div>
