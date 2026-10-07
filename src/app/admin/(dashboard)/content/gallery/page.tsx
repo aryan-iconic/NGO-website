@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Eye } from "lucide-react";
 import { db } from "@/lib/db";
 import { LinkButton } from "@/components/ui/button";
+import { DeleteButton } from "@/components/admin/delete-button";
 
 export default async function AdminGalleryListPage() {
   const items = await db.listGalleryItems(true);
@@ -25,20 +26,23 @@ export default async function AdminGalleryListPage() {
 
       <div className="mt-6 bg-surface border border-border rounded-lg divide-y divide-border">
         {items.map((item: any) => (
-          <Link key={item.id} href={`/admin/content/gallery/${item.id}`} className="p-4 flex gap-4 items-center hover:bg-cream/40">
+          <div key={item.id} className="p-4 flex gap-4 items-center hover:bg-cream/40">
             <div className="w-16 h-16 bg-cream rounded-md overflow-hidden flex-shrink-0">
               {item.imageUrl ? (
                 <img src={item.imageUrl} alt="" className="w-full h-full object-cover" />
               ) : null}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-medium truncate">{item.title || "Untitled Image"}</p>
+              <Link href={`/admin/content/gallery/${item.id}`} className="font-medium truncate hover:text-primary">{item.title || "Untitled Image"}</Link>
               <p className="text-xs text-muted mt-1">{item.category}</p>
             </div>
-            <span className={`text-xs px-2 py-0.5 rounded-full ${item.isPublished ? 'bg-success/10 text-success' : 'bg-cream text-muted'}`}>
-              {item.isPublished ? "PUBLISHED" : "DRAFT"}
-            </span>
-          </Link>
+            <div className="flex items-center gap-4">
+              <span className={`text-xs px-2 py-0.5 rounded-full ${item.isPublished ? 'bg-success/10 text-success' : 'bg-cream text-muted'}`}>
+                {item.isPublished ? "PUBLISHED" : "DRAFT"}
+              </span>
+              <DeleteButton endpoint={`/api/admin/gallery/${item.id}`} title="" />
+            </div>
+          </div>
         ))}
         {items.length === 0 && <p className="p-8 text-center text-muted">No gallery items yet.</p>}
       </div>

@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import Link from "next/link";
 import { LinkButton } from "@/components/ui/button";
+import { DeleteButton } from "@/components/admin/delete-button";
 
 export default async function SevaAreasPage() {
   // Uses direct DB call since it's a server component in admin
@@ -32,10 +33,11 @@ export default async function SevaAreasPage() {
                 {sa.published ? "Published" : "Draft"}
               </span>
             </div>
-            <div className="text-right">
-              <Link href={`/admin/seva-areas/${sa.id}`} className="text-sm text-primary hover:underline">
+            <div className="text-right flex items-center justify-end gap-3">
+              <Link href={`/admin/seva-areas/${sa.id}`} className="text-sm text-primary hover:underline font-medium">
                 Edit
               </Link>
+              <DeleteButton endpoint={`/api/admin/seva-areas/${sa.id}`} title="" />
             </div>
           </div>
         ))}

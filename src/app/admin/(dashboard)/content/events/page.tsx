@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { LinkButton } from "@/components/ui/button";
+import { DeleteButton } from "@/components/admin/delete-button";
 
 export default async function AdminEventsListPage() {
   const events = await db.listEvents();
@@ -14,13 +15,16 @@ export default async function AdminEventsListPage() {
 
       <div className="mt-6 bg-surface border border-border rounded-lg divide-y divide-border">
         {events.map((e: any) => (
-          <Link key={e.id} href={`/admin/content/events/${e.id}`} className="p-4 flex justify-between items-center hover:bg-cream/40">
+          <div key={e.id} className="p-4 flex justify-between items-center hover:bg-cream/40">
             <div>
-              <p className="font-medium">{e.title}</p>
+              <Link href={`/admin/content/events/${e.id}`} className="font-medium hover:text-primary">{e.title}</Link>
               <p className="text-xs text-muted">{new Date(e.eventDate).toLocaleDateString("en-IN")}</p>
             </div>
-            <span className="text-xs px-2 py-0.5 rounded-full bg-cream text-maroon">{e.status}</span>
-          </Link>
+            <div className="flex items-center gap-4">
+              <span className="text-xs px-2 py-0.5 rounded-full bg-cream text-maroon">{e.status}</span>
+              <DeleteButton endpoint={`/api/admin/events/${e.id}`} title="" />
+            </div>
+          </div>
         ))}
         {events.length === 0 && <p className="p-8 text-center text-muted">No events yet.</p>}
       </div>

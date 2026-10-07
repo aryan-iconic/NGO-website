@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import { format } from "date-fns";
 import { Eye, CheckCircle2, Circle, Trash2 } from "lucide-react";
+import { DeleteButton } from "@/components/admin/delete-button";
 
 export default async function AdminContactPage() {
   const inquiries = await db.listContactMessages();
@@ -40,10 +41,11 @@ export default async function AdminContactPage() {
                     {inquiry.status === "NEW" ? "Unread" : "Read"}
                   </span>
                 </td>
-                <td className="p-4 text-right space-x-3">
-                  <a href={`/admin/contact/${inquiry.id}`} className="text-maroon hover:underline inline-flex items-center gap-1">
+                <td className="p-4 text-right flex items-center justify-end gap-3">
+                  <a href={`/admin/contact/${inquiry.id}`} className="text-maroon hover:underline inline-flex items-center gap-1 font-medium">
                     <Eye size={14} /> View
                   </a>
+                  <DeleteButton endpoint={`/api/admin/contact/${inquiry.id}`} title="" />
                 </td>
               </tr>
             ))}

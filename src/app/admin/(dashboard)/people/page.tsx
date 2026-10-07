@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import Link from "next/link";
 import { LinkButton } from "@/components/ui/button";
+import { DeleteButton } from "@/components/admin/delete-button";
 
 export default async function AdminPeoplePage() {
   const teamMembers = await db.listTeamMembers(true);
@@ -44,8 +45,9 @@ export default async function AdminPeoplePage() {
                       {member.isPublished ? "Published" : "Draft"}
                     </span>
                   </td>
-                  <td className="p-3 text-right">
-                    <Link href={`/admin/people/${member.id}`} className="text-primary hover:underline text-sm">Edit</Link>
+                  <td className="p-3 text-right flex items-center justify-end gap-3">
+                    <Link href={`/admin/people/${member.id}`} className="text-primary hover:underline text-sm font-medium">Edit</Link>
+                    <DeleteButton endpoint={`/api/admin/people/${member.id}`} title="" />
                   </td>
                 </tr>
               ))}
