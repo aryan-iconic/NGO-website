@@ -21,7 +21,7 @@ export default async function AdminCampaignsPage() {
           <thead className="bg-cream">
             <tr className="text-left">
               <th className="p-3 font-medium">Title</th>
-              <th className="p-3 font-medium">Category</th>
+              <th className="p-3 font-medium">Seva Area</th>
               <th className="p-3 font-medium">Status</th>
               <th className="p-3 font-medium">Updated</th>
               <th className="p-3 font-medium"></th>
@@ -39,7 +39,7 @@ export default async function AdminCampaignsPage() {
 }
 
 async function CampaignRow({ c }: { c: any }) {
-  const cat = await db.getCategory(c.categoryId);
+  const sa = await db.getSevaArea(c.sevaAreaId);
   return (
     <tr className="border-t border-border">
       <td className="p-3">
@@ -47,7 +47,7 @@ async function CampaignRow({ c }: { c: any }) {
           {c.title}
         </Link>
       </td>
-      <td className="p-3 text-muted">{cat?.name ?? "—"}</td>
+      <td className="p-3 text-muted">{sa?.name ?? "—"}</td>
       <td className="p-3">
         <StatusToggle campaignId={c.id} status={c.status} />
       </td>

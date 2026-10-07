@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Campaign } from "@/lib/db";
 import { ImageUpload } from "@/components/ui/image-upload";
-import { CampaignMediaManager } from "./campaign-media-manager";
 
 export function CampaignEditForm({ campaign, sevaAreas }: { campaign: Campaign; sevaAreas: { id: string; name: string }[] }) {
   const [form, setForm] = useState({
@@ -104,13 +103,6 @@ export function CampaignEditForm({ campaign, sevaAreas }: { campaign: Campaign; 
           <Button type="button" variant="outline" onClick={() => router.back()}>Cancel</Button>
           <Button onClick={handleSave}>{saved ? "Saved ✓" : "Save Changes"}</Button>
         </div>
-      </section>
-
-      <section className="space-y-4 bg-surface p-6 rounded-lg border border-border">
-        <h2 className="text-xl font-serif mb-4">Gallery & Media</h2>
-        <p className="text-sm text-muted mb-6">Manage images and videos associated with this campaign.</p>
-        <CampaignMediaManager campaignId={campaign.id} />
-      </section>
     </div>
   );
 }

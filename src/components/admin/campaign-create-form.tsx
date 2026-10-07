@@ -14,7 +14,7 @@ export function CampaignCreateForm({ sevaAreas }: { sevaAreas: { id: string; nam
     story: "",
     sevaAreaId: sevaAreas[0]?.id || "",
     locationText: "",
-    donationMode: "BOTH" as "PRODUCTS" | "GENERAL" | "BOTH",
+    donationMode: "GENERAL" as "PRODUCTS" | "GENERAL" | "BOTH",
     allowCustomAmount: true,
     isFeatured: false,
     isUrgent: false,
@@ -108,19 +108,6 @@ export function CampaignCreateForm({ sevaAreas }: { sevaAreas: { id: string; nam
         />
       </div>
 
-      <div>
-        <label className="text-sm text-muted" htmlFor="donationMode">Donation Mode</label>
-        <select
-          id="donationMode"
-          value={form.donationMode}
-          onChange={(e) => setForm({ ...form, donationMode: e.target.value as typeof form.donationMode })}
-          className="mt-1.5 w-full rounded-lg border border-border px-4 py-2.5 bg-surface"
-        >
-          <option value="BOTH">Products + Custom Amount</option>
-          <option value="PRODUCTS">Products Only</option>
-          <option value="GENERAL">Custom Amount Only</option>
-        </select>
-      </div>
       <div className="flex flex-wrap gap-5">
         {[
           ["isFeatured", "Featured"],
