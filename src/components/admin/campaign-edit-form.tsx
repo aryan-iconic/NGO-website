@@ -103,6 +103,7 @@ export function CampaignEditForm({ campaign, sevaAreas }: { campaign: Campaign; 
           <Button type="button" variant="outline" onClick={() => router.back()}>Cancel</Button>
           <Button onClick={handleSave}>{saved ? "Saved ✓" : "Save Changes"}</Button>
         </div>
+      </section>
     </div>
   );
 }
