@@ -1,128 +1,145 @@
-# Shri Nityanikunj Trust — Platform
+# Shri Nityanikunj Trust — Website & Giving Platform
 
-A real, working Next.js 15 (App Router) application — public site, user accounts,
-donations, monthly giving, 2FA-protected admin panel with full content
-management, and a working (if simplified) language toggle. Verified with
-`next build` (zero errors) and a full API-level smoke test of every major
-flow, including the complete 2FA lifecycle (see "What's verified" below).
+A Next.js application for the Trust’s public website, online donations, and admin-managed content. It uses PostgreSQL through Prisma, Razorpay for one-time payments, SMTP for email, and optional S3-compatible object storage and translation providers.
 
-## Run it
+> **Deployment note:** A successful build does not configure external services. Before accepting live donations, configure the production environment variables below and verify the live Razorpay webhook, payment confirmation, receipt email, database, and storage.
+
+## Contents
+
+- [Getting started](#getting-started)
+- [Environment variables](#environment-variables)
+- [External service setup](#external-service-setup)
+- [Available features](#available-features)
+- [Useful commands](#useful-commands)
+
+## Getting started
+
+Requirements: Node.js compatible with the installed Next.js version, npm, and a PostgreSQL database.
 
 ```bash
 npm install
+cp .env.example .env
+```
+
+Fill in at least `DATABASE_URL` and `AUTH_SECRET` in `.env`. This repository currently contains a Prisma schema but no committed migration history or configured seed command. For local development, create an initial migration from the schema, then start the app:
+
+```bash
+npx prisma migrate dev --name init
 npm run dev
 ```
 
-Open http://localhost:3000. Data persists to `.data/db.json` (git-ignored) —
-delete that file to reset to the seed data.
+Open [http://localhost:3000](http://localhost:3000). Commit reviewed migrations and apply them with `npx prisma migrate deploy` during deployment. Do not use `prisma db push` as a substitute for a production migration workflow.
 
-**Demo admin login** (`/admin/login`): `admin@nityanikunj.org` / `Admin@12345`
-(2FA is off by default for this account — enable it from `/admin/settings`
-with any authenticator app, e.g. Google Authenticator or Authy.)
+`prisma/seed.ts` can create `admin@nityanikunj.org` when `ADMIN_BOOTSTRAP_PASSWORD` is set, but this repository does not currently configure a Prisma seed command or include a TypeScript seed runner. Configure an approved seed invocation in your deployment/setup workflow before relying on it; do not assume the admin account is automatically created.
 
-## What's actually working end-to-end
+Never use a demo password or the development fallback signing secret on a public deployment. Keep `.env` out of version control and configure production secrets in the hosting provider’s environment settings.
 
-### Public site
-Home, campaign listing + filters, campaign detail (story, products, timeline,
-updates, FAQs), events + registration, gallery, blog, volunteer form, contact
-form, FAQ, About, all four legal pages, and a language toggle (English/Hindi)
-in the navbar that actually re-renders navigation, hero, and section copy.
+## Environment variables
 
-### Donations (one-time)
-Add products to a cart from a campaign page, or pick a custom amount, go to
-checkout, submit donor details, and the server recalculates every line item
-from the current product price, checks quantity limits, "settles" payment
-(mocked — see note below), generates a sequential donation number and an
-immutable receipt number, and reserves product inventory.
+See [`.env.example`](.env.example) for a commented template. The application reads these exact names:
 
-### Monthly giving
-`/monthly` — pick a recurring amount, direct it to a campaign or the general
-fund, submit donor details, and a subscription is created (mock gateway
-authorization, same pattern as one-time donations). Shown and cancellable
-from the user dashboard; admins see every subscription at `/admin/recurring`.
+| Variable | Required? | Used for |
+| --- | --- | --- |
+| `DATABASE_URL` | Yes | PostgreSQL connection used by Prisma. |
+| `AUTH_SECRET` | Yes in production | Signs user and admin session cookies. Use a strong random value. |
+| `RAZORPAY_KEY_ID` | For donations | Razorpay API key ID used for order creation and checkout. |
+| `RAZORPAY_KEY_SECRET` | For donations | Razorpay API secret used for payment verification. |
+| `RAZORPAY_WEBHOOK_SECRET` | For webhook confirmation | Verifies Razorpay webhook signatures. Set the same value in Razorpay and hosting. |
+| `EMAIL_HOST` | For real email delivery | SMTP hostname. For Resend, use `smtp.resend.com`. |
+| `EMAIL_PORT` | For real email delivery | SMTP port. Resend supports `465` for SSL; the app defaults to `465`. |
+| `EMAIL_USER` | For real email delivery | SMTP username. For Resend, use `resend`. |
+| `EMAIL_PASSWORD` | For real email delivery | SMTP password. For Resend, use your Resend API key. |
+| `EMAIL_FROM` | Recommended | Sender address. Use an address on a domain verified with your mail provider. |
+| `S3_ENDPOINT` | For image uploads | S3-compatible endpoint. For R2, use the account’s R2 S3 API endpoint. |
+| `S3_ACCESS_KEY_ID` | For image uploads | S3/R2 access key ID. |
+| `S3_SECRET_ACCESS_KEY` | For image uploads | Matching S3/R2 secret access key. |
+| `S3_BUCKET_NAME` | For image uploads | Destination bucket name. |
+| `S3_PUBLIC_URL` | For public images | Public bucket URL or connected custom domain used to form image URLs. |
+| `GOOGLE_TRANSLATE_API_KEY` | Optional | Google Cloud Translation provider. Tried first when configured. |
+| `LIBRETRANSLATE_URL` | Optional | LibreTranslate server URL; used if Google is absent or fails. |
+| `LIBRETRANSLATE_API_KEY` | Optional | API key for LibreTranslate instances that require one. |
+| `NEXT_PUBLIC_BASE_URL` | Optional | Production site URL used in newsletter unsubscribe links. Defaults to `https://shrinityanikunjtrust.org`. |
+| `ADMIN_BOOTSTRAP_PASSWORD` | Setup only | Password used by the seed script when creating the first admin. |
+| `NODE_ENV` | Hosting-managed | Determines development/production behavior. Normally set by the platform. |
 
-### Auth
-Register/login with hashed passwords (bcrypt) and signed session cookies,
-separate from the admin session. Navbar reflects real logged-in state.
+`REDIS_URL`, `DIRECT_URL`, and the old `STORAGE_*` names are not read by the current application. Translation uses PostgreSQL and a process-memory cache; Redis credentials are not needed. Uploads use the `S3_*` names above.
 
-### User dashboard
-`/user/dashboard` — real donation history and totals, plus active monthly
-giving with a working cancel button, for the logged-in user.
+## External service setup
 
-### Admin panel
-Separate login/session, middleware-guarded routes, **two-factor
-authentication** (TOTP, QR-code setup, enforced at every login once
-enabled — full lifecycle verified with real generated codes, not just the
-UI). Campaign creation/editing/status workflow, per-campaign financials
-(admin-only, structurally separate from the public API), donations table,
-monthly giving table, volunteer applications, contact inbox, and **full CRUD
-for blog posts, events, and FAQs** (create/edit/delete, not just read-only
-lists) — plus a real append-only audit log recording campaign changes and
-2FA enable/disable.
+### Razorpay — one-time donations
 
-### Rule enforcement is real, not just hidden UI
-Every `/api/admin/*` route calls `requireAdmin()` first. A logged-in normal
-user — or a request with no session at all — gets a real `401`/`403`,
-verified by curl during testing for campaigns, blog, events, and FAQs alike.
+1. Generate API keys in the Razorpay Dashboard. Use **Test Mode** while testing and **Live Mode** only after the account is ready to accept payments.
+2. Add `RAZORPAY_KEY_ID` and `RAZORPAY_KEY_SECRET` to the hosting environment.
+3. Configure a webhook pointing to `https://your-domain.example/api/webhooks/razorpay`.
+4. Subscribe to `payment.captured` and `payment.failed`. Set a webhook secret and copy the same value to `RAZORPAY_WEBHOOK_SECRET` in hosting.
+5. Complete a test-mode donation and verify that the donation status, receipt number, and donor email are correct before switching to live keys.
 
-## What's mocked, and why
+The donor-facing checkout creates an order through Razorpay. Payment verification and the webhook update the donation; the successful payment flow generates a receipt number and sends the receipt email when SMTP is configured.
 
-- **Payment gateway**: `POST /api/donations` and `POST /api/recurring` settle
-  immediately instead of creating a Razorpay order/subscription and waiting
-  for a webhook. This sandbox has no Razorpay keys to test against, so the
-  real flow (`create-order` → checkout → `verify` → webhook) is documented
-  inline in those two files rather than stubbed elsewhere. Swapping in a real
-  gateway means replacing the settlement call in those two files; the
-  donation/subscription/receipt/inventory logic around it doesn't change.
-- **Data layer**: `src/lib/db.ts` is an in-memory store persisted to a JSON
-  file, with the same shapes as `prisma/schema.prisma`. This sandbox's
-  network allowlist doesn't include `binaries.prisma.sh`, so the Prisma CLI
-  can't download its query engine here — real Postgres was not reachable to
-  verify against. The schema file is production-ready; swapping `db.ts`'s
-  functions for `prisma.<model>.*` calls is the migration path.
-- **i18n**: `src/lib/i18n.tsx` is a client-side language toggle (English/Hindi)
-  covering navigation, hero, and section headings — not the spec's
-  next-intl + locale-prefixed-routing approach. That approach server-renders
-  each locale at its own URL and lets every field (including admin-authored
-  campaign stories and blog posts) carry a translation — real schema and
-  routing work, not a UI pass. What's here proves the mechanism end-to-end;
-  extending it to content fields is the next step, and matches the spec's
-  own phasing (full Hindi content is Release 2, not MVP).
-- **Email**: receipts, confirmations, and 2FA-related notices are generated
-  but not actually emailed — no SMTP/Resend credential is configured here.
-- **Gallery images / cover photos**: styled placeholders, not real uploaded
-  photography — no object storage (S3/R2) connected in this environment.
+### Resend — email via SMTP
 
-## What's not built
+The app uses Nodemailer SMTP, not Resend’s HTTP API. Use:
 
-- PDF receipt generation (currently a receipt *number*, no rendered PDF)
-- Admin settings persistence (`/admin/settings` renders the structure from
-  the spec but doesn't save — 2FA is the one settings sub-feature that's
-  fully wired)
-- Refunds, offline donation recording, CSV report export
-- Per-content-field translations (see i18n note above)
-  
+```text
+EMAIL_HOST=smtp.resend.com
+EMAIL_PORT=465
+EMAIL_USER=resend
+EMAIL_PASSWORD=<your Resend API key>
+EMAIL_FROM=<sender address on your verified domain>
+```
+
+Verify the sending domain in Resend and use a permitted sender address. Without SMTP credentials, some development paths only log a simulated email; that does not deliver mail to a donor.
+
+### Cloudflare R2 or another S3-compatible store — image uploads
+
+Create a bucket and an API token with only the object permissions this app needs. For Cloudflare R2, copy its S3 endpoint and access key pair, connect a public custom domain (recommended for production), and configure all five `S3_*` variables. The app returns image URLs using `S3_PUBLIC_URL`; the corresponding bucket/domain must serve those objects publicly for public pages to display them.
+
+### Translations — Google or LibreTranslate
+
+The active translated content locales are Hindi (`hi`), Telugu (`te`), and Tamil (`ta`), with English as the source. Configure Google, LibreTranslate, or both. If both are set, Google is attempted first and LibreTranslate is used if Google fails. A LibreTranslate URL may point to a self-hosted instance or a hosted service; availability, request limits, and any key requirements depend on that instance.
+
+## Available features
+
+### Public website
+
+Campaigns, events, blog posts, FAQs, gallery, team and transparency information, legal pages, contact form, volunteer form, newsletter signup, user registration/login, and donation checkout. Admin-authored public content is read from the database and translated content is served when available.
+
+### Admin
+
+Admin login and authorization, optional TOTP two-factor authentication, campaign and content management, donation records, volunteer and contact inquiry management, site settings, translation management, and audit logging. Site Settings values for contact email, phone, address, map URL, WhatsApp, and footer social links feed the corresponding public areas where wired.
+
+### One-time donations
+
+Razorpay order creation, payment verification, webhook processing, donation status updates, receipt-number creation, and receipt email are implemented. Actual payment acceptance and email delivery depend on correct production credentials, webhook setup, database connectivity, and SMTP configuration.
+
+### Recurring donations
+
+Recurring/subscription payment infrastructure is not implemented in the current database layer. The monthly giving UI/API should not be treated as a live recurring billing feature until a subscription provider flow is implemented and verified.
+
+### Translation
+
+Stored field translations are generated for registered content text fields on save when a provider is configured. The admin Translations page can also backfill missing translations for existing content. Machine translations should be reviewed, especially legal and statutory text.
+
+## Useful commands
+
+```bash
+npm run dev             # Start the local development server
+npm run build           # Compile the production application
+npm run start           # Start the production server after a build
+npm run lint            # Run ESLint
+npx prisma generate     # Generate Prisma Client
+npx prisma migrate deploy  # Apply committed migrations
+```
+
 ## Project structure
 
-```
-src/
-  app/                  Pages + API routes (Next.js App Router)
-    api/                Route handlers — the "backend"
-      admin/2fa/         2FA setup/verify/challenge/disable
-      admin/blog|events|faqs/   Full CRUD, admin-guarded
-      recurring/          Monthly giving
-    admin/               Admin panel (middleware-guarded)
-      content/blog|events|faqs/   Create/edit forms
-    campaigns/, donate/, monthly/, user/, events/, blog/, ...
-  components/
-    admin/               Status toggle, campaign/blog/event forms, FAQ manager, 2FA panel
-    i18n/                <T k="..."/> — drop a translated string into a server component
-  lib/
-    db.ts                Data layer (swap for Prisma+Postgres in production)
-    auth.ts              Session cookies + 2FA pending-token signing
-    totp.ts              TOTP secret generation, QR code, code verification
-    schemas.ts           Zod validation shared by API + forms
-    i18n.tsx             Language context + dictionary
-    types.ts, view-models.ts   Public-facing types — no financial fields
-prisma/schema.prisma     Production data model (Postgres)
+```text
+src/app/                 Public pages, admin pages, and API route handlers
+src/components/          Shared public and admin UI
+src/lib/db.ts            Prisma-backed data access and domain operations
+src/lib/auth.ts          Signed user/admin sessions
+src/lib/translation.ts   Translation providers and content translation registry
+prisma/schema.prisma     PostgreSQL data model
+prisma/migrations/       Database migrations
+prisma/seed.ts           Optional initial-admin bootstrap
 ```
