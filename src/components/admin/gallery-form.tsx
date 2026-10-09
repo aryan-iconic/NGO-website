@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { ImageUpload } from "@/components/ui/image-upload";
 
 interface GalleryFormValues {
   title: string;
@@ -14,8 +15,6 @@ interface GalleryFormValues {
   isPublished: boolean;
   displayOrder: number;
 }
-
-const CATEGORIES = ["All", "Initiatives", "Seva", "Community", "Education", "Spiritual", "Volunteers"];
 
 export function GalleryForm({
   mode,
@@ -38,53 +37,59 @@ export function GalleryForm({
   });
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!form.imageUrl.trim()) {
+      setError("Upload an image or provide a valid image URL.");
+      return;
+    }
     setLoading(true);
     setError(null);
     const url = mode === "create" ? "/api/admin/gallery" : `/api/admin/gallery/${itemId}`;
     const method = mode === "create" ? "POST" : "PUT";
-    const res = await fetch(url, {
-      method,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
-    });
-    const data = await res.json();
-    setLoading(false);
-    if (!data.success) {
-      setError(data.error?.message ?? "Something went wrong.");
-      return;
+    try {
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setError(data.error?.message ?? "Something went wrong.");
+        return;
+      }
+      router.push("/admin/content/gallery");
+      router.refresh();
+    } catch {
+      setError("Could not save the gallery item. Check your connection and try again.");
+    } finally {
+      setLoading(false);
     }
-    router.push("/admin/content/gallery");
-    router.refresh();
   };
 
   const handleDelete = async () => {
     if (!itemId || !confirm("Delete this gallery item?")) return;
-    await fetch(`/api/admin/gallery/${itemId}`, { method: "DELETE" });
-    router.push("/admin/content/gallery");
-    router.refresh();
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch(`/api/admin/gallery/${itemId}`, { method: "DELETE" });
+      const data = await response.json();
+      if (!response.ok || !data.success) throw new Error(data.error?.message || "Could not delete gallery item.");
+      router.push("/admin/content/gallery");
+      router.refresh();
+    } catch (deleteError) {
+      setError(deleteError instanceof Error ? deleteError.message : "Could not delete gallery item.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 max-w-2xl">
-      <div>
-        <label className="text-sm text-muted" htmlFor="imageUrl">Image URL *</label>
-        <input
-          id="imageUrl"
-          required
-          value={form.imageUrl}
-          onChange={(e) => setForm({ ...form, imageUrl: e.target.value })}
-          className="mt-1.5 w-full rounded-lg border border-border px-4 py-2.5 bg-surface"
-        />
-        {form.imageUrl && (
-          <div className="mt-4 w-48 h-48 rounded-lg overflow-hidden border border-border">
-            <img src={form.imageUrl} alt="Preview" className="w-full h-full object-cover" />
-          </div>
-        )}
-      </div>
+      <ImageUpload value={form.imageUrl} onChange={(imageUrl) => setForm((current) => ({ ...current, imageUrl }))} onUploadingChange={setUploadingImage} label="Gallery image *" />
 
       <div className="grid sm:grid-cols-2 gap-4">
         <div>
@@ -98,16 +103,14 @@ export function GalleryForm({
         </div>
         <div>
           <label className="text-sm text-muted" htmlFor="category">Category</label>
-          <select
+          <input
             id="category"
+            type="text"
             value={form.category}
             onChange={(e) => setForm({ ...form, category: e.target.value })}
+            placeholder="e.g. Community, Seva, Education"
             className="mt-1.5 w-full rounded-lg border border-border px-4 py-2.5 bg-surface"
-          >
-            {CATEGORIES.map(c => (
-              <option key={c} value={c}>{c}</option>
-            ))}
-          </select>
+          />
         </div>
       </div>
 
@@ -164,11 +167,11 @@ export function GalleryForm({
 
       {error && <p className="text-sm text-red">{error}</p>}
       <div className="flex gap-3 mt-6">
-        <Button type="submit" disabled={loading}>
-          {loading ? "Saving…" : mode === "create" ? "Add to Gallery" : "Save Changes"}
+        <Button type="submit" disabled={loading || uploadingImage}>
+          {uploadingImage ? "Uploading image…" : loading ? "Saving…" : mode === "create" ? "Add to Gallery" : "Save Changes"}
         </Button>
         {mode === "edit" && (
-          <Button type="button" variant="outline" onClick={handleDelete}>
+          <Button type="button" variant="outline" onClick={handleDelete} disabled={loading || uploadingImage}>
             Delete
           </Button>
         )}

@@ -9,7 +9,7 @@ const schema = z.object({
   caption: z.string().optional().nullable(),
   description: z.string().optional().nullable(),
   category: z.string().optional(),
-  imageUrl: z.string().optional(),
+  imageUrl: z.string().trim().url().refine((url) => /^https?:\/\//i.test(url), "Image URL must use HTTPS or HTTP.").optional(),
   altText: z.string().optional().nullable(),
   isPublished: z.boolean().optional(),
   displayOrder: z.number().optional(),

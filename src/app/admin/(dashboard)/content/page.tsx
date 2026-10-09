@@ -6,6 +6,7 @@ export default async function AdminContentPage() {
   const posts = await db.listBlogPosts();
   const events = await db.listEvents();
   const faqs = await db.listFaqs();
+  const galleryItems = await db.listGalleryItems(true);
 
   const cards = [
     { href: "/admin/content/blog", icon: FileText, label: "Blog Posts", count: posts.length },
@@ -14,13 +15,13 @@ export default async function AdminContentPage() {
     { href: "/admin/content/homepage", icon: FileText, label: "Homepage CMS", count: null },
     { href: "/admin/content/about", icon: FileText, label: "About Page CMS", count: null },
     { href: "/admin/content/legal", icon: FileText, label: "Legal & Transparency", count: null },
-    { href: "/gallery", icon: ImageIcon, label: "Gallery (view only)", count: null },
+    { href: "/admin/content/gallery", icon: ImageIcon, label: "Gallery", count: galleryItems.length },
   ];
 
   return (
     <div>
       <h1 className="text-2xl font-serif text-maroon">Content</h1>
-      <p className="text-sm text-muted mt-1">Manage blog posts, events, and FAQs.</p>
+      <p className="text-sm text-muted mt-1">Manage the public site’s blog, events, FAQs, pages, and gallery.</p>
 
       <div className="mt-6 grid sm:grid-cols-2 gap-4">
         {cards.map(({ href, icon: Icon, label, count }) => (

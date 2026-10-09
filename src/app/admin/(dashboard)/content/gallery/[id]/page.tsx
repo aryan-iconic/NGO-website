@@ -16,7 +16,7 @@ export default async function AdminGalleryEditPage({ params }: { params: Promise
           <ArrowLeft size={16} /> Back to Gallery
         </Link>
       </div>
-      <h1 className="text-2xl font-serif text-maroon mb-6">Edit Gallery Image</h1>
+      <h1 className="text-2xl font-serif text-maroon mb-6">Edit Gallery Photo</h1>
       <GalleryForm
         mode="edit"
         itemId={item.id}

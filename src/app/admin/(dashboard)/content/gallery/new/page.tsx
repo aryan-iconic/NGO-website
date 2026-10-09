@@ -10,7 +10,7 @@ export default function AdminGalleryNewPage() {
           <ArrowLeft size={16} /> Back to Gallery
         </Link>
       </div>
-      <h1 className="text-2xl font-serif text-maroon mb-6">Add Gallery Image</h1>
+      <h1 className="text-2xl font-serif text-maroon mb-6">Add Gallery Photo</h1>
       <GalleryForm mode="create" />
     </div>
   );
