@@ -27,11 +27,13 @@ import { getWhatsAppHref } from "@/lib/whatsapp";
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   let settingsMap: Record<string, { value: string; translations: unknown }> = {};
+  let publicSettings: Record<string, string> = {};
   let whatsappHref: string | null = null;
   try {
     const settings = await prisma.setting.findMany();
     whatsappHref = getWhatsAppHref(settings.find((setting) => setting.key === "contact.whatsapp")?.value);
     settingsMap = Object.fromEntries(settings.map((setting) => [setting.key, { value: setting.value, translations: setting.translations }]));
+    publicSettings = Object.fromEntries(settings.map((setting) => [setting.key, setting.value]));
   } catch (error) {
     console.error("Failed to load settings in layout:", error);
   }
@@ -57,7 +59,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 </a>
               </div>
             )}
-            <RouteConditional navbar={<Navbar />} footer={<Footer />} whatsapp={<WhatsAppFloatingButton href={whatsappHref} />}>
+            <RouteConditional navbar={<Navbar />} footer={<Footer settings={publicSettings} />} whatsapp={<WhatsAppFloatingButton href={whatsappHref} />}>
               {children}
             </RouteConditional>
           </CartProvider>

@@ -7,7 +7,11 @@ import { T } from "@/components/i18n/t";
 import { useI18n } from "@/lib/i18n";
 
 export default function ContactPage() {
-  const { t } = useI18n();
+  const { t, getSetting } = useI18n();
+  const contactEmail = getSetting("contact.email", "shrinitynikunj@gmail.com");
+  const contactPhone = getSetting("contact.phone", "+91 94508 81090");
+  const contactAddress = getSetting("contact.address", "Shri Nityanikunj Trust, Vrindavan, Susuwahi, Varanasi - 221011, Uttar Pradesh, India");
+  const mapEmbedUrl = getSetting("contact.map_embed_url", "https://maps.google.com/maps?q=Shri+Nityanikunj+Trust,+Vrindavan,+Susuwahi,+Varanasi,+Kandwa,+Uttar+Pradesh+221011&t=&z=15&ie=UTF8&iwloc=&output=embed");
   const [form, setForm] = useState({ name: "", email: "", phone: "", subject: "", message: "" });
   const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
@@ -62,23 +66,23 @@ export default function ContactPage() {
               <h2 className="text-2xl font-serif text-maroon mb-8 relative z-10">{t("Get in Touch")}</h2>
               
               <div className="space-y-8 relative z-10">
-                <a href="mailto:shrinitynikunj@gmail.com" className="flex items-start gap-5 group/item">
+                <a href={`mailto:${contactEmail}`} className="flex items-start gap-5 group/item">
                   <div className="w-12 h-12 rounded-full bg-cream flex items-center justify-center text-maroon shadow-inner shrink-0 group-hover/item:bg-primary group-hover/item:text-white transition-colors duration-300">
                     <Mail size={20} />
                   </div>
                   <div>
                     <p className="text-sm font-bold tracking-widest text-primary uppercase mb-1">{t("Email Us")}</p>
-                    <p className="text-text font-medium group-hover/item:text-primary transition-colors">shrinitynikunj@gmail.com</p>
+                    <p className="text-text font-medium group-hover/item:text-primary transition-colors">{contactEmail}</p>
                   </div>
                 </a>
                 
-                <a href="tel:+919450881090" className="flex items-start gap-5 group/item">
+                <a href={`tel:${contactPhone.replace(/[^\d+]/g, "")}`} className="flex items-start gap-5 group/item">
                   <div className="w-12 h-12 rounded-full bg-cream flex items-center justify-center text-maroon shadow-inner shrink-0 group-hover/item:bg-primary group-hover/item:text-white transition-colors duration-300">
                     <Phone size={20} />
                   </div>
                   <div>
                     <p className="text-sm font-bold tracking-widest text-primary uppercase mb-1">{t("Call Us")}</p>
-                    <p className="text-text font-medium group-hover/item:text-primary transition-colors">+91 94508 81090</p>
+                    <p className="text-text font-medium group-hover/item:text-primary transition-colors">{contactPhone}</p>
                   </div>
                 </a>
                 
@@ -88,7 +92,7 @@ export default function ContactPage() {
                   </div>
                   <div>
                     <p className="text-sm font-bold tracking-widest text-primary uppercase mb-1">{t("Visit Us")}</p>
-                    <p className="text-text font-medium leading-relaxed">{t("Shri Nityanikunj Trust, Vrindavan, Susuwahi, Varanasi - 221011, Uttar Pradesh, India")}</p>
+                    <p className="text-text font-medium leading-relaxed">{contactAddress}</p>
                   </div>
                 </div>
               </div>
@@ -206,7 +210,7 @@ export default function ContactPage() {
             {t("Our Location")}
           </div>
           <iframe
-            src="https://maps.google.com/maps?q=Shri+Nityanikunj+Trust,+Vrindavan,+Susuwahi,+Varanasi,+Kandwa,+Uttar+Pradesh+221011&t=&z=15&ie=UTF8&iwloc=&output=embed"
+            src={mapEmbedUrl}
             width="100%"
             height="100%"
             style={{ border: 0 }}

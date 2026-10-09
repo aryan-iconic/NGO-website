@@ -71,6 +71,7 @@ interface I18nContextValue {
   locale: Locale;
   setLocale: (l: Locale) => void;
   t: (textOrKey: string, vars?: Record<string, any>, options?: { isSensitive?: boolean }) => string;
+  getSetting: (key: string, fallback?: string) => string;
 }
 
 const I18nContext = createContext<I18nContextValue | null>(null);
@@ -142,7 +143,16 @@ export function I18nProvider({ children, settings = {} }: { children: ReactNode,
     return interpolate(textOrKey, vars);
   }, [locale, settings]);
 
-  return <I18nContext.Provider value={{ locale, setLocale, t }}>{children}</I18nContext.Provider>;
+  const getSetting = useCallback((key: string, fallback = "") => {
+    const setting = settings[key];
+    if (!setting || typeof setting.value !== "string" || !setting.value.trim()) return fallback;
+    if (locale !== "en" && typeof setting.translations?.[locale] === "string" && setting.translations[locale].trim()) {
+      return setting.translations[locale];
+    }
+    return setting.value;
+  }, [locale, settings]);
+
+  return <I18nContext.Provider value={{ locale, setLocale, t, getSetting }}>{children}</I18nContext.Provider>;
 }
 
 export function useI18n() {
