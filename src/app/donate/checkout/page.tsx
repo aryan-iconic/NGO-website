@@ -8,6 +8,24 @@ import { useCart } from "@/lib/cart-context";
 import { formatPaise } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 
+declare global {
+  interface Window {
+    Razorpay?: new (options: Record<string, any>) => { open: () => void; on: (event: string, callback: (response: any) => void) => void };
+  }
+}
+
+function loadRazorpayCheckout(): Promise<boolean> {
+  if (window.Razorpay) return Promise.resolve(true);
+  return new Promise((resolve) => {
+    const existing = document.querySelector<HTMLScriptElement>('script[src="https://checkout.razorpay.com/v1/checkout.js"]');
+    const script = existing ?? document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    if (!existing) document.body.appendChild(script);
+  });
+}
+
 interface CampaignSummary {
   id: string;
   title: string;
@@ -63,6 +81,7 @@ function CheckoutContent() {
     const customItems = items.filter((i) => !i.productId);
     const customAmountPaise = customItems.reduce((s, i) => s + i.unitPricePaise * i.quantity, 0) || undefined;
 
+    try {
     const res = await fetch("/api/donations", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -82,15 +101,52 @@ function CheckoutContent() {
       }),
     });
     const data = await res.json();
-    setSubmitting(false);
 
     if (!data.success) {
+      setSubmitting(false);
       setError(data.error?.message ?? "Something went wrong. Please try again.");
       return;
     }
 
-    clear();
-    router.push(`/thank-you?receipt=${data.receipt.receiptNumber}&amount=${data.donation.totalPaise}`);
+    const loaded = await loadRazorpayCheckout();
+    if (!loaded || !window.Razorpay) throw new Error("Could not load Razorpay Checkout. Please try again.");
+
+    const checkout = new window.Razorpay({
+      key: data.keyId,
+      amount: data.amount,
+      currency: data.currency,
+      name: "Shri Nityanikunj Trust",
+      description: "Donation",
+      order_id: data.orderId,
+      prefill: { name: data.donorName, email: data.donorEmail, contact: data.donorPhone },
+      theme: { color: "#7b1e2b" },
+      handler: async (response: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }) => {
+        try {
+          const verifyResponse = await fetch("/api/donations/verify", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(response),
+          });
+          const verified = await verifyResponse.json();
+          if (!verifyResponse.ok || !verified.success) throw new Error(verified.error?.message || "Payment confirmation is pending.");
+          clear();
+          router.push(`/thank-you?receipt=${encodeURIComponent(verified.receiptNumber)}&amount=${verified.amountPaise}`);
+        } catch (verificationError) {
+          setSubmitting(false);
+          setError(verificationError instanceof Error ? verificationError.message : "Payment confirmation is pending.");
+        }
+      },
+      modal: { ondismiss: () => setSubmitting(false) },
+    });
+    checkout.on("payment.failed", (response) => {
+      setSubmitting(false);
+      setError(response.error?.description || "Payment failed. Please try again.");
+    });
+    checkout.open();
+    } catch (submitError) {
+      setSubmitting(false);
+      setError(submitError instanceof Error ? submitError.message : "Could not start payment. Please try again.");
+    }
   };
 
   if (items.length === 0 && !(wantsCustom && campaignSlug)) {
@@ -212,9 +268,7 @@ function CheckoutContent() {
             {submitting ? "Processing…" : `Pay ${formatPaise(totalPaise)}`}
           </Button>
           <p className="text-xs text-muted">
-            This demo settles payment immediately via a mock gateway. In production this step
-            opens Razorpay checkout, and the donation is only marked successful after
-            server-side signature verification (Section 8.5 of the spec).
+            Payment is processed securely by Razorpay. Your donation is confirmed after server-side verification.
           </p>
         </form>
       </div>

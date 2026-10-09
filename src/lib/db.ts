@@ -498,18 +498,54 @@ export const db = {
     });
     return mapDates(donation);
   },
+  createDonationWithOrder: async (input: any, orderId: string) => {
+    const year = new Date().getFullYear();
+    const count = await prisma.donation.count();
+    const donationNumber = `DN-${year}-${String(count + 1).padStart(6, "0")}`;
+    return mapDates(await prisma.donation.create({
+      data: {
+        donationNumber,
+        userId: input.userId,
+        campaignId: input.campaignId,
+        donorName: input.donorName,
+        donorEmail: input.donorEmail,
+        donorPhone: input.donorPhone,
+        totalPaise: input.totalPaise,
+        itemsTotalPaise: input.items.reduce((sum: number, item: any) => sum + item.totalPaise, 0),
+        status: "PENDING_PAYMENT",
+        isAnonymous: input.isAnonymous,
+        idempotencyKey: input.idempotencyKey,
+        expiresAt: new Date(Date.now() + 30 * 60 * 1000),
+        items: { create: input.items.map((item: any) => ({
+          campaignProductId: item.productId,
+          productNameSnapshot: item.productNameSnapshot,
+          unitPriceSnapshotPaise: item.unitPriceSnapshotPaise,
+          quantity: item.quantity,
+          totalPaise: item.totalPaise,
+        })) },
+        payments: { create: { gatewayOrderId: orderId, amountPaise: input.totalPaise, status: "PENDING" } },
+      },
+      include: { items: true },
+    }));
+  },
   getDonation: async (id: string) => mapDates(await prisma.donation.findUnique({ where: { id }, include: { items: true } })),
   listAllDonations: async () => mapDates(await prisma.donation.findMany({ orderBy: { createdAt: 'desc' }, include: { items: true } })),
-  markDonationCompleted: async (id: string, paymentId: string) => {
-    await prisma.$transaction(async (tx) => {
+  markDonationCompleted: async (id: string, paymentId: string, orderId?: string, method?: string) => {
+    return prisma.$transaction(async (tx) => {
       const result = await tx.donation.updateMany({
-        where: { id, status: "PENDING_PAYMENT" },
+        where: { id, status: { in: ["PENDING_PAYMENT", "CREATED"] } },
         data: { status: "SUCCESS" }
       });
-      if (result.count === 0) return;
+      if (result.count === 0) {
+        const existing = await tx.donation.findUnique({ where: { id }, include: { receipt: true } });
+        if (existing?.status === "SUCCESS" && !existing.receipt) {
+          await tx.receipt.create({ data: { donationId: id, receiptNumber: `REC-${existing.donationNumber}` } });
+        }
+        return false;
+      }
 
       const d = await tx.donation.findUnique({ where: { id }, include: { items: true } });
-      if (!d) return;
+      if (!d) return false;
 
       // Update sponsored quantities
       for (const item of d.items) {
@@ -521,15 +557,28 @@ export const db = {
         }
       }
 
-      await tx.receipt.create({
-        data: {
-          donationId: d.id,
-          receiptNumber: `REC-${d.donationNumber}`,
-        }
+      await tx.payment.updateMany({
+        where: { donationId: id, ...(orderId ? { gatewayOrderId: orderId } : {}) },
+        data: { status: "SUCCESS", gatewayPaymentId: paymentId, method, paidAt: new Date() },
       });
+      await tx.receipt.upsert({
+        where: { donationId: d.id },
+        create: { donationId: d.id, receiptNumber: `REC-${d.donationNumber}` },
+        update: {},
+      });
+      return true;
     });
   },
   findDonationByOrder: async (orderId: string) => mapDates(await prisma.donation.findFirst({ where: { payments: { some: { gatewayOrderId: orderId } } } })),
+  getPaymentByOrder: async (orderId: string) => mapDates(await prisma.payment.findUnique({ where: { gatewayOrderId: orderId }, include: { donation: true } })),
+  markDonationPaymentFailed: async (orderId: string) => {
+    await prisma.$transaction(async (tx) => {
+      const payment = await tx.payment.findUnique({ where: { gatewayOrderId: orderId } });
+      if (!payment) return;
+      await tx.payment.updateMany({ where: { gatewayOrderId: orderId, status: { not: "SUCCESS" } }, data: { status: "FAILED" } });
+      await tx.donation.updateMany({ where: { id: payment.donationId, status: "PENDING_PAYMENT" }, data: { status: "FAILED" } });
+    });
+  },
   
   // Receipts
   getReceiptForDonation: async (donationId: string) => mapDates(await prisma.receipt.findUnique({ where: { donationId } })),
