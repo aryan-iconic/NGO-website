@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import Link from "next/link";
 import { LinkButton } from "@/components/ui/button";
 import { DeleteButton } from "@/components/admin/delete-button";
+import { VolunteerApplicationsManager } from "@/components/admin/volunteer-applications-manager";
 
 export default async function AdminPeoplePage() {
   const teamMembers = await db.listTeamMembers(true);
@@ -25,7 +26,7 @@ export default async function AdminPeoplePage() {
               </tr>
             </thead>
             <tbody>
-              {teamMembers.map((member: any) => (
+              {teamMembers.map((member: { id: string; name: string; imageUrl: string | null; role: string; isPublished: boolean }) => (
                 <tr key={member.id} className="border-t border-border hover:bg-background/50">
                   <td className="p-3 font-medium">
                     <div className="flex items-center gap-3">
@@ -59,33 +60,7 @@ export default async function AdminPeoplePage() {
 
       <section>
         <h2 className="text-2xl font-serif text-maroon">Volunteer Applications</h2>
-        <div className="mt-4 bg-surface border border-border rounded-lg overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-cream">
-              <tr className="text-left">
-                <th className="p-3 font-medium">Name</th>
-                <th className="p-3 font-medium">Contact</th>
-                <th className="p-3 font-medium">City</th>
-                <th className="p-3 font-medium">Status</th>
-                <th className="p-3 font-medium">Applied</th>
-              </tr>
-            </thead>
-            <tbody>
-              {volunteers.map((v: any) => (
-                <tr key={v.id} className="border-t border-border">
-                  <td className="p-3">{v.name}</td>
-                  <td className="p-3 text-muted">{v.email}{v.phone ? ` · ${v.phone}` : ""}</td>
-                  <td className="p-3 text-muted">{v.city ?? "—"}</td>
-                  <td className="p-3">
-                    <span className="px-2 py-0.5 rounded-full text-xs bg-cream text-maroon">{v.status}</span>
-                  </td>
-                  <td className="p-3 text-muted">{new Date(v.createdAt).toLocaleDateString("en-IN")}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {volunteers.length === 0 && <p className="p-8 text-center text-muted">No applications yet.</p>}
-        </div>
+        <VolunteerApplicationsManager applications={volunteers} />
       </section>
 
     </div>
