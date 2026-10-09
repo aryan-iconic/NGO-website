@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { Locale, isLocale } from "./locales";
 import { dictionary } from "./i18n-dictionary";
 import { prisma } from "@/lib/prisma";
+import { ENABLED_LOCALES } from "./translation";
 
 // Module-level cache to prevent querying translation table on every server render
 const serverCache = {
@@ -13,7 +14,7 @@ const serverCache = {
 export async function getServerTranslator() {
   const cookieStore = await cookies();
   const saved = cookieStore.get("NEXT_LOCALE")?.value;
-  const locale: Locale = isLocale(saved) ? saved : "en";
+  const locale: Locale = saved && ["en", ...ENABLED_LOCALES].includes(saved) && isLocale(saved) ? saved : "en";
 
   let settings: Record<string, any> = {};
   try {

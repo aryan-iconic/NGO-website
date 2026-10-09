@@ -2,18 +2,15 @@ import { NextResponse } from "next/server";
 import { isLocale } from "@/lib/locales";
 import { prisma } from "@/lib/prisma";
 import { createHash } from "crypto";
-import { Redis } from "@upstash/redis";
-
-// Initialize Redis only if configured
-const redis = process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN 
-  ? new Redis({
-      url: process.env.UPSTASH_REDIS_REST_URL,
-      token: process.env.UPSTASH_REDIS_REST_TOKEN,
-    }) 
-  : null;
+import { ENABLED_LOCALES, translateTexts } from "@/lib/translation";
 
 // Fallback to memory cache if Redis is not configured
 const memCache = new Map<string, string>();
+type TranslateItem = { text: string; isSensitive?: boolean };
+
+function isTranslateItem(item: unknown): item is TranslateItem {
+  return !!item && typeof item === "object" && "text" in item && typeof item.text === "string";
+}
 
 function hashSource(text: string, locale: string) {
   return createHash("sha256").update(`${locale}:${text}`).digest("hex");
@@ -21,9 +18,10 @@ function hashSource(text: string, locale: string) {
 
 export async function POST(req: Request) {
   try {
-    const { target, items } = await req.json();
+    const body = await req.json() as { target?: unknown; items?: unknown };
+    const { target, items } = body;
 
-    if (!isLocale(target) || target === "en") {
+    if (typeof target !== "string" || !isLocale(target) || target === "en" || !ENABLED_LOCALES.includes(target as (typeof ENABLED_LOCALES)[number])) {
       return NextResponse.json({ error: "Invalid target locale" }, { status: 400 });
     }
 
@@ -32,8 +30,8 @@ export async function POST(req: Request) {
     }
 
     // Filter items to ensure they are valid
-    const validItems = items.filter((item: any) => 
-      item && typeof item.text === "string" && item.text.trim().length > 0 && item.text.length < 5000
+    const validItems = items.filter((item): item is TranslateItem =>
+      isTranslateItem(item) && item.text.trim().length > 0 && item.text.length < 5000
     );
     if (validItems.length === 0) return NextResponse.json({ translations: [] });
 
@@ -65,48 +63,23 @@ export async function POST(req: Request) {
     const sensitiveItems = itemsToTranslate.filter(i => i.isSensitive);
 
     if (autoTranslatingItems.length > 0) {
-      // Fetch from Google Translate API
-      const apiKey = process.env.GOOGLE_TRANSLATE_API_KEY;
-      if (apiKey) {
-        try {
-          const res = await fetch(`https://translation.googleapis.com/language/translate/v2?key=${apiKey}`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              q: autoTranslatingItems.map(i => i.text),
-              target: target,
-              source: "en",
-              format: "html" // preserves placeholders better, though custom placeholder protection is ideal
-            })
-          });
-
-          if (res.ok) {
-            const data = await res.json();
-            const translatedTexts = data.data.translations.map((t: any) => t.translatedText);
-
-            // Save to DB and MemCache
-            const newTranslations = autoTranslatingItems.map((item, i) => ({
-              sourceText: item.text,
-              sourceHash: hashSource(item.text, target),
-              locale: target,
-              translatedText: translatedTexts[i],
-              status: "AUTO",
-              isManual: false,
-            }));
-
-            await prisma.translation.createMany({
-              data: newTranslations,
-              skipDuplicates: true
-            });
-
-            newTranslations.forEach(t => {
-              translationMap.set(t.sourceText, t.translatedText);
-              memCache.set(t.sourceHash, t.translatedText);
-            });
-          }
-        } catch (e) {
-          console.error("Google Translate API Error", e);
-        }
+      try {
+        const translatedTexts = await translateTexts(autoTranslatingItems.map((item) => item.text), target);
+        const newTranslations = autoTranslatingItems.map((item, index) => ({
+          sourceText: item.text,
+          sourceHash: hashSource(item.text, target),
+          locale: target,
+          translatedText: translatedTexts[index],
+          status: "AUTO",
+          isManual: false,
+        }));
+        await prisma.translation.createMany({ data: newTranslations, skipDuplicates: true });
+        newTranslations.forEach((translation) => {
+          translationMap.set(translation.sourceText, translation.translatedText);
+          memCache.set(translation.sourceHash, translation.translatedText);
+        });
+      } catch (error) {
+        console.error("Google Translate API Error", error);
       }
     }
 
@@ -133,7 +106,7 @@ export async function POST(req: Request) {
       });
     }
 
-    const finalTranslations = items.map((item: any) => translationMap.get(item.text) || item.text);
+    const finalTranslations = items.map((item) => isTranslateItem(item) ? translationMap.get(item.text) || item.text : "");
 
     return NextResponse.json({ translations: finalTranslations });
 

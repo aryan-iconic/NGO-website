@@ -3,7 +3,7 @@ import Link from "next/link";
 import { LinkButton } from "@/components/ui/button";
 
 export default async function AdminTransparencyPage() {
-  const registrations = await db.listStatutoryRegistrations(true); // include draft
+  const registrations = await db.listStatutoryRegistrations(true, false); // include draft in source language for editing
 
   return (
     <div className="space-y-6">

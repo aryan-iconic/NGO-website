@@ -18,7 +18,7 @@ type GalleryAdminItem = {
 };
 
 export default async function AdminGalleryListPage() {
-  const items = await db.listGalleryItems(true) as GalleryAdminItem[];
+  const items = await db.listGalleryItems(true, false) as GalleryAdminItem[];
 
   return (
     <div>

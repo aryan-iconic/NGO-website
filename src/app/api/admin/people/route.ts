@@ -15,7 +15,7 @@ const schema = z.object({
 
 export async function GET() {
   await requireAdmin();
-  const people = await db.listTeamMembers(true);
+  const people = await db.listTeamMembers(true, false);
   return NextResponse.json({ success: true, data: people });
 }
 

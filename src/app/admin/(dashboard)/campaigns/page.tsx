@@ -39,7 +39,7 @@ export default async function AdminCampaignsPage() {
 }
 
 async function CampaignRow({ c }: { c: any }) {
-  const sa = await db.getSevaArea(c.sevaAreaId);
+  const sa = await db.getSevaArea(c.sevaAreaId, false);
   return (
     <tr className="border-t border-border">
       <td className="p-3">

@@ -39,17 +39,17 @@ export default async function CampaignDetailPage({
           <div>
             <div className="flex flex-wrap gap-4 items-center justify-between">
               <span className="text-xs font-medium text-primary uppercase tracking-wide">
-                {t(campaign.sevaArea?.name ?? campaign.category.name)}
+                {campaign.sevaArea?.name ?? campaign.category.name}
               </span>
               <ShareButtons title={campaign.title} text={campaign.shortDescription} />
             </div>
-            <h1 className="mt-2 text-3xl md:text-4xl leading-tight">{t(campaign.title)}</h1>
+            <h1 className="mt-2 text-3xl md:text-4xl leading-tight">{campaign.title}</h1>
             {campaign.locationText && (
               <p className="mt-3 flex items-center gap-1.5 text-sm text-muted">
-                <MapPin size={14} /> {t(campaign.locationText)}
+                <MapPin size={14} /> {campaign.locationText}
               </p>
             )}
-            <p className="mt-4 text-muted">{t(campaign.shortDescription)}</p>
+            <p className="mt-4 text-muted">{campaign.shortDescription}</p>
             <div className="mt-6 flex gap-3">
               <LinkButton href={`/donate/checkout?campaign=${campaign.slug}`} size="lg">
                 {t("Donate Now")}
@@ -67,17 +67,17 @@ export default async function CampaignDetailPage({
           {/* Story */}
           <section>
             <h2 className="text-2xl">{t("The Story")}</h2>
-            <p className="mt-3 text-text leading-relaxed">{t(campaign.story)}</p>
+            <p className="mt-3 text-text leading-relaxed">{campaign.story}</p>
             {campaign.beneficiaryInfo && (
               <>
                 <h3 className="mt-6 text-lg">{t("Who It Supports")}</h3>
-                <p className="mt-2 text-muted">{t(campaign.beneficiaryInfo)}</p>
+                <p className="mt-2 text-muted">{campaign.beneficiaryInfo}</p>
               </>
             )}
             {campaign.impactDescription && (
               <>
                 <h3 className="mt-6 text-lg">{t("What We're Doing")}</h3>
-                <p className="mt-2 text-muted">{t(campaign.impactDescription)}</p>
+                <p className="mt-2 text-muted">{campaign.impactDescription}</p>
               </>
             )}
           </section>
@@ -151,10 +151,10 @@ export default async function CampaignDetailPage({
                       <Circle size={20} className="text-muted shrink-0 mt-0.5" />
                     )}
                     <div>
-                      <p className="font-medium text-maroon">{t(m.title)}</p>
+                      <p className="font-medium text-maroon">{m.title}</p>
                       {m.value && (
                         <p className="text-sm text-muted">
-                          {m.value} {t(m.unit || "")}
+                          {m.value} {m.unit || ""}
                         </p>
                       )}
                     </div>
@@ -172,8 +172,8 @@ export default async function CampaignDetailPage({
                 {campaign.updates.map((u) => (
                   <div key={u.id} className="border-l-2 border-primary/40 pl-4">
                     <p className="text-xs text-muted">{u.publishedAt}</p>
-                    <h3 className="text-lg font-semibold text-maroon mt-1">{t(u.title)}</h3>
-                    <p className="text-muted mt-1">{t(u.content)}</p>
+                    <h3 className="text-lg font-semibold text-maroon mt-1">{u.title}</h3>
+                    <p className="text-muted mt-1">{u.content}</p>
                   </div>
                 ))}
               </div>
@@ -188,10 +188,10 @@ export default async function CampaignDetailPage({
                 {campaign.faqs.map((f) => (
                   <details key={f.id} className="p-4 group">
                     <summary className="cursor-pointer font-medium text-maroon list-none flex justify-between">
-                      {t(f.question)}
+                      {f.question}
                       <span className="text-muted group-open:rotate-45 transition-transform">+</span>
                     </summary>
-                    <p className="mt-2 text-sm text-muted">{t(f.answer)}</p>
+                    <p className="mt-2 text-sm text-muted">{f.answer}</p>
                   </details>
                 ))}
               </div>

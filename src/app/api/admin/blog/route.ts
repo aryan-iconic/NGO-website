@@ -20,7 +20,7 @@ function slugify(title: string) {
 export async function GET() {
   const guard = await requireAdmin();
   if (guard.error) return guard.error;
-  return NextResponse.json({ success: true, posts: await db.listBlogPosts() });
+  return NextResponse.json({ success: true, posts: await db.listBlogPosts(false) });
 }
 
 export async function POST(req: NextRequest) {
@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
   const baseSlug = slugify(parsed.data.title);
   let slug = baseSlug;
   let n = 1;
-  while ((await db.listBlogPosts()).some((p: any) => p.slug === slug)) slug = `${baseSlug}-${++n}`;
+  while ((await db.listBlogPosts(false)).some((p: any) => p.slug === slug)) slug = `${baseSlug}-${++n}`;
 
   const post = await db.createBlogPost({
     ...parsed.data,

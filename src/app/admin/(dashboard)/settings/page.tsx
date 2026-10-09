@@ -43,7 +43,7 @@ export default function AdminSettingsPage() {
     if (!data.success) {
       setError(data.error?.message || "Failed to save settings");
     } else {
-      alert("Settings saved successfully.");
+      alert(data.warning || "Settings saved successfully.");
       router.refresh();
     }
   };

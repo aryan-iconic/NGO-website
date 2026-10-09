@@ -17,7 +17,7 @@ export default function AdminLegalCMS() {
     fetch("/api/admin/settings")
       .then((r) => r.json())
       .then((d) => {
-        if (d.success) setSettings(d.data || {});
+        if (d.success) setSettings(Object.fromEntries(Object.entries(d.data || {}).map(([key, setting]) => [key, typeof setting === "string" ? setting : (setting as { value?: string } | null)?.value || ""])));
         setLoading(false);
       });
   }, []);
@@ -36,7 +36,7 @@ export default function AdminLegalCMS() {
     if (!data.success) {
       setError(data.error?.message || "Failed to save settings");
     } else {
-      alert("Legal pages content saved successfully.");
+      alert(data.warning || "Legal pages content saved successfully.");
       router.refresh();
     }
   };

@@ -21,12 +21,12 @@ export default async function BlogPage() {
             )}
             <p className="text-xs text-muted">
               {p.publishedAt && new Date(p.publishedAt).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}
-              {p.author ? ` · ${t(p.author)}` : ""}
+              {p.author ? ` · ${p.author}` : ""}
             </p>
             <h2 className="mt-1 text-2xl font-serif text-maroon group-hover:text-primary transition-colors">
-              {t(p.title)}
+              {p.title}
             </h2>
-            <p className="mt-2 text-muted">{t(p.excerpt)}</p>
+            <p className="mt-2 text-muted">{p.excerpt}</p>
           </Link>
         ))}
         {posts.length === 0 && <p className="text-muted">{t("No posts published yet.")}</p>}

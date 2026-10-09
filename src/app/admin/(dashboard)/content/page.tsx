@@ -3,10 +3,10 @@ import { FileText, Calendar, HelpCircle, Image as ImageIcon } from "lucide-react
 import { db } from "@/lib/db";
 
 export default async function AdminContentPage() {
-  const posts = await db.listBlogPosts();
+  const posts = await db.listBlogPosts(false);
   const events = await db.listEvents();
-  const faqs = await db.listFaqs();
-  const galleryItems = await db.listGalleryItems(true);
+  const faqs = await db.listFaqs(false);
+  const galleryItems = await db.listGalleryItems(true, false);
 
   const cards = [
     { href: "/admin/content/blog", icon: FileText, label: "Blog Posts", count: posts.length },

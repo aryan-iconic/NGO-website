@@ -78,7 +78,7 @@ export default async function EventsPage() {
                   
                   <div className="p-8 flex-1 flex flex-col">
                     <h2 className="text-2xl font-serif font-bold text-maroon mb-4 group-hover:text-primary transition-colors line-clamp-2">
-                      {t(e.title)}
+                      {e.title}
                     </h2>
                     
                     <div className="space-y-3 mb-6">
@@ -94,13 +94,13 @@ export default async function EventsPage() {
                           <span className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0">
                             <MapPin size={16} />
                           </span>
-                          <span className="line-clamp-1">{e.venue ? `${t(e.venue)}, ` : ""}{t(e.location)}</span>
+                          <span className="line-clamp-1">{e.venue ? `${e.venue}, ` : ""}{e.location}</span>
                         </p>
                       )}
                     </div>
                     
                     <p className="text-text/70 line-clamp-3 leading-relaxed mb-8">
-                      {t(e.description)}
+                      {e.description}
                     </p>
                     
                     <div className="mt-auto pt-6 border-t border-border flex items-center justify-between">

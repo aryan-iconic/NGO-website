@@ -24,7 +24,7 @@ export async function PATCH(
   if (guard.error) return guard.error;
 
   const { id } = await params;
-  const existing = await db.getSevaArea(id);
+  const existing = await db.getSevaArea(id, false);
   if (!existing) {
     return NextResponse.json({ success: false, error: { code: "NOT_FOUND", message: "Not found" } }, { status: 404 });
   }
@@ -71,7 +71,7 @@ export async function DELETE(
   if (guard.error) return guard.error;
 
   const { id } = await params;
-  const existing = await db.getSevaArea(id);
+  const existing = await db.getSevaArea(id, false);
   if (!existing) {
     return NextResponse.json({ success: false, error: { code: "NOT_FOUND", message: "Not found" } }, { status: 404 });
   }

@@ -20,7 +20,7 @@ export async function GET() {
   if (guard.error) return guard.error;
   revalidatePath("/gallery");
     revalidatePath("/");
-    return NextResponse.json({ success: true, items: await db.listGalleryItems(true) });
+    return NextResponse.json({ success: true, items: await db.listGalleryItems(true, false) });
 }
 
 export async function POST(req: NextRequest) {

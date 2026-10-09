@@ -7,7 +7,7 @@ import { BackToContent } from "@/components/admin/back-to-content";
 type BlogListItem = { id: string; title: string; slug: string; status: string };
 
 export default async function AdminBlogListPage() {
-  const posts = await db.listBlogPosts() as BlogListItem[];
+  const posts = await db.listBlogPosts(false) as BlogListItem[];
 
   return (
     <div>

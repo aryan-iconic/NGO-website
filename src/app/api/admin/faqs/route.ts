@@ -12,7 +12,7 @@ const schema = z.object({
 export async function GET() {
   const guard = await requireAdmin();
   if (guard.error) return guard.error;
-  return NextResponse.json({ success: true, faqs: await db.listFaqs() });
+  return NextResponse.json({ success: true, faqs: await db.listFaqs(false) });
 }
 
 export async function POST(req: NextRequest) {

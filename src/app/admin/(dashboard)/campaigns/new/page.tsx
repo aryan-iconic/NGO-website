@@ -4,7 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { CampaignCreateForm } from "@/components/admin/campaign-create-form";
 
 export default async function NewCampaignPage() {
-  const sevaAreas = await db.listSevaAreas();
+  const sevaAreas = await db.listSevaAreas(false);
   return (
     <div className="max-w-2xl">
       <div className="mb-4">

@@ -2,7 +2,7 @@ import { prisma } from "./prisma";
 import bcrypt from "bcryptjs";
 import { Prisma } from "@prisma/client";
 import { getLocale } from "./get-locale";
-import { resolveLocalizedRecord, generateAllTranslations } from "./translation";
+import { resolveLocalizedRecord, generateAllTranslations, TRANSLATABLE_MODELS } from "./translation";
 
 
 // ---------------------------------------------------------------------------
@@ -307,25 +307,67 @@ async function resolve<T>(promise: Promise<T>): Promise<any> {
   }
 }
 
-// Fire-and-forget wrapper for triggering translation updates after write operations
-function triggerTranslation(model: string, id: string, record: any, fields: string[]) {
-  // We run this in the background to avoid blocking the Admin response
-  generateAllTranslations(record, fields).then(async (translations) => {
-    // Update the record with the generated translations JSON
-    await (prisma as any)[model].update({
-      where: { id },
-      data: { translations }
-    });
-  }).catch(e => console.error("Failed to generate translations for", model, id, e));
+// Await translations before returning from writes so serverless runtimes don't
+// terminate translation work after the admin API response has completed.
+async function triggerTranslation(model: string, id: string, record: any, fields: string[]) {
+  if (fields.length === 0) return;
+  try {
+    const translations = await generateAllTranslations(record, fields);
+    await (prisma as any)[model].update({ where: { id }, data: { translations } });
+  } catch (error) {
+    // Content must remain saveable when translation credentials are unavailable;
+    // the admin bulk-translation action reports this configuration error clearly.
+    console.error(`Could not translate ${model} ${id}:`, error);
+    // Don't keep showing stale machine translations after the source text changes.
+    // Manual translations remain untouched so an editor can review them separately.
+    const translations = record.translations && typeof record.translations === "object"
+      ? structuredClone(record.translations) as Record<string, Record<string, any>>
+      : {};
+    let clearedAutoTranslations = false;
+    for (const localeData of Object.values(translations)) {
+      if (!localeData || typeof localeData !== "object") continue;
+      const metadata = localeData._meta;
+      for (const field of fields) {
+        if (metadata?.[field]?.source !== "auto") continue;
+        delete localeData[field];
+        delete metadata[field];
+        clearedAutoTranslations = true;
+      }
+    }
+    if (clearedAutoTranslations) {
+      try {
+        await (prisma as any)[model].update({ where: { id }, data: { translations } });
+      } catch (cleanupError) {
+        console.error(`Could not clear stale translations for ${model} ${id}:`, cleanupError);
+      }
+    }
+  }
+}
+
+async function changedTranslationFields(model: string, id: string, patch: Record<string, unknown>) {
+  const fields = translationFields(model);
+  const changed = fields.filter((field) => Object.hasOwn(patch, field));
+  if (changed.length === 0) return [];
+  const select = Object.fromEntries(changed.map((field) => [field, true]));
+  const existing = await (prisma as any)[model].findUnique({ where: { id }, select });
+  return changed.filter((field) => existing?.[field] !== patch[field]);
+}
+
+function translationFields(model: string) {
+  const definition = TRANSLATABLE_MODELS.find((entry) => entry.delegate === model);
+  return definition ? [...definition.fields] : [];
 }
 
 export const db = {
   // Categories & Seva Areas
   listCategories: async () => resolve(prisma.category.findMany({ orderBy: { sortOrder: 'asc' } })),
-  listSevaAreas: async () => resolve(prisma.sevaArea.findMany({ orderBy: { sortOrder: 'asc' } })),
-  getSevaArea: async (id?: string) => {
+  listSevaAreas: async (localized = true) => localized
+    ? resolve(prisma.sevaArea.findMany({ orderBy: { sortOrder: 'asc' } }))
+    : mapDates(await prisma.sevaArea.findMany({ orderBy: { sortOrder: 'asc' } })),
+  getSevaArea: async (id?: string, localized = true) => {
     if (!id) return null;
-    return resolve(prisma.sevaArea.findUnique({ where: { id } }));
+    const query = prisma.sevaArea.findUnique({ where: { id } });
+    return localized ? resolve(query) : mapDates(await query);
   },
   getSevaAreaBySlug: async (slug: string) => resolve(prisma.sevaArea.findUnique({ where: { slug } })),
   createSevaArea: async (data: any) => {
@@ -343,12 +385,13 @@ export const db = {
         isActive: data.isActive ?? true,
       }
     });
-    triggerTranslation("sevaArea", record.id, record, ["name", "description", "objectives"]);
+    await triggerTranslation("sevaArea", record.id, record, translationFields("sevaArea"));
     return resolve(Promise.resolve(record));
   },
   updateSevaArea: async (id: string, data: any) => {
+    const changedFields = await changedTranslationFields("sevaArea", id, data);
     const record = await prisma.sevaArea.update({ where: { id }, data });
-    triggerTranslation("sevaArea", record.id, record, ["name", "description", "objectives"]);
+    await triggerTranslation("sevaArea", record.id, record, changedFields);
     return resolve(Promise.resolve(record));
   },
   deleteSevaArea: async (id: string) => {
@@ -391,8 +434,8 @@ export const db = {
   },
 
   // Admin campaign management
-  listAllCampaigns: async () => resolve(prisma.campaign.findMany({ where: { deletedAt: null }, orderBy: { createdAt: 'desc' } })),
-  getCampaignById: async (id: string) => resolve(prisma.campaign.findUnique({ where: { id } })),
+  listAllCampaigns: async () => mapDates(await prisma.campaign.findMany({ where: { deletedAt: null }, orderBy: { createdAt: 'desc' } })),
+  getCampaignById: async (id: string) => mapDates(await prisma.campaign.findUnique({ where: { id } })),
   createCampaign: async (input: any) => {
     const campaign = await prisma.campaign.create({
       data: {
@@ -420,7 +463,7 @@ export const db = {
     await prisma.campaignFinancials.create({
       data: { campaignId: campaign.id, internalTargetPaise: null, internalBudgetPaise: null }
     });
-    triggerTranslation("campaign", campaign.id, campaign, ["title", "shortDescription", "story", "beneficiaryInfo", "impactDescription", "locationText"]);
+    await triggerTranslation("campaign", campaign.id, campaign, translationFields("campaign"));
     const c = await resolve(Promise.resolve(campaign));
     c.suggestedAmountsPaise = input.suggestedAmountsPaise || [];
     return c;
@@ -430,8 +473,9 @@ export const db = {
       patch.suggestedAmountsJson = JSON.stringify(patch.suggestedAmountsPaise);
       delete patch.suggestedAmountsPaise;
     }
+    const changedFields = await changedTranslationFields("campaign", id, patch);
     const updated = await prisma.campaign.update({ where: { id }, data: patch });
-    triggerTranslation("campaign", updated.id, updated, ["title", "shortDescription", "story", "beneficiaryInfo", "impactDescription", "locationText"]);
+    await triggerTranslation("campaign", updated.id, updated, changedFields);
     const c = await resolve(Promise.resolve(updated));
     c.suggestedAmountsPaise = c.suggestedAmountsJson ? JSON.parse(c.suggestedAmountsJson) : [];
     return c;
@@ -619,7 +663,7 @@ export const db = {
   listContactMessages: async () => mapDates(await prisma.contactMessage.findMany({ orderBy: { createdAt: 'desc' } })),
 
   // Events
-  listEvents: async () => resolve(prisma.event.findMany({ orderBy: { eventDate: 'asc' } })),
+  listEvents: async () => mapDates(await prisma.event.findMany({ orderBy: { eventDate: 'asc' } })),
   getEventBySlug: async (slug: string) => resolve(prisma.event.findUnique({ where: { slug } })),
   getAdmin: async (email: string) => await prisma.admin.findUnique({ where: { email } }),
   getAdminById: async (id: string) => await prisma.admin.findUnique({ where: { id } }),
@@ -630,16 +674,17 @@ export const db = {
     await prisma.admin.update({ where: { id: adminId }, data: { twoFactorEnabled: true } });
     return true;
   },
-  getEventById: async (id: string) => resolve(prisma.event.findUnique({ where: { id } })),
+  getEventById: async (id: string) => mapDates(await prisma.event.findUnique({ where: { id } })),
   createEvent: async (data: any) => {
     const record = await prisma.event.create({ data: { ...data, eventDate: new Date(data.eventDate) } });
-    triggerTranslation("event", record.id, record, ["title", "description", "venue", "location", "organizer"]);
+    await triggerTranslation("event", record.id, record, translationFields("event"));
     return resolve(Promise.resolve(record));
   },
   updateEvent: async (id: string, data: any) => {
     if (data.eventDate) data.eventDate = new Date(data.eventDate);
+    const changedFields = await changedTranslationFields("event", id, data);
     const record = await prisma.event.update({ where: { id }, data });
-    triggerTranslation("event", record.id, record, ["title", "description", "venue", "location", "organizer"]);
+    await triggerTranslation("event", record.id, record, changedFields);
     return resolve(Promise.resolve(record));
   },
   deleteEvent: async (id: string) => { await prisma.event.delete({ where: { id } }); return true; },
@@ -647,32 +692,41 @@ export const db = {
   listEventRegistrations: async (eventId: string) => mapDates(await prisma.eventRegistration.findMany({ where: { eventId } })),
 
   // Blog
-  listBlogPosts: async () => resolve(prisma.blogPost.findMany({ orderBy: { publishedAt: 'desc' } })),
+  listBlogPosts: async (localized = true) => localized
+    ? resolve(prisma.blogPost.findMany({ orderBy: { publishedAt: 'desc' } }))
+    : mapDates(await prisma.blogPost.findMany({ orderBy: { publishedAt: 'desc' } })),
   getBlogPostBySlug: async (slug: string) => resolve(prisma.blogPost.findUnique({ where: { slug } })),
-  getBlogPostById: async (id: string) => resolve(prisma.blogPost.findUnique({ where: { id } })),
+  getBlogPostById: async (id: string) => mapDates(await prisma.blogPost.findUnique({ where: { id } })),
   createBlogPost: async (data: any) => {
     const record = await prisma.blogPost.create({ data });
-    triggerTranslation("blogPost", record.id, record, ["title", "excerpt", "content"]);
+    await triggerTranslation("blogPost", record.id, record, translationFields("blogPost"));
     return resolve(Promise.resolve(record));
   },
   updateBlogPost: async (id: string, data: any) => {
+    const changedFields = await changedTranslationFields("blogPost", id, data);
     const record = await prisma.blogPost.update({ where: { id }, data });
-    triggerTranslation("blogPost", record.id, record, ["title", "excerpt", "content"]);
+    await triggerTranslation("blogPost", record.id, record, changedFields);
     return resolve(Promise.resolve(record));
   },
   deleteBlogPost: async (id: string) => { await prisma.blogPost.delete({ where: { id } }); return true; },
 
   // FAQs
-  listFaqs: async () => resolve(prisma.faq.findMany({ orderBy: { sortOrder: 'asc' } })),
-  getFaq: async (id: string) => resolve(prisma.faq.findUnique({ where: { id } })),
+  listFaqs: async (localized = true) => localized
+    ? resolve(prisma.faq.findMany({ orderBy: { sortOrder: 'asc' } }))
+    : mapDates(await prisma.faq.findMany({ orderBy: { sortOrder: 'asc' } })),
+  getFaq: async (id: string, localized = true) => {
+    const query = prisma.faq.findUnique({ where: { id } });
+    return localized ? resolve(query) : mapDates(await query);
+  },
   createFaq: async (data: any) => {
     const record = await prisma.faq.create({ data });
-    triggerTranslation("faq", record.id, record, ["question", "answer", "category"]);
+    await triggerTranslation("faq", record.id, record, translationFields("faq"));
     return resolve(Promise.resolve(record));
   },
   updateFaq: async (id: string, data: any) => {
+    const changedFields = await changedTranslationFields("faq", id, data);
     const record = await prisma.faq.update({ where: { id }, data });
-    triggerTranslation("faq", record.id, record, ["question", "answer", "category"]);
+    await triggerTranslation("faq", record.id, record, changedFields);
     return resolve(Promise.resolve(record));
   },
   deleteFaq: async (id: string) => { await prisma.faq.delete({ where: { id } }); return true; },
@@ -697,7 +751,7 @@ export const db = {
     });
   },
   listAuditLogs: async () => mapDates(await prisma.auditLog.findMany({ orderBy: { createdAt: 'desc' } })),
-  listPublishedEvents: async () => mapDates(await prisma.event.findMany({ where: { status: "PUBLISHED" }, orderBy: { eventDate: 'asc' } })),
+  listPublishedEvents: async () => resolve(prisma.event.findMany({ where: { status: "PUBLISHED" }, orderBy: { eventDate: 'asc' } })),
   listDonationsForUser: async (userId: string) => mapDates(await prisma.donation.findMany({ where: { userId }, orderBy: { createdAt: 'desc' }, include: { items: true } })),
 
   // Social Media
@@ -705,12 +759,13 @@ export const db = {
   getInstagramPost: async (id: string) => resolve(prisma.instagramPost.findUnique({ where: { id } })),
   createInstagramPost: async (data: any) => {
     const record = await prisma.instagramPost.create({ data });
-    triggerTranslation("instagramPost", record.id, record, ["title", "caption"]);
+    await triggerTranslation("instagramPost", record.id, record, translationFields("instagramPost"));
     return resolve(Promise.resolve(record));
   },
   updateInstagramPost: async (id: string, data: any) => {
+    const changedFields = await changedTranslationFields("instagramPost", id, data);
     const record = await prisma.instagramPost.update({ where: { id }, data });
-    triggerTranslation("instagramPost", record.id, record, ["title", "caption"]);
+    await triggerTranslation("instagramPost", record.id, record, changedFields);
     return resolve(Promise.resolve(record));
   },
   deleteInstagramPost: async (id: string) => { await prisma.instagramPost.delete({ where: { id } }); return true; },
@@ -719,42 +774,51 @@ export const db = {
   getYouTubeVideo: async (id: string) => resolve(prisma.youTubeVideo.findUnique({ where: { id } })),
   createYouTubeVideo: async (data: any) => {
     const record = await prisma.youTubeVideo.create({ data });
-    triggerTranslation("youTubeVideo", record.id, record, ["title", "description"]);
+    await triggerTranslation("youTubeVideo", record.id, record, translationFields("youTubeVideo"));
     return resolve(Promise.resolve(record));
   },
   updateYouTubeVideo: async (id: string, data: any) => {
+    const changedFields = await changedTranslationFields("youTubeVideo", id, data);
     const record = await prisma.youTubeVideo.update({ where: { id }, data });
-    triggerTranslation("youTubeVideo", record.id, record, ["title", "description"]);
+    await triggerTranslation("youTubeVideo", record.id, record, changedFields);
     return resolve(Promise.resolve(record));
   },
   deleteYouTubeVideo: async (id: string) => { await prisma.youTubeVideo.delete({ where: { id } }); return true; },
 
   // Gallery
-  listGalleryItems: async (includeUnpublished = false) => resolve(prisma.galleryItem.findMany({ where: includeUnpublished ? {} : { isPublished: true }, orderBy: { displayOrder: 'asc' } })),
-  getGalleryItem: async (id: string) => resolve(prisma.galleryItem.findUnique({ where: { id } })),
+  listGalleryItems: async (includeUnpublished = false, localized = true) => {
+    const query = prisma.galleryItem.findMany({ where: includeUnpublished ? {} : { isPublished: true }, orderBy: { displayOrder: 'asc' } });
+    return localized ? resolve(query) : mapDates(await query);
+  },
+  getGalleryItem: async (id: string) => mapDates(await prisma.galleryItem.findUnique({ where: { id } })),
   createGalleryItem: async (data: any) => {
     const record = await prisma.galleryItem.create({ data });
-    triggerTranslation("galleryItem", record.id, record, ["title", "caption", "description", "category", "altText"]);
+    await triggerTranslation("galleryItem", record.id, record, translationFields("galleryItem"));
     return resolve(Promise.resolve(record));
   },
   updateGalleryItem: async (id: string, data: any) => {
+    const changedFields = await changedTranslationFields("galleryItem", id, data);
     const record = await prisma.galleryItem.update({ where: { id }, data });
-    triggerTranslation("galleryItem", record.id, record, ["title", "caption", "description", "category", "altText"]);
+    await triggerTranslation("galleryItem", record.id, record, changedFields);
     return resolve(Promise.resolve(record));
   },
   deleteGalleryItem: async (id: string) => { await prisma.galleryItem.delete({ where: { id } }); return true; },
 
   // Team
-  listTeamMembers: async (includeUnpublished = false) => resolve(prisma.teamMember.findMany({ where: includeUnpublished ? {} : { isPublished: true }, orderBy: { displayOrder: 'asc' } })),
-  getTeamMember: async (id: string) => resolve(prisma.teamMember.findUnique({ where: { id } })),
+  listTeamMembers: async (includeUnpublished = false, localized = !includeUnpublished) => {
+    const query = prisma.teamMember.findMany({ where: includeUnpublished ? {} : { isPublished: true }, orderBy: { displayOrder: 'asc' } });
+    return localized ? resolve(query) : mapDates(await query);
+  },
+  getTeamMember: async (id: string) => mapDates(await prisma.teamMember.findUnique({ where: { id } })),
   createTeamMember: async (data: any) => {
     const record = await prisma.teamMember.create({ data });
-    triggerTranslation("teamMember", record.id, record, ["name", "role", "bio"]);
+    await triggerTranslation("teamMember", record.id, record, translationFields("teamMember"));
     return resolve(Promise.resolve(record));
   },
   updateTeamMember: async (id: string, data: any) => {
+    const changedFields = await changedTranslationFields("teamMember", id, data);
     const record = await prisma.teamMember.update({ where: { id }, data });
-    triggerTranslation("teamMember", record.id, record, ["name", "role", "bio"]);
+    await triggerTranslation("teamMember", record.id, record, changedFields);
     return resolve(Promise.resolve(record));
   },
   deleteTeamMember: async (id: string) => { await prisma.teamMember.delete({ where: { id } }); return true; },
@@ -773,19 +837,21 @@ export const db = {
   deleteNewsletterSubscriber: async (id: string) => { await prisma.newsletterSubscriber.delete({ where: { id } }); return true; },
 
   // --- Statutory Registrations ---
-  listStatutoryRegistrations: async (includeDraft = false) => {
+  listStatutoryRegistrations: async (includeDraft = false, localized = !includeDraft) => {
     const p = includeDraft ? {} : { isPublished: true };
-    return resolve(prisma.statutoryRegistration.findMany({ where: p, orderBy: { displayOrder: "asc" } }));
+    const query = prisma.statutoryRegistration.findMany({ where: p, orderBy: { displayOrder: "asc" } });
+    return localized ? resolve(query) : mapDates(await query);
   },
-  getStatutoryRegistration: async (id: string) => resolve(prisma.statutoryRegistration.findUnique({ where: { id } })),
+  getStatutoryRegistration: async (id: string) => mapDates(await prisma.statutoryRegistration.findUnique({ where: { id } })),
   createStatutoryRegistration: async (data: any) => {
     const record = await prisma.statutoryRegistration.create({ data });
-    triggerTranslation("statutoryRegistration", record.id, record, ["title", "description", "issuingAuthority"]);
+    await triggerTranslation("statutoryRegistration", record.id, record, translationFields("statutoryRegistration"));
     return resolve(Promise.resolve(record));
   },
   updateStatutoryRegistration: async (id: string, data: any) => {
+    const changedFields = await changedTranslationFields("statutoryRegistration", id, data);
     const record = await prisma.statutoryRegistration.update({ where: { id }, data });
-    triggerTranslation("statutoryRegistration", record.id, record, ["title", "description", "issuingAuthority"]);
+    await triggerTranslation("statutoryRegistration", record.id, record, changedFields);
     return resolve(Promise.resolve(record));
   },
   deleteStatutoryRegistration: async (id: string) => { await prisma.statutoryRegistration.delete({ where: { id } }); return true; },

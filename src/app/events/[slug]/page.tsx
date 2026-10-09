@@ -24,16 +24,16 @@ export default async function EventDetailPage({
           <Calendar size={14} />
           {new Date(event.eventDate).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}
         </p>
-        <h1 className="mt-2 text-4xl">{t(event.title)}</h1>
+        <h1 className="mt-2 text-4xl">{event.title}</h1>
         {event.coverImage && (
           <img src={event.coverImage} alt={event.title} className="mt-6 w-full aspect-video rounded-lg object-cover border border-border" />
         )}
         {(event.venue || event.location) && (
           <p className="mt-3 flex items-center gap-1.5 text-sm text-muted">
-            <MapPin size={14} /> {event.venue ? `${t(event.venue)}, ` : ""}{event.location ? t(event.location) : ""}
+            <MapPin size={14} /> {event.venue ? `${event.venue}, ` : ""}{event.location ? event.location : ""}
           </p>
         )}
-        <p className="mt-6 text-text leading-relaxed">{t(event.description)}</p>
+        <p className="mt-6 text-text leading-relaxed">{event.description}</p>
       </div>
 
       <aside>

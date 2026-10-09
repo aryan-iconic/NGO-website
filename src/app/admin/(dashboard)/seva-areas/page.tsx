@@ -5,7 +5,7 @@ import { DeleteButton } from "@/components/admin/delete-button";
 
 export default async function SevaAreasPage() {
   // Uses direct DB call since it's a server component in admin
-  const sevaAreas = await db.listSevaAreas();
+  const sevaAreas = await db.listSevaAreas(false);
 
   return (
     <div>

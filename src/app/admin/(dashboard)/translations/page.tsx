@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 
 interface TranslationRow {
@@ -15,7 +14,6 @@ interface TranslationRow {
 }
 
 export default function AdminTranslationsPage() {
-  const router = useRouter();
   const [translations, setTranslations] = useState<TranslationRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
@@ -23,6 +21,9 @@ export default function AdminTranslationsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [localeFilter, setLocaleFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [backfillRunning, setBackfillRunning] = useState(false);
+  const [backfillProgress, setBackfillProgress] = useState("");
+  const [backfillCursor, setBackfillCursor] = useState<{ modelIndex: number; skip: number } | null>(null);
 
   const fetchTranslations = async () => {
     setLoading(true);
@@ -40,7 +41,17 @@ export default function AdminTranslationsPage() {
   };
 
   useEffect(() => {
-    fetchTranslations();
+    let active = true;
+    const params = new URLSearchParams();
+    if (searchTerm) params.append("q", searchTerm);
+    if (localeFilter) params.append("locale", localeFilter);
+    if (statusFilter) params.append("status", statusFilter);
+    fetch(`/api/admin/translations?${params.toString()}`)
+      .then((response) => response.json())
+      .then((data) => { if (active && data.success) setTranslations(data.data); })
+      .catch(() => { if (active) setError("Could not load translations."); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
   }, [searchTerm, localeFilter, statusFilter]);
 
   const handleUpdate = async (id: string, updates: Partial<TranslationRow>) => {
@@ -62,18 +73,57 @@ export default function AdminTranslationsPage() {
     }
   };
 
+  const translateExistingContent = async () => {
+    setBackfillRunning(true);
+    setError(null);
+    let cursor = backfillCursor ?? { modelIndex: 0, skip: 0 };
+    let processed = 0;
+    setBackfillProgress("Starting translation of existing content...");
+    try {
+      for (let requestCount = 0; requestCount < 10000; requestCount++) {
+        const response = await fetch("/api/admin/translations/generate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(cursor),
+        });
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error(data.error?.message ?? "Could not translate existing content.");
+        if (data.done) {
+          setBackfillCursor(null);
+          setBackfillProgress(`Finished. Checked ${processed} existing content records.`);
+          await fetchTranslations();
+          return;
+        }
+        cursor = data.cursor;
+        setBackfillCursor(cursor);
+        processed += data.processed ?? 0;
+        setBackfillProgress(`Checked ${processed} records. Processing ${data.model}...`);
+      }
+      throw new Error("Translation paused after reaching the safety limit. Click the button again to continue.");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not translate existing content.");
+      setBackfillProgress(`Paused after checking ${processed} records.`);
+    } finally {
+      setBackfillRunning(false);
+    }
+  };
+
   return (
     <div className="space-y-6 max-w-7xl">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-serif text-maroon">Translations Management</h1>
-        <Button variant="outline" onClick={() => fetchTranslations()} disabled={loading}>
-          Refresh
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={() => fetchTranslations()} disabled={loading || backfillRunning}>Refresh</Button>
+          <Button onClick={translateExistingContent} disabled={backfillRunning}>
+            {backfillRunning ? "Translating existing content..." : backfillCursor ? "Continue existing-content translation" : "Translate existing content"}
+          </Button>
+        </div>
       </div>
       
       <p className="text-muted max-w-3xl text-sm">
-        Manage translations across the platform. Note: Translations are cached for up to 60 seconds to improve performance. Changes may take up to a minute to reflect on the public site.
+        Manage text translations and fill missing translations for existing campaigns, posts, events, FAQs, gallery entries, and other public content. New or edited content is translated when it is saved. Configure GOOGLE_TRANSLATE_API_KEY or LIBRETRANSLATE_URL on the server. Google is tried first; LibreTranslate is used when Google is unavailable or fails. LIBRETRANSLATE_API_KEY is optional and depends on the selected instance.
       </p>
+      {backfillProgress && <p role="status" className="text-sm text-muted">{backfillProgress}</p>}
 
       <div className="flex flex-wrap gap-4 items-center bg-surface p-4 border border-border rounded-lg">
         <input 
@@ -90,6 +140,7 @@ export default function AdminTranslationsPage() {
         >
           <option value="">All Locales</option>
           <option value="hi">Hindi (hi)</option>
+          <option value="te">Telugu (te)</option>
           <option value="ta">Tamil (ta)</option>
         </select>
         <select 

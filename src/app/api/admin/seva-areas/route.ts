@@ -21,7 +21,7 @@ export async function GET() {
   if (guard.error) return guard.error;
   revalidatePath("/");
     revalidatePath("/campaigns");
-    return NextResponse.json({ success: true, sevaAreas: await db.listSevaAreas() });
+    return NextResponse.json({ success: true, sevaAreas: await db.listSevaAreas(false) });
 }
 
 export async function POST(req: NextRequest) {

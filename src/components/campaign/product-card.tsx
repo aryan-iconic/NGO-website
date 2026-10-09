@@ -28,8 +28,8 @@ export function ProductCard({
   if (!product.available) {
     return (
       <div className="p-5 rounded-lg border border-border bg-cream/60">
-        <h4 className="font-semibold text-maroon">{t(product.name)}</h4>
-        <p className="text-sm text-muted mt-1">{t(product.description || "")}</p>
+        <h4 className="font-semibold text-maroon">{product.name}</h4>
+        <p className="text-sm text-muted mt-1">{product.description || ""}</p>
         <p className="mt-3 text-sm font-medium text-muted">{t("Currently fully sponsored")}</p>
       </div>
     );
@@ -51,10 +51,10 @@ export function ProductCard({
 
   return (
     <div className="p-5 rounded-lg border border-border bg-surface">
-      <h4 className="font-semibold text-maroon">{t(product.name)}</h4>
-      {product.description && <p className="text-sm text-muted mt-1">{t(product.description)}</p>}
+      <h4 className="font-semibold text-maroon">{product.name}</h4>
+      {product.description && <p className="text-sm text-muted mt-1">{product.description}</p>}
       <p className="mt-3 text-sm font-medium text-primary">
-        {formatPaise(product.pricePaise)} / {t(product.unitName)}
+        {formatPaise(product.pricePaise)} / {product.unitName}
       </p>
       <div className="mt-4 flex items-center justify-between">
         <div className="flex items-center gap-3 border border-border rounded-full px-1">

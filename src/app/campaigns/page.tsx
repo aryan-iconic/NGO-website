@@ -68,7 +68,7 @@ export default async function CampaignsPage({
                     : "bg-surface border border-border text-text hover:bg-cream hover:border-primary/50"
                 }`}
               >
-                {t(cat.name)}
+                {cat.name}
               </Link>
             ))}
           </div>

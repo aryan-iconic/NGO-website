@@ -157,8 +157,8 @@ export default async function HomePage() {
                     </div>
                   )}
                   <div className="p-8 pt-6 flex-1 bg-white relative z-20 group-hover:translate-y-[-20px] transition-transform duration-500">
-                    <h3 className="text-xl font-serif font-bold text-maroon group-hover:text-primary transition-colors">{t(area.name)}</h3>
-                    {area.hindiName && <h4 className="mt-1 text-sm font-semibold text-primary uppercase tracking-widest bg-primary/5 inline-block px-3 py-1 rounded-full">{t(area.hindiName)}</h4>}
+                    <h3 className="text-xl font-serif font-bold text-maroon group-hover:text-primary transition-colors">{area.name}</h3>
+                    {area.hindiName && <h4 className="mt-1 text-sm font-semibold text-primary uppercase tracking-widest bg-primary/5 inline-block px-3 py-1 rounded-full">{area.hindiName}</h4>}
                   </div>
                 </Link>
               );
@@ -193,8 +193,8 @@ export default async function HomePage() {
                       <div className="flex items-center gap-2 text-xs font-bold text-muted uppercase tracking-widest mb-2">
                         <Calendar size={14} className="text-primary" /> {date.getFullYear()}
                       </div>
-                      <h3 className="text-xl font-serif font-bold text-maroon group-hover:text-primary transition-colors line-clamp-2">{t(e.title)}</h3>
-                      <p className="mt-2 text-sm text-text/80 line-clamp-2 leading-relaxed">{t(e.description)}</p>
+                      <h3 className="text-xl font-serif font-bold text-maroon group-hover:text-primary transition-colors line-clamp-2">{e.title}</h3>
+                      <p className="mt-2 text-sm text-text/80 line-clamp-2 leading-relaxed">{e.description}</p>
                     </div>
                   </Link>
                 );
@@ -256,8 +256,8 @@ export default async function HomePage() {
                     />
                     {(post.title || post.caption) && (
                       <div className="p-6">
-                        {post.title && <h3 className="font-serif font-bold text-maroon text-xl mb-2">{t(post.title)}</h3>}
-                        {post.caption && <p className="text-sm text-text/80 leading-relaxed">{t(post.caption)}</p>}
+                        {post.title && <h3 className="font-serif font-bold text-maroon text-xl mb-2">{post.title}</h3>}
+                        {post.caption && <p className="text-sm text-text/80 leading-relaxed">{post.caption}</p>}
                       </div>
                     )}
                   </div>
@@ -292,8 +292,8 @@ export default async function HomePage() {
                     </div>
                     {(video.title || video.description) && (
                       <div className="p-6 flex-1 flex flex-col">
-                        {video.title && <h3 className="font-serif font-bold text-maroon text-lg line-clamp-2 mb-2 group-hover:text-primary transition-colors">{t(video.title)}</h3>}
-                        {video.description && <p className="text-sm text-text/80 mt-auto line-clamp-3 leading-relaxed">{t(video.description)}</p>}
+                        {video.title && <h3 className="font-serif font-bold text-maroon text-lg line-clamp-2 mb-2 group-hover:text-primary transition-colors">{video.title}</h3>}
+                        {video.description && <p className="text-sm text-text/80 mt-auto line-clamp-3 leading-relaxed">{video.description}</p>}
                       </div>
                     )}
                   </div>

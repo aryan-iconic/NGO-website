@@ -5,7 +5,7 @@ import { DeleteButton } from "@/components/admin/delete-button";
 import { VolunteerApplicationsManager } from "@/components/admin/volunteer-applications-manager";
 
 export default async function AdminPeoplePage() {
-  const teamMembers = await db.listTeamMembers(true);
+  const teamMembers = await db.listTeamMembers(true, false);
   const volunteers = await db.listVolunteerApplications();
 
   return (

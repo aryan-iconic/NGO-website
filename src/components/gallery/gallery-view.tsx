@@ -67,7 +67,7 @@ export function GalleryView({ items, categories }: { items: GalleryItemView[]; c
               filter === c ? "bg-primary text-white border-primary" : "border-border text-text"
             }`}
           >
-            {t(c)}
+            {c}
           </button>
         ))}
       </nav>}
@@ -82,9 +82,9 @@ export function GalleryView({ items, categories }: { items: GalleryItemView[]; c
               <div className="relative aspect-[4/3] overflow-hidden bg-cream">
                 <Image src={item.imageUrl} alt={item.altText || item.caption || item.title || `Gallery image ${idx + 1}`} fill unoptimized sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw" className="object-cover transition-transform duration-500 group-hover:scale-105" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-transparent to-transparent opacity-80" />
-                <span className="absolute bottom-3 left-3 rounded-full bg-black/40 px-3 py-1 text-xs font-medium text-white backdrop-blur-sm">{t(item.category)}</span>
+                <span className="absolute bottom-3 left-3 rounded-full bg-black/40 px-3 py-1 text-xs font-medium text-white backdrop-blur-sm">{item.category}</span>
               </div>
-              {(item.caption || item.title) && <div className="px-3 py-3 sm:px-4"><p className="line-clamp-2 text-sm font-medium text-text">{t(item.caption || item.title || "")}</p></div>}
+              {(item.caption || item.title) && <div className="px-3 py-3 sm:px-4"><p className="line-clamp-2 text-sm font-medium text-text">{item.caption || item.title}</p></div>}
             </button>
           </article>
         ))}
@@ -117,9 +117,9 @@ export function GalleryView({ items, categories }: { items: GalleryItemView[]; c
           <div className="flex max-h-[90vh] w-full max-w-5xl flex-col items-center gap-4" onClick={(event) => event.stopPropagation()}>
             <Image src={openItem.imageUrl} alt={openItem.altText || openItem.caption || openItem.title || "Gallery photo"} width={1600} height={1200} unoptimized className="max-h-[72vh] max-w-full rounded-lg object-contain shadow-2xl" />
             <div className="max-w-3xl text-center">
-              {(openItem.caption || openItem.title) && <p className="font-serif text-xl text-white">{t(openItem.caption || openItem.title || "")}</p>}
-              {openItem.description && <p className="mt-2 text-sm text-white/75">{t(openItem.description)}</p>}
-              <p className="mt-2 text-xs text-white/60" aria-live="polite">{activeIndex + 1} / {filtered.length} · {t(openItem.category)}</p>
+              {(openItem.caption || openItem.title) && <p className="font-serif text-xl text-white">{openItem.caption || openItem.title}</p>}
+              {openItem.description && <p className="mt-2 text-sm text-white/75">{openItem.description}</p>}
+              <p className="mt-2 text-xs text-white/60" aria-live="polite">{activeIndex + 1} / {filtered.length} · {openItem.category}</p>
             </div>
           </div>
           {filtered.length > 1 && <button type="button" aria-label="Next photo" onClick={(event) => { event.stopPropagation(); move(1); }} className="absolute right-2 sm:right-6 rounded-full bg-white/10 p-2 text-white hover:bg-white/20"><ChevronRight size={28} /></button>}

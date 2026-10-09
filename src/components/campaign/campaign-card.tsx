@@ -29,15 +29,15 @@ export async function CampaignCard({ campaign }: { campaign: PublicCampaign }) {
       </div>
       <div className="p-5">
         <span className="text-xs font-medium text-primary uppercase tracking-wide">
-          {t(campaign.sevaArea?.name ?? campaign.category.name)}
+          {campaign.sevaArea?.name ?? campaign.category.name}
         </span>
         <h3 className="mt-1.5 text-lg leading-snug font-serif text-maroon group-hover:text-primary transition-colors">
-          {t(campaign.title)}
+          {campaign.title}
         </h3>
-        <p className="mt-2 text-sm text-muted line-clamp-2">{t(campaign.shortDescription)}</p>
+        <p className="mt-2 text-sm text-muted line-clamp-2">{campaign.shortDescription}</p>
         {campaign.locationText && (
           <p className="mt-3 flex items-center gap-1.5 text-xs text-muted">
-            <MapPin size={13} /> {t(campaign.locationText)}
+            <MapPin size={13} /> {campaign.locationText}
           </p>
         )}
       </div>
