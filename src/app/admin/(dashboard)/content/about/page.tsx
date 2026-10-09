@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { BackToContent } from "@/components/admin/back-to-content";
 
 export default function AdminAboutCMS() {
   const router = useRouter();
@@ -47,6 +48,7 @@ export default function AdminAboutCMS() {
 
   return (
     <div className="space-y-10 max-w-4xl">
+      <BackToContent />
       <div>
         <h1 className="text-2xl font-serif text-maroon mb-6">About Page CMS</h1>
         <form onSubmit={handleSave} className="space-y-8">

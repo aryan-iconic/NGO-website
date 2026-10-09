@@ -2,19 +2,23 @@ import Link from "next/link";
 import { db } from "@/lib/db";
 import { LinkButton } from "@/components/ui/button";
 import { DeleteButton } from "@/components/admin/delete-button";
+import { BackToContent } from "@/components/admin/back-to-content";
+
+type BlogListItem = { id: string; title: string; slug: string; status: string };
 
 export default async function AdminBlogListPage() {
-  const posts = await db.listBlogPosts();
+  const posts = await db.listBlogPosts() as BlogListItem[];
 
   return (
     <div>
+      <BackToContent />
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-serif text-maroon">Blog Posts</h1>
         <LinkButton href="/admin/content/blog/new" size="sm">New Post</LinkButton>
       </div>
 
       <div className="mt-6 bg-surface border border-border rounded-lg divide-y divide-border">
-        {posts.map((p: any) => (
+        {posts.map((p) => (
           <div key={p.id} className="p-4 flex justify-between items-center hover:bg-cream/40">
             <div>
               <Link href={`/admin/content/blog/${p.id}`} className="font-medium hover:text-primary">{p.title}</Link>

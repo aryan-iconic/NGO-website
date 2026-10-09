@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { LinkButton } from "@/components/ui/button";
 import { DeleteButton } from "@/components/admin/delete-button";
 import Image from "next/image";
+import { BackToContent } from "@/components/admin/back-to-content";
 
 type GalleryAdminItem = {
   id: string;
@@ -21,6 +22,7 @@ export default async function AdminGalleryListPage() {
 
   return (
     <div>
+      <BackToContent />
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-serif text-maroon">Gallery</h1>

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { BackToContent } from "@/components/admin/back-to-content";
 
 export default function AdminLegalCMS() {
   const router = useRouter();
@@ -93,6 +94,7 @@ export default function AdminLegalCMS() {
 
   return (
     <div className="space-y-10 max-w-4xl">
+      <BackToContent />
       <div>
         <h1 className="text-2xl font-serif text-maroon mb-6">Legal & Static Pages CMS</h1>
         
