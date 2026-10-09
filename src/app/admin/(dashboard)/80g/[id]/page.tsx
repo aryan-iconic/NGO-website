@@ -1,47 +1,63 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { use, useEffect, useState } from "react";
 import { format } from "date-fns";
 import { ArrowLeft, Save } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
-export default function Admin80GDetailPage({ params }: { params: { id: string } }) {
-  const router = useRouter();
+export default function Admin80GDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const [record, setRecord] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   
   const [status, setStatus] = useState("");
   const [form10bdStatus, setForm10bdStatus] = useState("");
   const [form10beRef, setForm10beRef] = useState("");
 
   useEffect(() => {
-    fetch(`/api/admin/80g/${params.id}`)
-      .then(res => res.json())
-      .then(data => {
+    let active = true;
+    fetch(`/api/admin/80g/${id}`)
+      .then(async (res) => {
+        const data = await res.json();
+        if (!res.ok || !data.record) throw new Error(data.error || "80G request not found.");
+        if (!active) return;
         setRecord(data.record);
-        setStatus(data.record.status);
+        setStatus(data.record.status ?? "SUBMITTED");
         setForm10bdStatus(data.record.form10bdStatus || "");
         setForm10beRef(data.record.form10beRef || "");
-        setLoading(false);
-      });
-  }, [params.id]);
+      })
+      .catch((loadError) => {
+        if (active) setError(loadError instanceof Error ? loadError.message : "Could not load this 80G request.");
+      })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [id]);
 
   const handleSave = async () => {
     setSaving(true);
-    await fetch(`/api/admin/80g/${params.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status, form10bdStatus, form10beRef })
-    });
-    setSaving(false);
-    alert("Updated successfully");
+    setError(null);
+    try {
+      const response = await fetch(`/api/admin/80g/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status, form10bdStatus, form10beRef })
+      });
+      const data = await response.json();
+      if (!response.ok || !data.success) throw new Error(data.error || "Could not update this 80G request.");
+      setRecord(data.record ?? record);
+      alert("Updated successfully");
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : "Could not update this 80G request.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (loading) return <div>Loading...</div>;
-  if (!record) return <div>Record not found.</div>;
+  if (!record) return <div className="space-y-4"><p className="text-red">{error || "Record not found."}</p><Link href="/admin/80g" className="text-primary hover:underline">Back to 80G requests</Link></div>;
 
   return (
     <div className="space-y-6 max-w-4xl">
@@ -55,6 +71,7 @@ export default function Admin80GDetailPage({ params }: { params: { id: string } 
           <Save size={16} className="mr-2" /> {saving ? "Saving..." : "Save Changes"}
         </Button>
       </div>
+      {error && <p role="alert" className="text-sm text-red">{error}</p>}
 
       <div className="grid md:grid-cols-2 gap-6">
         <div className="bg-surface border border-border rounded-lg p-6 space-y-4 text-sm">
