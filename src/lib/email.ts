@@ -17,12 +17,17 @@ export async function sendEmail({
   to,
   subject,
   html,
+  attachments,
+  requireConfiguration = false,
 }: {
   to: string | string[];
   subject: string;
   html: string;
+  attachments?: Array<{ filename: string; content: Buffer; contentType: string }>;
+  requireConfiguration?: boolean;
 }) {
   if (!host || !user || !pass) {
+    if (requireConfiguration) return false;
     console.warn("Email configuration missing. Simulating email send:");
     console.warn("To:", to);
     console.warn("Subject:", subject);
@@ -35,6 +40,7 @@ export async function sendEmail({
       to,
       subject,
       html,
+      attachments,
     });
     console.log("Email sent: %s", info.messageId);
     return true;

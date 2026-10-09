@@ -1,13 +1,26 @@
 import { db } from "@/lib/db";
 import { format } from "date-fns";
 import Link from "next/link";
+import { PreArnManager } from "@/components/admin/pre-arn-manager";
+
+type DonorTaxRecord = {
+  id: string;
+  createdAt: string | Date;
+  donorName: string;
+  pan: string;
+  email: string;
+  status: string;
+  donation?: { totalPaise: number; createdAt: string | Date } | null;
+};
 
 export default async function Admin80GPage() {
-  const records = await db.listDonorTaxInformation();
+  const records = await db.listDonorTaxInformation() as DonorTaxRecord[];
 
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-serif text-maroon">80G Tax Exemption Requests</h1>
+
+      <PreArnManager />
 
       <div className="bg-surface rounded-lg border border-border overflow-hidden">
         <table className="w-full text-sm">
@@ -21,7 +34,7 @@ export default async function Admin80GPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
-            {records.map((record: any) => (
+            {records.map((record) => (
               <tr key={record.id} className="hover:bg-cream/50 transition-colors">
                 <td className="p-4 whitespace-nowrap">
                   {format(new Date(record.createdAt), "MMM d, yyyy")}
@@ -45,11 +58,11 @@ export default async function Admin80GPage() {
                   <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
                     record.status === "SUBMITTED" ? "bg-primary/10 text-primary" :
                     record.status === "VERIFIED" ? "bg-blue-100 text-blue-700" :
-                    record.status === "INCLUDED_10BD" ? "bg-purple-100 text-purple-700" :
-                    record.status === "10BE_AVAILABLE" ? "bg-success/10 text-success" :
+                    ["INCLUDED_10BD", "INCLUDED_FORM_113"].includes(record.status) ? "bg-purple-100 text-purple-700" :
+                    ["MANUAL_RECEIPT_SENT", "10BE_AVAILABLE", "FORM_114_AVAILABLE", "FORM_114_SENT"].includes(record.status) ? "bg-success/10 text-success" :
                     "bg-red/10 text-red"
                   }`}>
-                    {record.status.replace("_", " ")}
+                    {record.status === "INCLUDED_10BD" ? "Included in Form 113" : record.status === "10BE_AVAILABLE" ? "Form 114 available" : record.status === "FORM_114_SENT" ? "Form 114 emailed" : record.status === "MANUAL_RECEIPT_SENT" ? "Pre-ARN receipt emailed" : record.status.replaceAll("_", " ")}
                   </span>
                 </td>
                 <td className="p-4 text-right">

@@ -2,15 +2,36 @@
 
 import { use, useEffect, useState } from "react";
 import { format } from "date-fns";
-import { ArrowLeft, Save } from "lucide-react";
+import { ArrowLeft, Mail, Save } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
+type DonorRecord = {
+  id: string;
+  donorName: string;
+  pan: string;
+  email: string;
+  addressLine1: string;
+  addressLine2?: string | null;
+  city: string;
+  state: string;
+  pincode: string;
+  status: string;
+  form10bdStatus?: string | null;
+  form10beRef?: string | null;
+  donation?: { status: string; createdAt: string; totalPaise: number; donorEmail: string; donationNumber: string } | null;
+};
+
 export default function Admin80GDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const [record, setRecord] = useState<any>(null);
+  const [record, setRecord] = useState<DonorRecord | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [sendingCertificate, setSendingCertificate] = useState(false);
+  const [sendingManualReceipt, setSendingManualReceipt] = useState(false);
+  const [preArns, setPreArns] = useState<Array<{ arn: string; status: string }>>([]);
+  const [selectedPreArn, setSelectedPreArn] = useState("");
+  const [preArnError, setPreArnError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   
   const [status, setStatus] = useState("");
@@ -25,9 +46,27 @@ export default function Admin80GDetailPage({ params }: { params: Promise<{ id: s
         if (!res.ok || !data.record) throw new Error(data.error || "80G request not found.");
         if (!active) return;
         setRecord(data.record);
-        setStatus(data.record.status ?? "SUBMITTED");
+        const storedStatus = data.record.status ?? "SUBMITTED";
+        setStatus(storedStatus === "INCLUDED_10BD" ? "INCLUDED_FORM_113" : storedStatus === "10BE_AVAILABLE" ? "FORM_114_AVAILABLE" : storedStatus);
         setForm10bdStatus(data.record.form10bdStatus || "");
         setForm10beRef(data.record.form10beRef || "");
+        const donationDate = new Date(data.record.donation?.createdAt || Date.now());
+        const parts = new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Kolkata", year: "numeric", month: "numeric" }).formatToParts(donationDate);
+        const year = Number(parts.find((part) => part.type === "year")?.value);
+        const month = Number(parts.find((part) => part.type === "month")?.value);
+        const start = month >= 4 ? year : year - 1;
+        const taxYear = `${start}-${String((start + 1) % 100).padStart(2, "0")}`;
+        fetch(`/api/admin/80g/pre-arns?taxYear=${taxYear}&donorId=${encodeURIComponent(id)}`)
+          .then(async (preArnResponse) => {
+            const preArnData = await preArnResponse.json();
+            if (!preArnResponse.ok || !preArnData.success) throw new Error(preArnData.error || "Could not load Pre-ARNs.");
+            if (active) {
+              const available = preArnData.entries.filter((entry: { status: string; donorTaxInformationId?: string }) => entry.status === "AVAILABLE" || entry.donorTaxInformationId === id);
+              setPreArns(available);
+              setSelectedPreArn((current) => current || available[0]?.arn || "");
+            }
+          })
+          .catch((preArnLoadError) => { if (active) setPreArnError(preArnLoadError instanceof Error ? preArnLoadError.message : "Could not load Pre-ARNs."); });
       })
       .catch((loadError) => {
         if (active) setError(loadError instanceof Error ? loadError.message : "Could not load this 80G request.");
@@ -53,6 +92,58 @@ export default function Admin80GDetailPage({ params }: { params: Promise<{ id: s
       setError(saveError instanceof Error ? saveError.message : "Could not update this 80G request.");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleSendCertificate = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    if (file.type !== "application/pdf" || file.size > 10 * 1024 * 1024) {
+      setError("Choose a PDF certificate smaller than 10 MB.");
+      return;
+    }
+
+    setSendingCertificate(true);
+    setError(null);
+    try {
+      const body = new FormData();
+      body.set("certificate", file);
+      const response = await fetch(`/api/admin/80g/${id}/certificate`, { method: "POST", body });
+      const data = await response.json();
+      if (!response.ok || !data.success) throw new Error(data.error || "Could not email certificate.");
+      setStatus("FORM_114_SENT");
+      setForm10beRef(data.record.form10beRef || file.name);
+      setRecord((current) => current ? { ...current, ...data.record } : data.record);
+      alert("Form 114 certificate emailed to the donor.");
+    } catch (sendError) {
+      setError(sendError instanceof Error ? sendError.message : "Could not email certificate.");
+    } finally {
+      setSendingCertificate(false);
+    }
+  };
+
+  const handleSendManualReceipt = async () => {
+    if (!selectedPreArn) return;
+    setSendingManualReceipt(true);
+    setError(null);
+    try {
+      const response = await fetch(`/api/admin/80g/${id}/pre-arn-receipt`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ preArn: selectedPreArn }),
+      });
+      const data = await response.json();
+      if (!response.ok || !data.success) throw new Error(data.error || "Could not email manual receipt.");
+      setStatus("MANUAL_RECEIPT_SENT");
+      setForm10bdStatus(`Pre-ARN ${data.preArn} — Tax Year ${data.taxYear}`);
+      setPreArns((current) => current.filter((entry) => entry.arn !== data.preArn));
+      setSelectedPreArn("");
+      alert("Pre-ARN manual donation receipt emailed to the donor. The official Form 114 is still due after Form 113 filing.");
+    } catch (sendError) {
+      setError(sendError instanceof Error ? sendError.message : "Could not email manual receipt.");
+    } finally {
+      setSendingManualReceipt(false);
     }
   };
 
@@ -113,30 +204,55 @@ export default function Admin80GDetailPage({ params }: { params: Promise<{ id: s
               >
                 <option value="SUBMITTED">Information Submitted</option>
                 <option value="VERIFIED">Verified</option>
-                <option value="INCLUDED_10BD">Included in 10BD</option>
-                <option value="10BE_AVAILABLE">10BE Available</option>
+                <option value="MANUAL_RECEIPT_SENT">Pre-ARN manual receipt emailed</option>
+                <option value="INCLUDED_FORM_113">Included in Form 113</option>
+                <option value="FORM_114_AVAILABLE">Form 114 available</option>
+                <option value="FORM_114_SENT">Form 114 emailed</option>
                 <option value="REJECTED">Rejected / Ineligible</option>
               </select>
             </div>
 
             <div>
-              <label className="block text-xs uppercase font-semibold text-muted mb-1">Form 10BD Reference/Status</label>
+              <label className="block text-xs uppercase font-semibold text-muted mb-1">Form 113 Filing Reference / Status</label>
               <input 
                 value={form10bdStatus} 
                 onChange={e => setForm10bdStatus(e.target.value)}
-                placeholder="e.g. Q2 FY24 Filing"
+                placeholder="e.g. Tax year 2026-27 filing acknowledgement"
                 className="w-full border border-border rounded-md px-3 py-2 bg-background"
               />
             </div>
 
             <div>
-              <label className="block text-xs uppercase font-semibold text-muted mb-1">Form 10BE Certificate Ref / Link</label>
+              <label className="block text-xs uppercase font-semibold text-muted mb-1">Form 114 Certificate Reference / Link</label>
               <input 
                 value={form10beRef} 
                 onChange={e => setForm10beRef(e.target.value)}
-                placeholder="Certificate ID or Drive Link"
+                placeholder="Official certificate reference or secure link"
                 className="w-full border border-border rounded-md px-3 py-2 bg-background"
               />
+            </div>
+            <div className="rounded-md border border-border p-3 space-y-3">
+              <div>
+                <h3 className="font-medium">Send Pre-ARN manual receipt</h3>
+                <p className="mt-1 text-xs text-muted">This emails a receipt populated with the donor, donation, Trust and Pre-ARN details. It is not Form 114; the official certificate must still be issued after Form 113 filing.</p>
+              </div>
+              {preArnError && <p role="alert" className="text-xs text-red">{preArnError}</p>}
+              <div className="flex flex-wrap gap-2">
+                <select value={selectedPreArn} onChange={(event) => setSelectedPreArn(event.target.value)} className="min-w-48 flex-1 rounded-md border border-border bg-background px-3 py-2" disabled={!preArns.length || sendingManualReceipt}>
+                  <option value="">{preArns.length ? "Select an available Pre-ARN" : "No available Pre-ARNs for this tax year"}</option>
+                  {preArns.map((entry) => <option key={entry.arn} value={entry.arn}>{entry.arn}</option>)}
+                </select>
+                <Button type="button" onClick={handleSendManualReceipt} disabled={!selectedPreArn || sendingManualReceipt}>
+                  <Mail size={16} className="mr-2" /> {sendingManualReceipt ? "Sending..." : "Fill & Email Receipt"}
+                </Button>
+              </div>
+            </div>
+            <div className="rounded-md border border-border p-3">
+              <p className="text-xs text-muted mb-3">After downloading the official Form 114 PDF from the Income Tax e-Filing portal, attach it here to email it to this donor. Filing Form 113 still happens on the government portal.</p>
+              <label className={`inline-flex items-center gap-2 rounded-md bg-primary px-3 py-2 text-white cursor-pointer ${sendingCertificate ? "opacity-60 pointer-events-none" : ""}`}>
+                <Mail size={16} /> {sendingCertificate ? "Sending..." : "Email Form 114 PDF to donor"}
+                <input type="file" accept="application/pdf,.pdf" className="sr-only" disabled={sendingCertificate} onChange={handleSendCertificate} />
+              </label>
             </div>
           </div>
           
