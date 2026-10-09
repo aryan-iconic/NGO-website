@@ -768,7 +768,7 @@ export const db = {
   // --- Newsletter ---
   createNewsletterSubscriber: async (data: any) => resolve(prisma.newsletterSubscriber.create({ data })),
   listNewsletterSubscribers: async () => resolve(prisma.newsletterSubscriber.findMany({ orderBy: { createdAt: "desc" } })),
-  getNewsletterSubscriberByEmail: async (email: string) => resolve(prisma.newsletterSubscriber.findUnique({ where: { email } })),
+  getNewsletterSubscriberByEmail: async (email: string) => resolve(prisma.newsletterSubscriber.findFirst({ where: { email: { equals: email, mode: "insensitive" } } })),
   updateNewsletterSubscriber: async (id: string, data: any) => resolve(prisma.newsletterSubscriber.update({ where: { id }, data })),
   deleteNewsletterSubscriber: async (id: string) => { await prisma.newsletterSubscriber.delete({ where: { id } }); return true; },
 

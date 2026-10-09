@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
   try {
     const existing = await db.getNewsletterSubscriberByEmail(parsed.data.email);
     if (existing && existing.status === "SUBSCRIBED") {
-      return NextResponse.json({ success: false, error: { message: "Already subscribed." } }, { status: 400 });
+      return NextResponse.json({ success: false, error: { message: "This email address is already subscribed." } }, { status: 409 });
     }
 
     if (existing) {
@@ -54,7 +54,10 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json({ success: true });
-  } catch (err: any) {
-    return NextResponse.json({ success: false, error: { message: err.message } }, { status: 500 });
+  } catch (err: unknown) {
+    if (typeof err === "object" && err !== null && "code" in err && err.code === "P2002") {
+      return NextResponse.json({ success: false, error: { message: "This email address is already subscribed." } }, { status: 409 });
+    }
+    return NextResponse.json({ success: false, error: { message: err instanceof Error ? err.message : "Could not process subscription." } }, { status: 500 });
   }
 }

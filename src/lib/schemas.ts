@@ -31,7 +31,7 @@ export const loginSchema = z.object({
 
 export const volunteerSchema = z.object({
   name: z.string().min(2),
-  email: z.string().email(),
+  email: z.string().trim().email().toLowerCase(),
   phone: z.string().optional(),
   city: z.string().optional(),
   interests: z.array(z.string()).default([]),
@@ -49,7 +49,7 @@ export const contactSchema = z.object({
 
 export const newsletterSchema = z.object({
   name: z.string().min(2, "Name is required"),
-  email: z.string().email("A valid email is required"),
+  email: z.string().trim().email("A valid email is required").toLowerCase(),
   city: z.string().optional(),
 });
 

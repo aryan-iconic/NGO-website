@@ -296,7 +296,7 @@ model Favorite {
 model VolunteerApplication {
   id           String   @id @default(uuid())
   name         String
-  email        String
+  email        String   @unique
   phone        String?
   city         String?
   interests    String
