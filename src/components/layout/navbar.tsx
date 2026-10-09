@@ -9,6 +9,7 @@ import { LinkButton } from "@/components/ui/button";
 import { useI18n, TranslationKey, Locale } from "@/lib/i18n";
 
 const links: { href: string; key: TranslationKey }[] = [
+  { href: "/", key: "nav.home" },
   { href: "/campaigns", key: "nav.campaigns" },
   { href: "/events", key: "nav.events" },
   { href: "/gallery", key: "nav.gallery" },
