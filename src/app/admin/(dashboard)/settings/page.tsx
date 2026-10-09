@@ -16,7 +16,15 @@ export default function AdminSettingsPage() {
     fetch("/api/admin/settings")
       .then((r) => r.json())
       .then((d) => {
-        if (d.success) setSettings(d.data || {});
+        if (d.success) {
+          const flatSettings = Object.fromEntries(
+            Object.entries(d.data || {}).map(([key, setting]) => [
+              key,
+              typeof setting === "string" ? setting : (setting as { value?: string } | null)?.value || "",
+            ]),
+          );
+          setSettings(flatSettings);
+        }
         setLoading(false);
       });
   }, []);
@@ -72,6 +80,18 @@ export default function AdminSettingsPage() {
                   onChange={(e) => handleChange("contact.phone", e.target.value)} 
                   className="w-full mt-1.5 rounded-lg border border-border px-4 py-2 bg-background" 
                 />
+              </div>
+              <div>
+                <label className="text-sm text-muted" htmlFor="whatsapp-contact">WhatsApp contact number or link</label>
+                <input
+                  id="whatsapp-contact"
+                  type="text"
+                  value={settings["contact.whatsapp"] || ""}
+                  onChange={(e) => handleChange("contact.whatsapp", e.target.value)}
+                  className="w-full mt-1.5 rounded-lg border border-border px-4 py-2 bg-background"
+                  placeholder="919876543210 or https://wa.me/919876543210"
+                />
+                <p className="mt-1 text-xs text-muted">Use the country code and digits, without needing a plus sign. Leave blank to hide the mobile button.</p>
               </div>
             </div>
             <div>

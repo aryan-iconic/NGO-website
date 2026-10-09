@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/require-admin";
 import { z } from "zod";
+import { getWhatsAppHref } from "@/lib/whatsapp";
 
 const settingsSchema = z.record(
   z.string(),
@@ -15,16 +16,13 @@ const settingsSchema = z.record(
   ])
 );
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    const { admin, error } = await requireAdmin();
-    if (error) return error;
+    const auth = await requireAdmin();
+    if (auth.error) return auth.error;
 
     const settings = await prisma.setting.findMany();
-    const settingsMap = settings.reduce((acc: any, curr: any) => ({
-      ...acc,
-      [curr.key]: { value: curr.value, translations: curr.translations },
-    }), {});
+    const settingsMap = Object.fromEntries(settings.map((setting) => [setting.key, { value: setting.value, translations: setting.translations }]));
     
     revalidatePath("/", "layout");
     return NextResponse.json({ success: true, data: settingsMap });
@@ -36,14 +34,22 @@ export async function GET(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
-    const { admin, error } = await requireAdmin();
-    if (error) return error;
+    const auth = await requireAdmin();
+    if (auth.error) return auth.error;
 
     const body = await request.json();
     const result = settingsSchema.safeParse(body);
     if (!result.success) return NextResponse.json({ success: false, error: result.error }, { status: 400 });
 
     const updates = result.data;
+
+    if (Object.hasOwn(updates, "contact.whatsapp")) {
+      const rawWhatsApp = updates["contact.whatsapp"];
+      const value = typeof rawWhatsApp === "string" ? rawWhatsApp : rawWhatsApp.value;
+      if (value.trim() && !getWhatsAppHref(value)) {
+        return NextResponse.json({ success: false, error: { message: "Enter a WhatsApp number with country code or a valid https://wa.me link." } }, { status: 400 });
+      }
+    }
     
     await prisma.$transaction(
       Object.entries(updates).map(([key, data]) => {

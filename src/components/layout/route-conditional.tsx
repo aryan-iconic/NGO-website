@@ -6,10 +6,12 @@ export function RouteConditional({
   children,
   navbar,
   footer,
+  whatsapp,
 }: {
   children: React.ReactNode;
   navbar: React.ReactNode;
   footer: React.ReactNode;
+  whatsapp: React.ReactNode;
 }) {
   const pathname = usePathname();
   const isAdminDashboard = pathname?.startsWith("/admin") && pathname !== "/admin/login";
@@ -23,6 +25,7 @@ export function RouteConditional({
       {navbar}
       <main>{children}</main>
       {footer}
+      {whatsapp}
     </>
   );
 }

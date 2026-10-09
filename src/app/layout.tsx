@@ -22,20 +22,24 @@ import { prisma } from "@/lib/prisma";
 import { draftMode } from "next/headers";
 
 import { RouteConditional } from "@/components/layout/route-conditional";
+import { WhatsAppFloatingButton } from "@/components/layout/whatsapp-floating-button";
+import { getWhatsAppHref } from "@/lib/whatsapp";
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  let settingsMap = {};
+  let settingsMap: Record<string, { value: string; translations: unknown }> = {};
+  let whatsappHref: string | null = null;
   try {
     const settings = await prisma.setting.findMany();
-    settingsMap = settings.reduce((acc: any, curr: any) => ({ ...acc, [curr.key]: { value: curr.value, translations: curr.translations } }), {});
-  } catch (e) {
-    console.error("Failed to load settings in layout:", e);
+    whatsappHref = getWhatsAppHref(settings.find((setting) => setting.key === "contact.whatsapp")?.value);
+    settingsMap = Object.fromEntries(settings.map((setting) => [setting.key, { value: setting.value, translations: setting.translations }]));
+  } catch (error) {
+    console.error("Failed to load settings in layout:", error);
   }
   
   let isDraftMode = false;
   try {
     isDraftMode = (await draftMode()).isEnabled;
-  } catch (e) {
+  } catch {
     // ignore
   }
 
@@ -53,7 +57,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 </a>
               </div>
             )}
-            <RouteConditional navbar={<Navbar />} footer={<Footer />}>
+            <RouteConditional navbar={<Navbar />} footer={<Footer />} whatsapp={<WhatsAppFloatingButton href={whatsappHref} />}>
               {children}
             </RouteConditional>
           </CartProvider>
