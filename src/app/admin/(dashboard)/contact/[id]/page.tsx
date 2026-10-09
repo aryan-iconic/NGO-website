@@ -32,6 +32,7 @@ export default function ContactMessagePage({ params }: { params: Promise<{ id: s
   const [inquiry, setInquiry] = useState<Inquiry | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
+  const [statusNotice, setStatusNotice] = useState("");
   const [template, setTemplate] = useState<ReplyTemplate>("ACKNOWLEDGE");
   const [replySubject, setReplySubject] = useState("");
   const [replyMessage, setReplyMessage] = useState("");
@@ -49,6 +50,19 @@ export default function ContactMessagePage({ params }: { params: Promise<{ id: s
           const initialTemplate = templates.ACKNOWLEDGE;
           setReplySubject(initialTemplate.subject(data.inquiry.subject));
           setReplyMessage(initialTemplate.message(data.inquiry.name));
+        }
+        if (data.inquiry.status === "NEW") {
+          try {
+            const statusResponse = await fetch(`/api/admin/contact/${id}`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ status: "READ" }),
+            });
+            if (!statusResponse.ok) throw new Error("Could not mark inquiry as read.");
+            if (!cancelled) setInquiry((current) => current?.id === id ? { ...current, status: "READ" } : current);
+          } catch {
+            if (!cancelled) setStatusNotice("This inquiry could not be marked as read automatically. Use the status button to retry.");
+          }
         }
       })
       .catch((error: unknown) => { if (!cancelled) setLoadError(error instanceof Error ? error.message : "Could not load this inquiry."); })
@@ -127,6 +141,7 @@ export default function ContactMessagePage({ params }: { params: Promise<{ id: s
       </div>
 
       <div className="bg-surface border border-border rounded-lg p-6 space-y-4 text-sm">
+        {statusNotice && <p role="status" className="text-sm text-amber-700">{statusNotice}</p>}
         <div className="grid grid-cols-2 gap-4 pb-4 border-b border-border">
           <div>
             <p className="text-muted text-xs uppercase tracking-wider font-semibold">Name</p>
