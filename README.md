@@ -51,6 +51,7 @@ See [`.env.example`](.env.example) for a commented template. The application rea
 | `EMAIL_PASSWORD` | For real email delivery | SMTP password. For Resend, use your Resend API key. |
 | `EMAIL_FROM` | Recommended | Sender address. Use an address on a domain verified with your mail provider. |
 | `S3_ENDPOINT` | For image uploads | S3-compatible endpoint. For R2, use the account’s R2 S3 API endpoint. |
+| `S3_REGION` | For image uploads | Storage region required by the S3 client. For the current Supabase project, use `ap-northeast-2`; use the region shown in Supabase Storage S3 settings for other projects. |
 | `S3_ACCESS_KEY_ID` | For image uploads | S3/R2 access key ID. |
 | `S3_SECRET_ACCESS_KEY` | For image uploads | Matching S3/R2 secret access key. |
 | `S3_BUCKET_NAME` | For image uploads | Destination bucket name. |
@@ -92,7 +93,7 @@ Verify the sending domain in Resend and use a permitted sender address. Without 
 
 ### Cloudflare R2 or another S3-compatible store — image uploads
 
-Create a bucket and an API token with only the object permissions this app needs. For Cloudflare R2, copy its S3 endpoint and access key pair, connect a public custom domain (recommended for production), and configure all five `S3_*` variables. The app returns image URLs using `S3_PUBLIC_URL`; the corresponding bucket/domain must serve those objects publicly for public pages to display them.
+Create a bucket and an API token with only the object permissions this app needs. For Cloudflare R2, copy its S3 endpoint and access key pair, connect a public custom domain (recommended for production), and configure the `S3_*` variables. For Supabase Storage, copy the S3 endpoint, region, and access key pair from Storage settings, and make the bucket public if its images should appear on public pages. The app returns image URLs using `S3_PUBLIC_URL`; the corresponding bucket/domain must serve those objects publicly for public pages to display them.
 
 ### Translations — Google or LibreTranslate
 

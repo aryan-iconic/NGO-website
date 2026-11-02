@@ -15,7 +15,8 @@ const schema = z.object({
 
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  await requireAdmin();
+  const guard = await requireAdmin();
+  if (guard.error) return guard.error;
   const person = await db.getTeamMember(id);
   if (!person) return NextResponse.json({ success: false, error: { message: "Not found" } }, { status: 404 });
   return NextResponse.json({ success: true, data: person });
@@ -23,7 +24,8 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  await requireAdmin();
+  const guard = await requireAdmin();
+  if (guard.error) return guard.error;
   try {
     const json = await req.json();
     const data = schema.parse(json);
@@ -37,7 +39,8 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
 export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  await requireAdmin();
+  const guard = await requireAdmin();
+  if (guard.error) return guard.error;
   try {
     await db.deleteTeamMember(id);
     revalidatePath("/about");

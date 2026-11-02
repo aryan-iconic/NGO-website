@@ -11,7 +11,9 @@ const IMAGE_TYPES = {
   "image/gif": { extension: "gif", signature: (buffer: Buffer) => ["GIF87a", "GIF89a"].includes(buffer.subarray(0, 6).toString("ascii")) },
 } as const;
 
-const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+// Leave room for multipart/form-data overhead under Vercel's 4.5 MB
+// function request-body limit.
+const MAX_IMAGE_BYTES = 4 * 1024 * 1024;
 
 export async function POST(req: NextRequest) {
   const guard = await requireAdmin();
@@ -25,7 +27,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: { message: "Choose an image file to upload." } }, { status: 400 });
     }
     if (file.size === 0 || file.size > MAX_IMAGE_BYTES) {
-      return NextResponse.json({ success: false, error: { message: "Image must be between 1 byte and 5 MB." } }, { status: 400 });
+      return NextResponse.json({ success: false, error: { message: "Image must be between 1 byte and 4 MB." } }, { status: 400 });
     }
 
     const type = IMAGE_TYPES[file.type as keyof typeof IMAGE_TYPES];
@@ -35,17 +37,23 @@ export async function POST(req: NextRequest) {
     }
 
     const endpoint = process.env.S3_ENDPOINT;
+    const isSupabaseStorage = Boolean(endpoint?.includes("supabase.co/storage/v1/s3"));
+    // The current Trust Supabase project is in Seoul. Keep S3_REGION
+    // configurable for other environments, but don't pass an empty region to
+    // the AWS SDK when the Supabase-specific variable hasn't been added yet.
+    const region = process.env.S3_REGION?.trim() || (isSupabaseStorage ? "ap-northeast-2" : "auto");
     const accessKeyId = process.env.S3_ACCESS_KEY_ID;
     const secretAccessKey = process.env.S3_SECRET_ACCESS_KEY;
     const bucket = process.env.S3_BUCKET_NAME;
     const publicUrl = process.env.S3_PUBLIC_URL?.replace(/\/+$/, "");
-    if (!endpoint || !accessKeyId || !secretAccessKey || !bucket || !publicUrl) {
-      return NextResponse.json({ success: false, error: { message: "Image storage is not fully configured. Set the S3/R2 endpoint, credentials, bucket, and public URL." } }, { status: 503 });
+    if (!endpoint || !region || !accessKeyId || !secretAccessKey || !bucket || !publicUrl) {
+      return NextResponse.json({ success: false, error: { message: "Image storage is not fully configured. Set the S3 endpoint, credentials, bucket, public URL, and S3_REGION for your storage project." } }, { status: 503 });
     }
 
     const s3Client = new S3Client({
-      region: "auto",
+      region,
       endpoint,
+      forcePathStyle: process.env.S3_FORCE_PATH_STYLE === "true" || isSupabaseStorage,
       credentials: { accessKeyId, secretAccessKey },
     });
     const key = `uploads/${Date.now()}-${randomUUID()}.${type.extension}`;

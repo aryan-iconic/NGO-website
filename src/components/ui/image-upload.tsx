@@ -21,8 +21,8 @@ export function ImageUpload({ value, onChange, label = "Image", onUploadingChang
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size === 0 || file.size > 5 * 1024 * 1024) {
-      setError("File is too large. Maximum size is 5MB.");
+    if (file.size === 0 || file.size > 4 * 1024 * 1024) {
+      setError("File is too large. Maximum size is 4MB.");
       e.target.value = "";
       return;
     }

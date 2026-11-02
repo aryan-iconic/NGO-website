@@ -10,6 +10,7 @@ import { ArrowLeft } from "lucide-react";
 export default function NewTeamMemberPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const [form, setForm] = useState({
@@ -83,6 +84,7 @@ export default function NewTeamMemberPage() {
               <ImageUpload
                 value={form.imageUrl}
                 onChange={(url) => setForm({...form, imageUrl: url})}
+                onUploadingChange={setUploadingImage}
               />
             </div>
           </div>
@@ -111,7 +113,9 @@ export default function NewTeamMemberPage() {
           <Button type="button" variant="outline" onClick={() => router.back()} disabled={loading}>
             Cancel
           </Button>
-          <Button type="submit" disabled={loading}>{loading ? "Saving..." : "Save Team Member"}</Button>
+          <Button type="submit" disabled={loading || uploadingImage}>
+            {uploadingImage ? "Wait for image upload…" : loading ? "Saving..." : "Save Team Member"}
+          </Button>
         </div>
       </form>
     </div>

@@ -11,6 +11,7 @@ export default function EditTeamMemberPage({ params }: { params: { id: string } 
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const [form, setForm] = useState({
@@ -116,6 +117,7 @@ export default function EditTeamMemberPage({ params }: { params: { id: string } 
               <ImageUpload
                 value={form.imageUrl}
                 onChange={(url) => setForm({...form, imageUrl: url})}
+                onUploadingChange={setUploadingImage}
               />
             </div>
           </div>
@@ -143,7 +145,9 @@ export default function EditTeamMemberPage({ params }: { params: { id: string } 
         <div className="flex items-center gap-3">
           <Button type="button" variant="outline" className="text-red border-red/30 hover:bg-red/10 mr-auto" onClick={handleDelete}>Delete</Button>
           <Button type="button" variant="outline" onClick={() => router.back()} disabled={saving}>Cancel</Button>
-          <Button type="submit" disabled={saving}>{saving ? "Saving..." : "Save Changes"}</Button>
+          <Button type="submit" disabled={saving || uploadingImage}>
+            {uploadingImage ? "Wait for image upload…" : saving ? "Saving..." : "Save Changes"}
+          </Button>
         </div>
       </form>
     </div>

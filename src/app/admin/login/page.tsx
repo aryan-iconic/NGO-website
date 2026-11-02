@@ -102,9 +102,6 @@ export default function AdminLoginPage() {
                 {loading ? "Signing in…" : "Sign In"}
               </Button>
             </form>
-            <p className="mt-5 text-xs text-muted text-center">
-              Demo credentials: admin@nityanikunj.org / password123
-            </p>
           </>
         ) : (
           <>

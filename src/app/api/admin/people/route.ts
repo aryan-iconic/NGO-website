@@ -14,13 +14,15 @@ const schema = z.object({
 });
 
 export async function GET() {
-  await requireAdmin();
+  const guard = await requireAdmin();
+  if (guard.error) return guard.error;
   const people = await db.listTeamMembers(true, false);
   return NextResponse.json({ success: true, data: people });
 }
 
 export async function POST(req: Request) {
-  await requireAdmin();
+  const guard = await requireAdmin();
+  if (guard.error) return guard.error;
   try {
     const json = await req.json();
     const data = schema.parse(json);
