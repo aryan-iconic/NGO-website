@@ -7,6 +7,17 @@ import { db } from "@/lib/db";
 import { toPublicCampaign } from "@/lib/view-models";
 import { T } from "@/components/i18n/t";
 import { getServerTranslator } from "@/lib/i18n-server";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Shri Nityanikunj Ras Seva Sansthan Trust",
+  alternates: { canonical: "/" },
+  openGraph: {
+    title: "Shri Nityanikunj Ras Seva Sansthan Trust",
+    siteName: "Shri Nityanikunj Ras Seva Sansthan Trust",
+    url: "https://www.shrinityanikunjtrust.com/",
+  },
+};
 
 const icons: Record<string, React.ComponentType<{ size?: number; className?: string }>> = {
   UtensilsCrossed,
@@ -41,9 +52,34 @@ export default async function HomePage() {
   };
 
   const heroImage = (await db.getSetting("home.hero.image")) || null;
+  const siteUrl = "https://www.shrinityanikunjtrust.com/";
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": `${siteUrl}#website`,
+        name: "Shri Nityanikunj Ras Seva Sansthan Trust",
+        alternateName: "Shri Nityanikunj Trust",
+        url: siteUrl,
+        publisher: { "@id": `${siteUrl}#organization` },
+      },
+      {
+        "@type": "Organization",
+        "@id": `${siteUrl}#organization`,
+        name: "Shri Nityanikunj Ras Seva Sansthan Trust",
+        url: siteUrl,
+        logo: "https://www.shrinityanikunjtrust.com/logo.png",
+      },
+    ],
+  };
 
   return (
     <div className="bg-background">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData).replace(/</g, "\\u003c") }}
+      />
       {/* Premium Hero Section */}
       <section className="relative overflow-hidden bg-maroon text-white min-h-[90vh] flex items-center pt-20">
         <div className="absolute inset-0 z-0">

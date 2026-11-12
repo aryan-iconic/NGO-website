@@ -14,8 +14,20 @@ const fontVars = "" as const;
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Shri Nityanikunj Ras Seva Sansthan Trust, Varanasi | Seva, Education, Healthcare & Social Welfare",
+  metadataBase: new URL("https://www.shrinityanikunjtrust.com"),
+  title: "Shri Nityanikunj Ras Seva Sansthan Trust",
   description: "A commitment to Seva, Culture and Social Welfare. Shri Nityanikunj Ras Seva Sansthan Trust, Varanasi focuses on education, healthcare, social welfare, environment and animal welfare.",
+  icons: {
+    icon: [{ url: "/favicon.png", type: "image/png", sizes: "512x512" }],
+    shortcut: "/favicon.png",
+    apple: [{ url: "/favicon.png", sizes: "512x512", type: "image/png" }],
+  },
+  openGraph: {
+    type: "website",
+    title: "Shri Nityanikunj Ras Seva Sansthan Trust",
+    siteName: "Shri Nityanikunj Ras Seva Sansthan Trust",
+    description: "A commitment to Seva, Culture and Social Welfare. Shri Nityanikunj Ras Seva Sansthan Trust, Varanasi focuses on education, healthcare, social welfare, environment and animal welfare.",
+  },
 };
 
 import { prisma } from "@/lib/prisma";

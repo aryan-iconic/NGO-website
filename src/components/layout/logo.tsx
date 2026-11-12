@@ -5,8 +5,8 @@ export function Logo({ className, mono = false }: { className?: string; mono?: b
   return (
     <div className={cn("flex items-center gap-2.5", className)}>
       <Image 
-        src="/logo.PNG" 
-        alt="Logo" 
+        src="/logo.png"
+        alt="Shri Nityanikunj Ras Seva Sansthan Trust logo"
         width={40} 
         height={40} 
         className={cn("object-contain", mono && "grayscale brightness-0 invert")}
