@@ -5,7 +5,7 @@ export function Logo({ className, mono = false }: { className?: string; mono?: b
   return (
     <div className={cn("flex items-center gap-2.5", className)}>
       <Image 
-        src="/logo.png"
+        src="/logo.PNG"
         alt="Shri Nityanikunj Ras Seva Sansthan Trust logo"
         width={40} 
         height={40} 
