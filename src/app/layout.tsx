@@ -37,8 +37,10 @@ import { WhatsAppFloatingButton } from "@/components/layout/whatsapp-floating-bu
 import { SocialFloatingButtons } from "@/components/layout/social-floating-buttons";
 import { getWhatsAppHref } from "@/lib/whatsapp";
 import { getServerSettings } from "@/lib/server-settings";
+import { getCurrentUserSummary } from "@/lib/auth";
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const currentUser = await getCurrentUserSummary();
   let settingsMap: Record<string, { value: string; translations: unknown }> = {};
   let publicSettings: Record<string, string> = {};
   let whatsappHref: string | null = null;
@@ -72,7 +74,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 </a>
               </div>
             )}
-            <RouteConditional navbar={<Navbar />} footer={<Footer settings={publicSettings} />} social={<SocialFloatingButtons settings={publicSettings} />} whatsapp={<WhatsAppFloatingButton href={whatsappHref} />}>
+            <RouteConditional navbar={<Navbar initialUser={currentUser} />} footer={<Footer settings={publicSettings} />} social={<SocialFloatingButtons settings={publicSettings} />} whatsapp={<WhatsAppFloatingButton href={whatsappHref} />}>
               {children}
             </RouteConditional>
           </CartProvider>

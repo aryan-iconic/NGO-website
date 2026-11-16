@@ -74,17 +74,15 @@ function LanguageDropdown({
   );
 }
 
-export function Navbar() {
+export function Navbar({ initialUser = null }: { initialUser?: { name: string } | null }) {
   const [open, setOpen] = useState(false);
-  const [user, setUser] = useState<{ name: string } | null>(null);
+  const [user, setUser] = useState<{ name: string } | null>(initialUser);
   const router = useRouter();
   const { locale, setLocale, t } = useI18n();
 
   useEffect(() => {
-    fetch("/api/auth/me")
-      .then((r) => r.json())
-      .then((d) => setUser(d.user));
-  }, []);
+    setUser(initialUser);
+  }, [initialUser]);
 
   const logout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -181,13 +179,24 @@ export function Navbar() {
             </Link>
           ))}
           
-          <div className="flex gap-3 mt-4">
+          <div className="mt-4 flex items-center gap-3">
             <LinkButton href={user ? "/user/dashboard" : "/login"} variant="outline" className="flex-1">
-              {user ? user.name.split(" ")[0] : t("nav.login")}
+              {user ? "My Account" : t("nav.login")}
             </LinkButton>
             <LinkButton href="/donate" className="flex-1">
               {t("nav.donate")}
             </LinkButton>
+            {user && (
+              <button
+                type="button"
+                aria-label="Logout"
+                title="Logout"
+                onClick={logout}
+                className="flex h-11 w-11 items-center justify-center rounded-full border border-border text-muted hover:bg-cream hover:text-red"
+              >
+                <LogOut size={18} />
+              </button>
+            )}
           </div>
         </nav>
       )}

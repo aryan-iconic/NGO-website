@@ -12,8 +12,10 @@ const ADMIN_COOKIE = "snt_admin_session";
 
 interface SessionPayload {
   sub: string;
-  kind: "user" | "admin";
+  kind: "user" | "admin" | "email-verification";
   exp: number;
+  email?: string;
+  name?: string;
 }
 
 function sign(payload: SessionPayload): string {
@@ -41,8 +43,8 @@ function verify(token: string): SessionPayload | null {
 const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
 const TWO_HOURS = 2 * 60 * 60 * 1000;
 
-export async function createUserSession(userId: string) {
-  const token = sign({ sub: userId, kind: "user", exp: Date.now() + SEVEN_DAYS });
+export async function createUserSession(userId: string, name?: string) {
+  const token = sign({ sub: userId, kind: "user", name, exp: Date.now() + SEVEN_DAYS });
   const jar = await cookies();
   jar.set(USER_COOKIE, token, {
     httpOnly: true,
@@ -73,12 +75,37 @@ export async function getCurrentUserId(): Promise<string | null> {
   return payload?.kind === "user" ? payload.sub : null;
 }
 
+export async function getCurrentUserSummary(): Promise<{ name: string } | null> {
+  const jar = await cookies();
+  const token = jar.get(USER_COOKIE)?.value;
+  if (!token) return null;
+  const payload = verify(token);
+  return payload?.kind === "user" ? { name: payload.name || "My Account" } : null;
+}
+
 export async function getCurrentAdminId(): Promise<string | null> {
   const jar = await cookies();
   const token = jar.get(ADMIN_COOKIE)?.value;
   if (!token) return null;
   const payload = verify(token);
   return payload?.kind === "admin" ? payload.sub : null;
+}
+
+const EMAIL_VERIFICATION_TTL = 24 * 60 * 60 * 1000;
+
+export function createEmailVerificationToken(userId: string, email: string) {
+  return sign({
+    sub: userId,
+    kind: "email-verification",
+    email: email.trim().toLowerCase(),
+    exp: Date.now() + EMAIL_VERIFICATION_TTL,
+  });
+}
+
+export function verifyEmailVerificationToken(token: string) {
+  const payload = verify(token);
+  if (payload?.kind !== "email-verification" || !payload.email) return null;
+  return { userId: payload.sub, email: payload.email };
 }
 
 export async function clearUserSession() {

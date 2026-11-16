@@ -8,7 +8,7 @@ export const runtime = "nodejs";
 const paymentEvents = new Set(["payment.captured", "payment.failed"]);
 const refundEvents = new Set(["refund.created", "refund.processed", "refund.failed"]);
 
-type PaymentEntity = { id?: string; order_id?: string; amount?: number; currency?: string; method?: string };
+type PaymentEntity = { id?: string; order_id?: string; amount?: number; currency?: string; method?: string; created_at?: number };
 type RefundEntity = { payment_id?: string; amount?: number };
 type RazorpayEvent = {
   event?: string;
@@ -72,8 +72,8 @@ export async function POST(req: NextRequest) {
 
   try {
     const payment = paymentEvents.has(eventType)
-      ? await prisma.payment.findUnique({ where: { gatewayOrderId: orderId! }, include: { donation: { include: { items: true } } } })
-      : await prisma.payment.findUnique({ where: { gatewayPaymentId: paymentId! }, include: { donation: { include: { items: true } } } });
+      ? await prisma.payment.findUnique({ where: { gatewayOrderId: orderId! }, include: { donation: { include: { items: true, campaign: { select: { title: true } } } } } })
+      : await prisma.payment.findUnique({ where: { gatewayPaymentId: paymentId! }, include: { donation: { include: { items: true, campaign: { select: { title: true } } } } } });
     // These may be events for other Razorpay products using the same account.
     if (!payment) return NextResponse.json({ received: true, ignored: true });
 
@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid refund amount." }, { status: 400 });
     }
 
-    const result = await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async (tx) => {
       await tx.paymentEvent.create({
         data: {
           paymentId: payment.id,
@@ -96,7 +96,7 @@ export async function POST(req: NextRequest) {
       });
 
       if (eventType === "payment.captured") {
-        if (payment.status === "REFUNDED" || payment.status === "PARTIALLY_REFUNDED") return { newlySettled: false };
+        if (payment.status === "REFUNDED" || payment.status === "PARTIALLY_REFUNDED") return;
 
         const settlement = await tx.donation.updateMany({
           where: { id: payment.donationId, status: { not: "SUCCESS" } },
@@ -122,7 +122,6 @@ export async function POST(req: NextRequest) {
             }
           }
         }
-        return { newlySettled: settlement.count > 0 };
       }
 
       if (eventType === "payment.failed") {
@@ -147,19 +146,27 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      return { newlySettled: false };
     });
 
-    if (result.newlySettled) {
+    if (eventType === "payment.captured" && payment.status !== "REFUNDED" && payment.status !== "PARTIALLY_REFUNDED") {
       try {
         const receipt = await prisma.receipt.findUnique({ where: { donationId: payment.donationId } });
         if (receipt) {
-          await sendDonationReceiptEmail({
+          const paidAt = typeof paymentEntity!.created_at === "number"
+            ? new Date(paymentEntity!.created_at * 1000).toISOString()
+            : payment.donation.createdAt.toISOString();
+          const emailSent = await sendDonationReceiptEmail({
             email: payment.donation.donorEmail,
             name: payment.donation.donorName,
+            donationNumber: payment.donation.donationNumber,
             receiptNumber: receipt.receiptNumber,
             amountPaise: payment.amountPaise,
+            paymentId: paymentId!,
+            paymentMethod: paymentEntity!.method,
+            campaignTitle: payment.donation.campaign?.title,
+            paidAt,
           });
+          if (!emailSent) console.error("Donation receipt email was not accepted by the provider", { donationNumber: payment.donation.donationNumber });
         }
       } catch (error) {
         // A mail provider outage must not make Razorpay retry a payment event

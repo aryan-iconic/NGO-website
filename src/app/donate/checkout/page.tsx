@@ -130,7 +130,7 @@ function CheckoutContent() {
           const verified = await verifyResponse.json();
           if (!verifyResponse.ok || !verified.success) throw new Error(verified.error?.message || "Payment confirmation is pending.");
           clear();
-          router.push(`/thank-you?receipt=${encodeURIComponent(verified.receiptNumber)}&amount=${verified.amountPaise}`);
+          router.push(`/thank-you?receipt=${encodeURIComponent(verified.receiptNumber)}&amount=${verified.amountPaise}&email=${verified.emailSent ? "sent" : "retry"}`);
         } catch (verificationError) {
           setSubmitting(false);
           setError(verificationError instanceof Error ? verificationError.message : "Payment confirmation is pending.");

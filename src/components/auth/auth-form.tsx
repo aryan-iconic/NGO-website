@@ -10,12 +10,14 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
   const [form, setForm] = useState({ name: "", email: "", phone: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setNotice(null);
     setLoading(true);
     const endpoint = mode === "login" ? "/api/auth/login" : "/api/auth/register";
     const res = await fetch(endpoint, {
@@ -27,6 +29,10 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
     setLoading(false);
     if (!data.success) {
       setError(data.error?.message ?? "Something went wrong.");
+      return;
+    }
+    if (data.verificationRequired) {
+      setNotice(`We sent a verification link to ${data.email || form.email}. Open it to verify your email, then log in. Only donations made with that exact email address will be linked to your account.`);
       return;
     }
     router.push("/user/dashboard");
@@ -92,7 +98,8 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
             </button>
           </div>
         </div>
-        {error && <p className="text-sm text-red">{error}</p>}
+        {error && <p role="alert" className="text-sm text-red">{error}</p>}
+        {notice && <p role="status" className="rounded-lg border border-primary/20 bg-cream p-3 text-sm text-maroon">{notice}</p>}
         <Button type="submit" size="lg" className="w-full" disabled={loading}>
           {loading ? "Please wait…" : mode === "login" ? "Login" : "Create Account"}
         </Button>

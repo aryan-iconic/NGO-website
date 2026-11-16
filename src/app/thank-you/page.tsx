@@ -10,6 +10,7 @@ function ThankYouContent() {
   const params = useSearchParams();
   const receipt = params.get("receipt");
   const amount = params.get("amount");
+  const emailSent = params.get("email") === "sent";
 
   return (
     <div className="container-app py-24 max-w-md mx-auto text-center">
@@ -18,7 +19,12 @@ function ThankYouContent() {
       <p className="mt-3 text-muted">
         Your contribution of{" "}
         <span className="font-semibold text-maroon">{amount ? formatPaise(Number(amount)) : ""}</span> has
-        been received. A receipt has been generated and sent to your email.
+        been received. Your receipt number is shown below.
+      </p>
+      <p className="mt-2 text-sm text-muted">
+        {emailSent
+          ? "The donation details have also been sent to your email."
+          : "We couldn’t confirm the receipt email was sent. Please check your inbox later or contact the Trust with your receipt number."}
       </p>
       {receipt && (
         <p className="mt-4 text-sm text-muted">

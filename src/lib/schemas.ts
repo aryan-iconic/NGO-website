@@ -12,7 +12,7 @@ export const createDonationSchema = z.object({
   items: z.array(donationItemSchema).default([]),
   customAmountPaise: z.number().int().positive().optional(),
   donorName: z.string().trim().default(""),
-  donorEmail: z.string().email("A valid email is required"),
+  donorEmail: z.string().trim().toLowerCase().email("A valid email is required"),
   donorPhone: z.string().optional(),
   isAnonymous: z.boolean().default(false),
 })
@@ -28,13 +28,13 @@ export const createDonationSchema = z.object({
 
 export const registerSchema = z.object({
   name: z.string().min(2),
-  email: z.string().email(),
+  email: z.string().trim().toLowerCase().email(),
   phone: z.string().optional(),
   password: z.string().min(8, "Password must be at least 8 characters"),
 });
 
 export const loginSchema = z.object({
-  email: z.string().email(),
+  email: z.string().trim().toLowerCase().email(),
   password: z.string().min(1),
 });
 

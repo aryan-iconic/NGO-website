@@ -527,18 +527,48 @@ export const db = {
   getCampaignFinancials: async (campaignId: string) => mapDates(await prisma.campaignFinancials.findUnique({ where: { campaignId } })),
 
   // Users / Admins (auth)
-  findUserByEmail: async (email: string) => mapDates(await prisma.user.findUnique({ where: { email } })),
+  findUserByEmail: async (email: string) => mapDates(await prisma.user.findFirst({ where: { email: { equals: email.trim(), mode: "insensitive" } } })),
   findUserById: async (id: string) => mapDates(await prisma.user.findUnique({ where: { id } })),
   createUser: async (name: string, email: string, phone: string | undefined, password: string) => {
     return mapDates(await prisma.user.create({
-      data: { name, email, phone, passwordHash: bcrypt.hashSync(password, 10) }
+      data: { name, email: email.trim().toLowerCase(), phone, passwordHash: bcrypt.hashSync(password, 10) }
     }));
   },
+  deleteUnverifiedUser: async (id: string) => prisma.user.deleteMany({ where: { id, emailVerifiedAt: null } }),
   verifyUserPassword: async (email: string, password: string) => {
-    const user = await prisma.user.findUnique({ where: { email } });
+    const user = await prisma.user.findFirst({ where: { email: { equals: email.trim(), mode: "insensitive" } } });
     if (!user) return null;
     return bcrypt.compareSync(password, user.passwordHash) ? mapDates(user) : null;
   },
+  verifyUserEmailAndClaimGuestDonations: async (userId: string, email: string) => prisma.$transaction(async (tx) => {
+    const normalizedEmail = email.trim().toLowerCase();
+    const user = await tx.user.findUnique({ where: { id: userId }, select: { email: true, emailVerifiedAt: true } });
+    if (!user || user.email.toLowerCase() !== normalizedEmail) return { verified: false, linkedDonations: 0 };
+
+    if (!user.emailVerifiedAt) {
+      await tx.user.update({ where: { id: userId }, data: { emailVerifiedAt: new Date() } });
+    }
+    const linked = await tx.donation.updateMany({
+      where: {
+        userId: null,
+        donorEmail: { equals: normalizedEmail, mode: "insensitive" },
+      },
+      data: { userId },
+    });
+    return { verified: true, linkedDonations: linked.count };
+  }),
+  claimGuestDonationsForVerifiedUser: async (userId: string) => prisma.$transaction(async (tx) => {
+    const user = await tx.user.findUnique({ where: { id: userId }, select: { email: true, emailVerifiedAt: true } });
+    if (!user?.emailVerifiedAt) return 0;
+    const linked = await tx.donation.updateMany({
+      where: {
+        userId: null,
+        donorEmail: { equals: user.email, mode: "insensitive" },
+      },
+      data: { userId },
+    });
+    return linked.count;
+  }),
   findAdminByEmail: async (email: string) => mapDates(await prisma.admin.findUnique({ where: { email } })),
   findAdminById: async (id: string) => mapDates(await prisma.admin.findUnique({ where: { id } })),
   verifyAdminPassword: async (email: string, password: string) => {
@@ -665,7 +695,10 @@ export const db = {
     });
   },
   findDonationByOrder: async (orderId: string) => mapDates(await prisma.donation.findFirst({ where: { payments: { some: { gatewayOrderId: orderId } } } })),
-  getPaymentByOrder: async (orderId: string) => mapDates(await prisma.payment.findUnique({ where: { gatewayOrderId: orderId }, include: { donation: true } })),
+  getPaymentByOrder: async (orderId: string) => mapDates(await prisma.payment.findUnique({
+    where: { gatewayOrderId: orderId },
+    include: { donation: { include: { campaign: { select: { title: true } } } } },
+  })),
   markDonationPaymentFailed: async (orderId: string) => {
     await prisma.$transaction(async (tx) => {
       const payment = await tx.payment.findUnique({ where: { gatewayOrderId: orderId } });
@@ -803,7 +836,15 @@ export const db = {
   },
   listAuditLogs: async () => mapDates(await prisma.auditLog.findMany({ orderBy: { createdAt: 'desc' } })),
   listPublishedEvents: async () => resolve(prisma.event.findMany({ where: { status: "PUBLISHED" }, orderBy: { eventDate: 'asc' } })),
-  listDonationsForUser: async (userId: string) => mapDates(await prisma.donation.findMany({ where: { userId }, orderBy: { createdAt: 'desc' }, include: { items: true } })),
+  listDonationsForUser: async (userId: string, email: string) => mapDates(await prisma.donation.findMany({
+    where: { userId, donorEmail: { equals: email.trim(), mode: "insensitive" } },
+    orderBy: { createdAt: "desc" },
+    include: {
+      items: { select: { productNameSnapshot: true, quantity: true } },
+      receipt: { select: { receiptNumber: true, voidedAt: true } },
+      payments: { select: { gatewayPaymentId: true, status: true, method: true, paidAt: true, amountPaise: true } },
+    },
+  })),
 
   // Social Media
   listInstagramPosts: async () => resolve(prisma.instagramPost.findMany({ orderBy: { displayOrder: 'asc' } })),

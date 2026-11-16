@@ -47,13 +47,25 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: { message: "Payment is still being processed. Please wait for confirmation." } }, { status: 409 });
     }
 
-    const newlySettled = await db.markDonationCompleted(payment.donationId, paymentId, orderId, gatewayPayment.method);
+    await db.markDonationCompleted(payment.donationId, paymentId, orderId, gatewayPayment.method);
     const receipt = await db.getReceiptForDonation(payment.donationId);
     if (!receipt) throw new Error("Receipt was not created after payment verification");
-    if (newlySettled) {
-      await sendDonationReceiptEmail({ email: payment.donation.donorEmail, name: payment.donation.donorName, receiptNumber: receipt.receiptNumber, amountPaise: payment.amountPaise });
-    }
-    return NextResponse.json({ success: true, receiptNumber: receipt.receiptNumber, amountPaise: payment.amountPaise });
+    const paidAt = typeof gatewayPayment.created_at === "number"
+      ? new Date(gatewayPayment.created_at * 1000).toISOString()
+      : payment.donation.createdAt;
+    const emailSent = await sendDonationReceiptEmail({
+      email: payment.donation.donorEmail,
+      name: payment.donation.donorName,
+      donationNumber: payment.donation.donationNumber,
+      receiptNumber: receipt.receiptNumber,
+      amountPaise: payment.amountPaise,
+      paymentId,
+      paymentMethod: gatewayPayment.method,
+      campaignTitle: payment.donation.campaign?.title,
+      paidAt,
+    });
+    if (!emailSent) console.error("Donation receipt email was not accepted by the provider", { donationNumber: payment.donation.donationNumber });
+    return NextResponse.json({ success: true, receiptNumber: receipt.receiptNumber, amountPaise: payment.amountPaise, emailSent });
   } catch (error) {
     console.error("Donation payment verification failed", error);
     return NextResponse.json({ success: false, error: { message: "Payment was received but confirmation is pending. Contact support if it is not confirmed shortly." } }, { status: 500 });

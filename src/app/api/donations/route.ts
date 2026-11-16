@@ -64,8 +64,14 @@ export async function POST(req: NextRequest) {
       return jsonError("Could not start payment. Please try again.", 502);
     }
 
+    const sessionUserId = await getCurrentUserId();
+    const sessionUser = sessionUserId ? await db.findUserById(sessionUserId) : null;
+    const ownerUserId = sessionUser?.emailVerifiedAt && sessionUser.email.toLowerCase() === input.donorEmail.toLowerCase()
+      ? sessionUser.id
+      : undefined;
+
     const donation = await db.createDonationWithOrder({
-      userId: (await getCurrentUserId()) ?? undefined,
+      userId: ownerUserId,
       campaignId: campaign?.id,
       donorName: input.donorName,
       donorEmail: input.donorEmail,
