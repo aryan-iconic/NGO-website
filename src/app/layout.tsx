@@ -30,19 +30,19 @@ export const metadata: Metadata = {
   },
 };
 
-import { prisma } from "@/lib/prisma";
 import { draftMode } from "next/headers";
 
 import { RouteConditional } from "@/components/layout/route-conditional";
 import { WhatsAppFloatingButton } from "@/components/layout/whatsapp-floating-button";
 import { getWhatsAppHref } from "@/lib/whatsapp";
+import { getServerSettings } from "@/lib/server-settings";
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   let settingsMap: Record<string, { value: string; translations: unknown }> = {};
   let publicSettings: Record<string, string> = {};
   let whatsappHref: string | null = null;
   try {
-    const settings = await prisma.setting.findMany();
+    const settings = await getServerSettings();
     whatsappHref = getWhatsAppHref(settings.find((setting) => setting.key === "contact.whatsapp")?.value);
     settingsMap = Object.fromEntries(settings.map((setting) => [setting.key, { value: setting.value, translations: setting.translations }]));
     publicSettings = Object.fromEntries(settings.map((setting) => [setting.key, setting.value]));

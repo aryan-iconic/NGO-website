@@ -2,13 +2,15 @@ import { db, Campaign } from "./db";
 import { PublicCampaign } from "./types";
 
 export async function toPublicCampaign(c: Campaign): Promise<PublicCampaign> {
-  const category = await db.getCategory(c.categoryId ?? undefined);
-  const sevaArea = await db.getSevaArea(c.sevaAreaId ?? undefined);
-  const products = await db.getCampaignProducts(c.id);
-  const milestones = await db.getCampaignMilestones(c.id);
-  const faqs = await db.getCampaignFaqs(c.id);
-  const updates = await db.getCampaignUpdates(c.id);
-  const media = await db.getCampaignMedia(c.id);
+  const [category, sevaArea, products, milestones, faqs, updates, media] = await Promise.all([
+    db.getCategory(c.categoryId ?? undefined),
+    db.getSevaArea(c.sevaAreaId ?? undefined),
+    db.getCampaignProducts(c.id),
+    db.getCampaignMilestones(c.id),
+    db.getCampaignFaqs(c.id),
+    db.getCampaignUpdates(c.id),
+    db.getCampaignMedia(c.id),
+  ]);
 
   return {
     id: c.id,

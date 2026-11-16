@@ -8,6 +8,7 @@ import { toPublicCampaign } from "@/lib/view-models";
 import { T } from "@/components/i18n/t";
 import { getServerTranslator } from "@/lib/i18n-server";
 import type { Metadata } from "next";
+import { getServerSettings } from "@/lib/server-settings";
 
 export const metadata: Metadata = {
   title: "Shri Nityanikunj Ras Seva Sansthan Trust",
@@ -29,14 +30,21 @@ const icons: Record<string, React.ComponentType<{ size?: number; className?: str
 };
 
 export default async function HomePage() {
-  const { t } = await getServerTranslator();
-  const sevaAreas = await db.listSevaAreas();
-  const campaignsList = await db.listPublicCampaigns();
+  const [translator, sevaAreas, campaignsList, publishedEvents, instagramRows, youtubeRows, settings] = await Promise.all([
+    getServerTranslator(),
+    db.listSevaAreas(),
+    db.listPublicCampaigns(),
+    db.listPublishedEvents(),
+    db.listInstagramPosts(),
+    db.listYouTubeVideos(),
+    getServerSettings(),
+  ]);
+  const { t } = translator;
   const campaigns = await Promise.all(campaignsList.map(toPublicCampaign));
   const featured = campaigns.filter((c) => c.isFeatured);
-  const events = (await db.listPublishedEvents()).slice(0, 2);
-  const instagramPosts = (await db.listInstagramPosts()).filter((p: any) => p.isPublished);
-  const youtubeVideos = (await db.listYouTubeVideos()).filter((p: any) => p.isPublished);
+  const events = publishedEvents.slice(0, 2);
+  const instagramPosts = instagramRows.filter((p: any) => p.isPublished);
+  const youtubeVideos = youtubeRows.filter((p: any) => p.isPublished);
 
   const getYoutubeEmbedUrl = (url: string) => {
     let videoId = "";
@@ -51,7 +59,7 @@ export default async function HomePage() {
     return `${clean}/embed`;
   };
 
-  const heroImage = (await db.getSetting("home.hero.image")) || null;
+  const heroImage = settings.find((setting) => setting.key === "home.hero.image")?.value || null;
   const siteUrl = "https://www.shrinityanikunjtrust.com/";
   const structuredData = {
     "@context": "https://schema.org",
