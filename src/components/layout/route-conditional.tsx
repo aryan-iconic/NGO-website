@@ -6,11 +6,13 @@ export function RouteConditional({
   children,
   navbar,
   footer,
+  social,
   whatsapp,
 }: {
   children: React.ReactNode;
   navbar: React.ReactNode;
   footer: React.ReactNode;
+  social: React.ReactNode;
   whatsapp: React.ReactNode;
 }) {
   const pathname = usePathname();
@@ -25,6 +27,7 @@ export function RouteConditional({
       {navbar}
       <main>{children}</main>
       {footer}
+      {social}
       {whatsapp}
     </>
   );

@@ -34,6 +34,7 @@ import { draftMode } from "next/headers";
 
 import { RouteConditional } from "@/components/layout/route-conditional";
 import { WhatsAppFloatingButton } from "@/components/layout/whatsapp-floating-button";
+import { SocialFloatingButtons } from "@/components/layout/social-floating-buttons";
 import { getWhatsAppHref } from "@/lib/whatsapp";
 import { getServerSettings } from "@/lib/server-settings";
 
@@ -71,7 +72,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 </a>
               </div>
             )}
-            <RouteConditional navbar={<Navbar />} footer={<Footer settings={publicSettings} />} whatsapp={<WhatsAppFloatingButton href={whatsappHref} />}>
+            <RouteConditional navbar={<Navbar />} footer={<Footer settings={publicSettings} />} social={<SocialFloatingButtons settings={publicSettings} />} whatsapp={<WhatsAppFloatingButton href={whatsappHref} />}>
               {children}
             </RouteConditional>
           </CartProvider>
