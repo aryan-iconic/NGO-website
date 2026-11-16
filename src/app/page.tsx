@@ -7,7 +7,6 @@ import { db } from "@/lib/db";
 import { T } from "@/components/i18n/t";
 import { getServerTranslator } from "@/lib/i18n-server";
 import type { Metadata } from "next";
-import { getServerSettings } from "@/lib/server-settings";
 
 export const metadata: Metadata = {
   title: "Shri Nityanikunj Ras Seva Sansthan Trust",
@@ -29,14 +28,13 @@ const icons: Record<string, React.ComponentType<{ size?: number; className?: str
 };
 
 export default async function HomePage() {
-  const [translator, sevaAreas, featured, publishedEvents, instagramRows, youtubeRows, settings] = await Promise.all([
+  const [translator, sevaAreas, featured, publishedEvents, instagramRows, youtubeRows] = await Promise.all([
     getServerTranslator(),
     db.listSevaAreas(),
     db.listHomepageFeaturedCampaigns(),
     db.listPublishedEvents(),
     db.listInstagramPosts(),
     db.listYouTubeVideos(),
-    getServerSettings(),
   ]);
   const { t } = translator;
   const events = publishedEvents.slice(0, 2);
@@ -56,7 +54,6 @@ export default async function HomePage() {
     return `${clean}/embed`;
   };
 
-  const heroImage = settings.find((setting) => setting.key === "home.hero.image")?.value || null;
   const siteUrl = "https://www.shrinityanikunjtrust.com/";
   const structuredData = {
     "@context": "https://schema.org",
@@ -88,15 +85,20 @@ export default async function HomePage() {
       {/* Premium Hero Section */}
       <section className="relative overflow-hidden bg-maroon text-white min-h-[90vh] flex items-center pt-20">
         <div className="absolute inset-0 z-0">
-          {heroImage ? (
-            <>
-              <img src={heroImage} alt="Hero" className="w-full h-full object-cover scale-105 animate-[pulse_20s_ease-in-out_infinite_alternate]" />
-              <div className="absolute inset-0 bg-gradient-to-r from-maroon via-maroon/90 to-maroon/40 backdrop-blur-[2px]"></div>
-              <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent opacity-80 h-32 bottom-0 top-auto"></div>
-            </>
-          ) : (
-            <div className="w-full h-full bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-primary/40 via-maroon to-[#2d0000]"></div>
-          )}
+          <picture className="absolute inset-0 block">
+            <source
+              media="(orientation: portrait)"
+              srcSet="/images/temple-hero-portrait.webp"
+            />
+            <img
+              src="/images/kashi-vishwanath-hero-landscape.webp"
+              alt=""
+              fetchPriority="high"
+              className="h-full w-full scale-105 object-cover animate-[pulse_20s_ease-in-out_infinite_alternate]"
+            />
+          </picture>
+          <div className="absolute inset-0 bg-maroon/55 backdrop-blur-[1px]" />
+          <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-background/80 to-transparent" />
         </div>
         
         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-30 z-0 mix-blend-overlay"></div>
