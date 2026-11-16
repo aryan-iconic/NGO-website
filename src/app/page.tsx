@@ -4,7 +4,6 @@ import { LinkButton } from "@/components/ui/button";
 import { CampaignCard } from "@/components/campaign/campaign-card";
 import { NewsletterSection } from "@/components/home/newsletter-section";
 import { db } from "@/lib/db";
-import { toPublicCampaign } from "@/lib/view-models";
 import { T } from "@/components/i18n/t";
 import { getServerTranslator } from "@/lib/i18n-server";
 import type { Metadata } from "next";
@@ -30,18 +29,16 @@ const icons: Record<string, React.ComponentType<{ size?: number; className?: str
 };
 
 export default async function HomePage() {
-  const [translator, sevaAreas, campaignsList, publishedEvents, instagramRows, youtubeRows, settings] = await Promise.all([
+  const [translator, sevaAreas, featured, publishedEvents, instagramRows, youtubeRows, settings] = await Promise.all([
     getServerTranslator(),
     db.listSevaAreas(),
-    db.listPublicCampaigns(),
+    db.listHomepageFeaturedCampaigns(),
     db.listPublishedEvents(),
     db.listInstagramPosts(),
     db.listYouTubeVideos(),
     getServerSettings(),
   ]);
   const { t } = translator;
-  const campaigns = await Promise.all(campaignsList.map(toPublicCampaign));
-  const featured = campaigns.filter((c) => c.isFeatured);
   const events = publishedEvents.slice(0, 2);
   const instagramPosts = instagramRows.filter((p: any) => p.isPublished);
   const youtubeVideos = youtubeRows.filter((p: any) => p.isPublished);

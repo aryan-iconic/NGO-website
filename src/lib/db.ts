@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { Prisma } from "@prisma/client";
 import { getLocale } from "./get-locale";
 import { resolveLocalizedRecord, generateAllTranslations, TRANSLATABLE_MODELS } from "./translation";
+import type { PublicCampaign } from "./types";
 
 
 // ---------------------------------------------------------------------------
@@ -408,6 +409,44 @@ export const db = {
       else if (sa) where.sevaAreaId = sa.id;
     }
     return resolve(prisma.campaign.findMany({ where, orderBy: { createdAt: 'desc' } }));
+  },
+  listHomepageFeaturedCampaigns: async () => {
+    const campaigns = await prisma.campaign.findMany({
+      where: { status: "ACTIVE", deletedAt: null, isFeatured: true },
+      orderBy: { createdAt: "desc" },
+      include: {
+        category: true,
+        sevaArea: true,
+        products: { where: { isActive: true }, orderBy: { sortOrder: "asc" } },
+        milestones: { orderBy: { sortOrder: "asc" } },
+        faqs: { orderBy: { sortOrder: "asc" } },
+        updates: { orderBy: { publishedAt: "desc" } },
+        media: { orderBy: { sortOrder: "asc" } },
+      },
+    });
+
+    // Materialize the view model from the already-fetched relations. The old
+    // homepage loaded every campaign, then issued seven more queries per row.
+    return campaigns.map((campaign) => ({
+      ...campaign,
+      category: campaign.category
+        ? { id: campaign.category.id, name: campaign.category.name, slug: campaign.category.slug, icon: campaign.category.icon }
+        : { id: "none", name: "General", slug: "general" },
+      sevaArea: campaign.sevaArea
+        ? { id: campaign.sevaArea.id, name: campaign.sevaArea.name, hindiName: campaign.sevaArea.hindiName, slug: campaign.sevaArea.slug, icon: campaign.sevaArea.icon }
+        : undefined,
+      coverImage: campaign.coverImage ?? "",
+      gallery: campaign.media.map((media) => ({ type: media.type, url: media.url })),
+      suggestedAmountsPaise: campaign.suggestedAmountsJson ? JSON.parse(campaign.suggestedAmountsJson) : [],
+      products: campaign.products.map((product) => ({
+        id: product.id,
+        name: product.name,
+        description: product.description,
+        unitName: product.unitName,
+        pricePaise: product.pricePaise,
+        available: product.quantityLimit ? product.quantitySponsored < product.quantityLimit : true,
+      })),
+    })) as unknown as PublicCampaign[];
   },
   getPublicCampaignBySlug: async (slug: string, includeDraft = false) => {
     const statusFilter = includeDraft ? { in: ["ACTIVE", "DRAFT", "COMPLETED"] as any[] } : "ACTIVE";
