@@ -12,10 +12,13 @@ export default async function CampaignsPage({
   searchParams: Promise<{ sevaArea?: string }>;
 }) {
   const { sevaArea } = await searchParams;
-  const categories = await db.listSevaAreas();
-  const filteredList = await db.listPublicCampaigns(sevaArea);
+  const [categories, filteredList, translator] = await Promise.all([
+    db.listSevaAreas(),
+    db.listPublicCampaigns(sevaArea),
+    getServerTranslator(),
+  ]);
   const filtered = await Promise.all(filteredList.map(toPublicCampaign));
-  const { t } = await getServerTranslator();
+  const { t } = translator;
 
   return (
     <div className="bg-background min-h-screen pb-24">

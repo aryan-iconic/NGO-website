@@ -5,9 +5,12 @@ import { ShieldCheck, Target, Heart, Eye, FileText, CheckCircle2 } from "lucide-
 import { getServerTranslator } from "@/lib/i18n-server";
 
 export default async function AboutPage() {
-  const team = await db.listTeamMembers(false);
-  const registrations = await db.listStatutoryRegistrations();
-  const { t } = await getServerTranslator();
+  const [team, registrations, translator] = await Promise.all([
+    db.listTeamMembers(false),
+    db.listStatutoryRegistrations(),
+    getServerTranslator(),
+  ]);
+  const { t } = translator;
 
   return (
     <div className="bg-background min-h-screen pb-20">
