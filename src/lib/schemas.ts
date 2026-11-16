@@ -11,11 +11,20 @@ export const createDonationSchema = z.object({
   campaignId: z.string().optional(),
   items: z.array(donationItemSchema).default([]),
   customAmountPaise: z.number().int().positive().optional(),
-  donorName: z.string().min(2, "Name is required"),
+  donorName: z.string().trim().default(""),
   donorEmail: z.string().email("A valid email is required"),
   donorPhone: z.string().optional(),
   isAnonymous: z.boolean().default(false),
-});
+})
+  .superRefine((input, ctx) => {
+    if (!input.isAnonymous && input.donorName.length < 2) {
+      ctx.addIssue({ code: "custom", path: ["donorName"], message: "Name is required" });
+    }
+  })
+  .transform((input) => ({
+    ...input,
+    donorName: input.donorName || "Anonymous donor",
+  }));
 
 export const registerSchema = z.object({
   name: z.string().min(2),

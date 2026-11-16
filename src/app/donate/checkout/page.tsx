@@ -219,14 +219,21 @@ function CheckoutContent() {
         <form onSubmit={handleSubmit} className="mt-10 space-y-4 max-w-md">
           <h2 className="text-xl">Donor Details</h2>
           <div>
-            <label className="text-sm text-muted" htmlFor="name">Full Name</label>
+            <label className="text-sm text-muted" htmlFor="name">
+              Full Name{form.anonymous ? " (optional)" : ""}
+            </label>
             <input
               id="name"
-              required
+              required={!form.anonymous}
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
               className="mt-1.5 w-full rounded-lg border border-border px-4 py-2.5 bg-surface"
             />
+            {form.anonymous && (
+              <p className="mt-1.5 text-xs text-muted">
+                Your name won’t be shown publicly. Leave this blank to use “Anonymous donor” on the receipt.
+              </p>
+            )}
           </div>
           <div>
             <label className="text-sm text-muted" htmlFor="email">Email</label>
