@@ -612,7 +612,19 @@ export const db = {
     }));
   },
   getDonation: async (id: string) => mapDates(await prisma.donation.findUnique({ where: { id }, include: { items: true } })),
-  listAllDonations: async () => mapDates(await prisma.donation.findMany({ orderBy: { createdAt: 'desc' }, include: { items: true } })),
+  listAllDonations: async () => mapDates(await prisma.donation.findMany({
+    orderBy: { createdAt: 'desc' },
+    include: {
+      items: { select: { productNameSnapshot: true } },
+      campaign: { select: { title: true } },
+      receipt: { select: { receiptNumber: true } },
+    },
+  })),
+  getCompletedDonationSummary: async () => prisma.donation.aggregate({
+    where: { status: "SUCCESS" },
+    _sum: { totalPaise: true },
+    _count: { _all: true },
+  }),
   markDonationCompleted: async (id: string, paymentId: string, orderId?: string, method?: string) => {
     return prisma.$transaction(async (tx) => {
       const result = await tx.donation.updateMany({

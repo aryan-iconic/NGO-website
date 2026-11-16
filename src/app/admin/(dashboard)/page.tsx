@@ -2,14 +2,16 @@ import { db } from "@/lib/db";
 import { formatPaise } from "@/lib/types";
 
 export default async function AdminDashboard() {
-  const campaigns = await db.listAllCampaigns();
-  const donations = await db.listAllDonations();
-  const totalPaise = donations.reduce((s: number, d: any) => s + d.totalPaise, 0);
-  const volunteers = await db.listVolunteerApplications();
+  const [campaigns, donationSummary, volunteers] = await Promise.all([
+    db.listAllCampaigns(),
+    db.getCompletedDonationSummary(),
+    db.listVolunteerApplications(),
+  ]);
+  const totalPaise = donationSummary._sum.totalPaise ?? 0;
 
   const stats = [
-    { label: "Total Donations (all-time)", value: formatPaise(totalPaise) },
-    { label: "Donation Count", value: String(donations.length) },
+    { label: "Completed Donations (all-time)", value: formatPaise(totalPaise) },
+    { label: "Completed Donation Count", value: String(donationSummary._count._all) },
     { label: "Active Campaigns", value: String(campaigns.filter((c: any) => c.status === "ACTIVE").length) },
     { label: "Volunteer Applications", value: String(volunteers.length) },
   ];
