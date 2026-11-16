@@ -9,9 +9,9 @@ export function WhatsAppFloatingButton({ href }: { href: string | null }) {
       aria-label="Chat with us on WhatsApp"
       title="Chat with us on WhatsApp"
       style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 1rem)" }}
-      className="group fixed right-4 z-40 flex h-14 w-14 items-center justify-center gap-2 rounded-full border-2 border-white/90 bg-[#25D366] px-0 text-white shadow-[0_8px_24px_rgba(0,0,0,0.22)] ring-1 ring-black/5 transition duration-200 hover:scale-105 hover:bg-[#1ebe5d] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#25D366]/40 active:scale-95 sm:w-auto sm:px-4"
+      className="group fixed right-4 z-40 flex h-11 w-11 items-center justify-center rounded-full border border-white/90 bg-white p-0 text-maroon shadow-[0_6px_18px_rgba(0,0,0,0.2)] transition duration-200 hover:scale-105 hover:bg-cream focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/40 active:scale-95"
     >
-      <svg viewBox="0 0 32 32" className="h-7 w-7 shrink-0" aria-hidden="true">
+      <svg viewBox="0 0 32 32" className="h-5 w-5 shrink-0" aria-hidden="true">
         <path
           d="M16 3.25a12.4 12.4 0 0 0-10.62 18.8L3.7 28.25l6.36-1.66A12.45 12.45 0 1 0 16 3.25Z"
           fill="none"
@@ -25,9 +25,6 @@ export function WhatsAppFloatingButton({ href }: { href: string | null }) {
           fill="currentColor"
         />
       </svg>
-      <span className="hidden whitespace-nowrap text-sm font-semibold sm:inline">
-        WhatsApp us
-      </span>
     </a>
   );
 }
