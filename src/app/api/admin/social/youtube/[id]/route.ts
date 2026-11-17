@@ -13,7 +13,7 @@ const updateSchema = z.object({
 });
 
 export async function PATCH(req: NextRequest, props: { params: Promise<{ id: string }> }) {
-  const guard = await requireAdmin();
+  const guard = await requireAdmin(["SUPER_ADMIN", "ADMIN", "CONTENT_ADMIN"]);
   if (guard.error) return guard.error;
 
   const { id } = await props.params;
@@ -40,7 +40,7 @@ export async function PATCH(req: NextRequest, props: { params: Promise<{ id: str
 }
 
 export async function DELETE(req: NextRequest, props: { params: Promise<{ id: string }> }) {
-  const guard = await requireAdmin();
+  const guard = await requireAdmin(["SUPER_ADMIN", "ADMIN", "CONTENT_ADMIN"]);
   if (guard.error) return guard.error;
 
   const { id } = await props.params;
