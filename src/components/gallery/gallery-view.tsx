@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import Image from "next/image";
 import { T } from "@/components/i18n/t";
@@ -20,6 +20,8 @@ export type GalleryItemView = {
 export function GalleryView({ items, categories }: { items: GalleryItemView[]; categories: string[] }) {
   const [filter, setFilter] = useState("All");
   const [open, setOpen] = useState<string | null>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const openerRef = useRef<HTMLElement | null>(null);
   const { t } = useI18n();
 
   const filtered = useMemo(() => filter === "All" ? items : items.filter((item) => item.category === filter), [filter, items]);
@@ -27,11 +29,22 @@ export function GalleryView({ items, categories }: { items: GalleryItemView[]; c
   const openItem = activeIndex >= 0 ? filtered[activeIndex] : null;
 
   useEffect(() => {
-    if (!openItem) return;
+    if (!openItem) {
+      openerRef.current?.focus();
+      return;
+    }
+    closeButtonRef.current?.focus();
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") setOpen(null);
       if (event.key === "ArrowLeft" && filtered.length > 1) setOpen(filtered[(activeIndex - 1 + filtered.length) % filtered.length].id);
       if (event.key === "ArrowRight" && filtered.length > 1) setOpen(filtered[(activeIndex + 1) % filtered.length].id);
+      if (event.key === "Tab") {
+        const focusable = Array.from(document.querySelectorAll<HTMLElement>('[role="dialog"] button:not([disabled])'));
+        if (!focusable.length) return;
+        const first = focusable[0], last = focusable[focusable.length - 1];
+        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+        else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+      }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
@@ -78,7 +91,7 @@ export function GalleryView({ items, categories }: { items: GalleryItemView[]; c
             key={item.id}
             className="overflow-hidden rounded-xl border border-border bg-surface shadow-[var(--shadow-soft)] transition-transform hover:-translate-y-0.5"
           >
-            <button type="button" onClick={() => setOpen(item.id)} className="group block w-full text-left" aria-label={`View photo: ${item.caption || item.title || item.altText || `Gallery image ${idx + 1}`}`}>
+            <button type="button" onClick={(event) => { openerRef.current = event.currentTarget; setOpen(item.id); }} className="group block w-full text-left" aria-label={`View photo: ${item.caption || item.title || item.altText || `Gallery image ${idx + 1}`}`}>
               <div className="relative aspect-[4/3] overflow-hidden bg-cream">
                 <Image src={item.imageUrl} alt={item.altText || item.caption || item.title || `Gallery image ${idx + 1}`} fill unoptimized sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw" className="object-cover transition-transform duration-500 group-hover:scale-105" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-transparent to-transparent opacity-80" />
@@ -106,6 +119,7 @@ export function GalleryView({ items, categories }: { items: GalleryItemView[]; c
           onClick={() => setOpen(null)}
         >
           <button
+            ref={closeButtonRef}
             aria-label="Close"
             type="button"
             className="absolute right-4 top-4 z-10 rounded-full bg-white/10 p-2 text-white hover:bg-white/20"
