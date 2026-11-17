@@ -13,7 +13,7 @@ const replySchema = z.object({
 const escapeHtml = (value: string) => value.replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]!);
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const adminRes = await requireAdmin();
+  const adminRes = await requireAdmin(["SUPER_ADMIN", "ADMIN"]);
   if (adminRes.error) return adminRes.error;
 
   const parsed = replySchema.safeParse(await request.json());
