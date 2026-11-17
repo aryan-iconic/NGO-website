@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
     if (!result.verified) {
       return NextResponse.json({ success: false, error: { message: "This verification link no longer matches the account." } }, { status: 400 });
     }
-    return NextResponse.json({ success: true, linkedDonations: result.linkedDonations });
+    return NextResponse.json({ success: true, linkedDonations: result.linkedDonations, restoreRequired: result.restoreRequired });
   } catch (error) {
     console.error("Email verification failed:", error);
     return NextResponse.json({ success: false, error: { message: "Could not verify your email. Please try again." } }, { status: 500 });
