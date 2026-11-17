@@ -533,6 +533,38 @@ export const db = {
       data: { name, email: email.trim().toLowerCase(), phone, passwordHash: bcrypt.hashSync(password, 10) }
     }));
   },
+  restoreDeletedUser: async (id: string, email: string, password: string) => prisma.$transaction(async (tx) => {
+    const existing = await tx.user.findUnique({ where: { id }, select: { email: true, status: true } });
+    if (!existing || existing.status !== "DELETED" || existing.email.toLowerCase() !== email.trim().toLowerCase()) return null;
+    const user = await tx.user.update({
+      where: { id },
+      data: { passwordHash: bcrypt.hashSync(password, 12), status: "ACTIVE", emailVerifiedAt: new Date(), sessionVersion: { increment: 1 } },
+    });
+    const linked = await tx.donation.updateMany({
+      where: { userId: null, donorEmail: { equals: existing.email, mode: "insensitive" } },
+      data: { userId: id },
+    });
+    return { user: mapDates(user), linkedDonations: linked.count };
+  }),
+  updateUserProfile: async (id: string, name: string, phone: string | null) => mapDates(await prisma.user.update({
+    where: { id, status: "ACTIVE" },
+    data: { name, phone },
+  })),
+  updateUserPassword: async (id: string, password: string) => prisma.user.update({
+    where: { id, status: "ACTIVE" },
+    data: { passwordHash: bcrypt.hashSync(password, 12), sessionVersion: { increment: 1 } },
+  }),
+  deactivateUserAccount: async (id: string) => prisma.user.update({
+    where: { id, status: "ACTIVE" },
+    data: {
+      status: "DELETED",
+      emailVerifiedAt: null,
+      sessionVersion: { increment: 1 },
+      // Retain identity and donation records for accounting and later recovery,
+      // while making the previous password unusable.
+      passwordHash: bcrypt.hashSync(randomUUID(), 12),
+    },
+  }),
   deleteUnverifiedUser: async (id: string) => prisma.user.deleteMany({ where: { id, emailVerifiedAt: null } }),
   verifyUserPassword: async (email: string, password: string) => {
     const user = await prisma.user.findFirst({ where: { email: { equals: email.trim(), mode: "insensitive" }, status: "ACTIVE" } });
@@ -541,8 +573,9 @@ export const db = {
   },
   verifyUserEmailAndClaimGuestDonations: async (userId: string, email: string) => prisma.$transaction(async (tx) => {
     const normalizedEmail = email.trim().toLowerCase();
-    const user = await tx.user.findUnique({ where: { id: userId }, select: { email: true, emailVerifiedAt: true } });
-    if (!user || user.email.toLowerCase() !== normalizedEmail) return { verified: false, linkedDonations: 0 };
+    const user = await tx.user.findUnique({ where: { id: userId }, select: { email: true, emailVerifiedAt: true, status: true } });
+    if (!user || user.email.toLowerCase() !== normalizedEmail || user.status === "SUSPENDED") return { verified: false, restoreRequired: false, linkedDonations: 0 };
+    if (user.status === "DELETED") return { verified: true, restoreRequired: true, linkedDonations: 0 };
 
     if (!user.emailVerifiedAt) {
       await tx.user.update({ where: { id: userId }, data: { emailVerifiedAt: new Date() } });
@@ -554,7 +587,7 @@ export const db = {
       },
       data: { userId },
     });
-    return { verified: true, linkedDonations: linked.count };
+    return { verified: true, restoreRequired: false, linkedDonations: linked.count };
   }),
   claimGuestDonationsForVerifiedUser: async (userId: string) => prisma.$transaction(async (tx) => {
     const user = await tx.user.findUnique({ where: { id: userId }, select: { email: true, emailVerifiedAt: true } });
