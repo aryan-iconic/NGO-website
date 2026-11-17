@@ -11,10 +11,12 @@ export default function AdminSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [retryingEmails, setRetryingEmails] = useState(false);
+  const [emailRetryMessage, setEmailRetryMessage] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/admin/settings")
-      .then((r) => r.json())
+      .then((r) => { if (!r.ok) throw new Error("Could not load settings."); return r.json(); })
       .then((d) => {
         if (d.success) {
           const flatSettings = Object.fromEntries(
@@ -26,6 +28,10 @@ export default function AdminSettingsPage() {
           setSettings(flatSettings);
         }
         setLoading(false);
+      })
+      .catch((loadError) => {
+        setError(loadError instanceof Error ? loadError.message : "Could not load settings.");
+        setLoading(false);
       });
   }, []);
 
@@ -33,18 +39,23 @@ export default function AdminSettingsPage() {
     e.preventDefault();
     setSaving(true);
     setError(null);
+    try {
     const res = await fetch("/api/admin/settings", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(settings),
     });
     const data = await res.json();
-    setSaving(false);
     if (!data.success) {
       setError(data.error?.message || "Failed to save settings");
     } else {
       alert(data.warning || "Settings saved successfully.");
       router.refresh();
+    }
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : "Could not save settings. Check your connection and try again.");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -52,13 +63,36 @@ export default function AdminSettingsPage() {
     setSettings((prev) => ({ ...prev, [key]: value }));
   };
 
-  if (loading) return <div className="p-8 text-muted">Loading settings...</div>;
+  const retryDonationEmails = async () => {
+    setRetryingEmails(true);
+    setEmailRetryMessage(null);
+    try {
+      const response = await fetch("/api/admin/email-deliveries/retry", { method: "POST" });
+      const data = await response.json();
+      if (!response.ok || !data.success) throw new Error(data.error?.message || "Could not retry emails.");
+      setEmailRetryMessage(`Delivered ${data.delivered} of ${data.attempted} due receipt emails.`);
+    } catch (retryError) {
+      setEmailRetryMessage(retryError instanceof Error ? retryError.message : "Could not retry emails.");
+    } finally {
+      setRetryingEmails(false);
+    }
+  };
+
+  if (loading) return <div role="status" className="p-8 text-muted">Loading settings...</div>;
+  if (error && !Object.keys(settings).length) return <p role="alert" className="p-8 text-red">{error}</p>;
 
   return (
     <div className="space-y-10 max-w-4xl">
       <div>
         <h1 className="text-2xl font-serif text-maroon mb-6">Site Settings</h1>
         <form onSubmit={handleSave} className="space-y-8">
+
+          <div className="p-6 rounded-lg border border-border bg-surface space-y-3">
+            <h2 className="text-lg font-medium text-maroon">Donation Receipt Email Recovery</h2>
+            <p className="text-sm text-muted">Failed provider sends are retained for retry. Retry due receipts after correcting the email service configuration.</p>
+            <Button type="button" variant="outline" onClick={retryDonationEmails} disabled={retryingEmails}>{retryingEmails ? "Retrying…" : "Retry pending receipt emails"}</Button>
+            {emailRetryMessage && <p role="status" className="text-sm text-muted">{emailRetryMessage}</p>}
+          </div>
           
           <div className="p-6 rounded-lg border border-border bg-surface space-y-4">
             <h2 className="text-lg font-medium text-maroon mb-4">Contact Information</h2>
