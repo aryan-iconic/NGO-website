@@ -251,25 +251,6 @@ export interface YouTubeVideo {
   updatedAt: string;
 }
 
-export type RecurringFrequency = "MONTHLY";
-export type RecurringStatus = "ACTIVE" | "PAUSED" | "CANCELLED";
-
-export interface RecurringDonation {
-  id: string;
-  userId?: string;
-  donorName: string;
-  donorEmail: string;
-  campaignId?: string;
-  amountPaise: number;
-  frequency: RecurringFrequency;
-  gatewaySubscriptionId: string;
-  status: RecurringStatus;
-  nextChargeAt: string;
-  startedAt: string;
-  cancelledAt?: string;
-}
-
-
 // We use Prisma's generated types but map Date -> string for the UI boundary
 function mapDates<T>(obj: T): any {
   if (obj === null || obj === undefined) return obj;
@@ -892,12 +873,6 @@ export const db = {
     return resolve(Promise.resolve(record));
   },
   deleteFaq: async (id: string) => { await prisma.faq.delete({ where: { id } }); return true; },
-
-  // Recurring - Release 2 Boundary
-  listRecurringDonations: async (...args: any[]) => [],
-  getRecurringDonation: async (...args: any[]) => null,
-  createRecurringDonation: async (...args: any[]) => { throw new Error("Recurring donations not supported in Phase 3"); },
-  updateRecurringDonationStatus: async (...args: any[]) => { throw new Error("Recurring donations not supported"); },
 
   // Audit
   logAudit: async (entry: any) => {
