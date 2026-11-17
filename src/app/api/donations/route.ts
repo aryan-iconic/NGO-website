@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { createDonationSchema } from "@/lib/schemas";
 import { getCurrentUserId } from "@/lib/auth";
+import { getMinimumDonationAmountPaise } from "@/lib/server-settings";
 
 const jsonError = (message: string, status: number) =>
   NextResponse.json({ success: false, error: { message } }, { status });
@@ -19,10 +20,13 @@ export async function POST(req: NextRequest) {
   const input = parsed.data;
 
   try {
+    await db.expireStaleDonations();
     let campaign = null;
     if (input.campaignId) {
       campaign = await db.getPublicCampaignBySlug(input.campaignId) ?? await db.getCampaignById(input.campaignId);
       if (!campaign || campaign.status !== "ACTIVE") return jsonError("This campaign is not accepting donations.", 400);
+      if (input.customAmountPaise && (!campaign.allowCustomAmount || campaign.donationMode === "PRODUCTS")) return jsonError("This campaign does not accept custom amount donations.", 400);
+      if (input.items.some((item) => item.productId) && campaign.donationMode === "GENERAL") return jsonError("This campaign does not accept product sponsorships.", 400);
     }
 
     const items = [];
@@ -32,7 +36,7 @@ export async function POST(req: NextRequest) {
         ? (await db.getCampaignProducts(campaign?.id ?? "")).find((p: any) => p.id === item.productId)
         : null;
       if (item.productId && !product) return jsonError("A selected product is no longer available.", 400);
-      if (product?.quantityLimit && product.quantitySponsored + item.quantity > product.quantityLimit) {
+      if (product?.quantityLimit && product.quantitySponsored + product.quantityReserved + item.quantity > product.quantityLimit) {
         return jsonError(`Not enough "${product.name}" remaining.`, 409);
       }
       const unitPricePaise = product?.pricePaise ?? item.unitPricePaise;
@@ -45,7 +49,8 @@ export async function POST(req: NextRequest) {
     const customAmountPaise = input.customAmountPaise ?? 0;
     const totalPaise = itemsTotal + customAmountPaise;
     if (!Number.isSafeInteger(totalPaise) || totalPaise <= 0) return jsonError("Donation amount must be greater than zero.", 400);
-    if (campaign && customAmountPaise > 0 && totalPaise < campaign.minimumAmountPaise) return jsonError("Amount is below this campaign's minimum.", 400);
+    const minimumPaise = campaign ? Math.max(100, campaign.minimumAmountPaise) : await getMinimumDonationAmountPaise();
+    if (totalPaise < minimumPaise) return jsonError(`The minimum donation is ₹${(minimumPaise / 100).toFixed(2)}.`, 400);
     if (customAmountPaise > 0) items.push({ productNameSnapshot: campaign ? "Campaign contribution" : "General donation", unitPriceSnapshotPaise: customAmountPaise, quantity: 1, totalPaise: customAmountPaise });
 
     const receipt = `don_${randomUUID()}`;
@@ -94,6 +99,7 @@ export async function POST(req: NextRequest) {
       donorPhone: input.donorPhone ?? undefined,
     });
   } catch (error) {
+    if (error instanceof Error && error.message === "PRODUCT_STOCK_UNAVAILABLE") return jsonError("A selected item was just reserved by another donor. Please update your cart and try again.", 409);
     console.error("Donation order creation failed", error);
     return jsonError("Could not start payment. Please try again.", 500);
   }
