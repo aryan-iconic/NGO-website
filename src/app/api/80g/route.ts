@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { prisma } from "@/lib/prisma";
 import { rateLimit } from "@/lib/rate-limit";
+import { getCurrentUserId } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
   const ip = req.headers.get("x-forwarded-for") || "unknown-ip";
@@ -34,6 +35,15 @@ export async function POST(req: NextRequest) {
     // Verify email matches to prevent unauthorized lookup
     if (receipt.donation.donorEmail.toLowerCase() !== email.toLowerCase()) {
       return NextResponse.json({ success: false, error: { message: "Email does not match the donation record." } }, { status: 403 });
+    }
+
+    const userId = await getCurrentUserId();
+    if (!userId) {
+      return NextResponse.json({ success: false, error: { message: "Sign in with a verified account that uses the donation email before submitting tax information." } }, { status: 401 });
+    }
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: { email: true, emailVerifiedAt: true } });
+    if (!user?.emailVerifiedAt || user.email.toLowerCase() !== receipt.donation.donorEmail.toLowerCase() || email.toLowerCase() !== user.email.toLowerCase()) {
+      return NextResponse.json({ success: false, error: { message: "The signed-in account must have a verified email matching this donation." } }, { status: 403 });
     }
 
     // Check if tax info already exists
