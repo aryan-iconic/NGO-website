@@ -10,7 +10,7 @@ const escapeHtml = (value: string) => value.replace(/[&<>"']/g, (char) => ({
 }[char]!));
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const adminRes = await requireAdmin();
+  const adminRes = await requireAdmin(["SUPER_ADMIN", "ADMIN", "FINANCE_ADMIN"]);
   if (adminRes.error) return adminRes.error;
 
   try {
