@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { formatPaise } from "@/lib/types";
@@ -12,14 +12,27 @@ const presets = [10100, 50100, 100100, 250100];
 export default function DonatePage() {
   const [amount, setAmount] = useState(presets[1]);
   const [custom, setCustom] = useState("");
+  const [minimumPaise, setMinimumPaise] = useState(100);
   const { addItem } = useCart();
   const router = useRouter();
   const { t } = useI18n();
 
+  useEffect(() => {
+    fetch("/api/donation-config", { cache: "no-store" })
+      .then((res) => res.ok ? res.json() : null)
+      .then((data) => {
+        if (Number.isSafeInteger(data?.minimumAmountPaise) && data.minimumAmountPaise >= 100) {
+          setMinimumPaise(data.minimumAmountPaise);
+          setAmount(presets.find((value) => value >= data.minimumAmountPaise) ?? presets[presets.length - 1]);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   const selected = custom ? Math.round(parseFloat(custom || "0") * 100) : amount;
 
   const handleContinue = () => {
-    if (!selected || selected <= 0) return;
+    if (!Number.isSafeInteger(selected) || selected < minimumPaise) return;
     addItem({
       name: t("General Donation"),
       unitPricePaise: selected,
@@ -39,6 +52,7 @@ export default function DonatePage() {
         {presets.map((p) => (
           <button
             key={p}
+            type="button"
             onClick={() => {
               setAmount(p);
               setCustom("");
@@ -61,7 +75,8 @@ export default function DonatePage() {
         <input
           id="custom-amount"
           type="number"
-          min={101}
+          min={minimumPaise / 100}
+          step="1"
           value={custom}
           onChange={(e) => setCustom(e.target.value)}
           placeholder={t("e.g. 750")}
@@ -74,7 +89,8 @@ export default function DonatePage() {
         <span className="font-semibold text-maroon text-lg">{formatPaise(selected || 0)}</span>
       </div>
 
-      <Button size="lg" className="w-full mt-6" disabled={!selected} onClick={handleContinue}>
+      <p className="mt-2 text-sm text-muted">Minimum donation: {formatPaise(minimumPaise)}</p>
+      <Button size="lg" className="w-full mt-6" disabled={!Number.isSafeInteger(selected) || selected < minimumPaise} onClick={handleContinue}>
         {t("Continue to Donor Details")}
       </Button>
     </div>
