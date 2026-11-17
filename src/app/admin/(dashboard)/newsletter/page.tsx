@@ -1,7 +1,9 @@
 import { db } from "@/lib/db";
 import { format } from "date-fns";
+import { requireAdminPage } from "@/lib/require-admin-page";
 
 export default async function AdminNewsletterPage() {
+  await requireAdminPage(["SUPER_ADMIN", "ADMIN"]);
   const subscribers = await db.listNewsletterSubscribers();
 
   return (
