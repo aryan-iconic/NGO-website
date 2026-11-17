@@ -1,7 +1,25 @@
 import * as OTPAuth from "otpauth";
 import QRCode from "qrcode";
+import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:crypto";
 
 const ISSUER = "Shri Nityanikunj Trust";
+const encryptionKey = () => createHash("sha256").update(process.env.AUTH_SECRET || "dev-only-secret-change-in-production-min-32-chars").digest();
+
+export function encryptTotpSecret(secret: string): string {
+  const iv = randomBytes(12);
+  const cipher = createCipheriv("aes-256-gcm", encryptionKey(), iv);
+  const ciphertext = Buffer.concat([cipher.update(secret, "utf8"), cipher.final()]);
+  return `enc.v1.${iv.toString("base64url")}.${cipher.getAuthTag().toString("base64url")}.${ciphertext.toString("base64url")}`;
+}
+
+export function decryptTotpSecret(value: string | null | undefined): string | undefined {
+  if (!value) return undefined;
+  if (!value.startsWith("enc.v1.")) return value;
+  const [, , ivText, tagText, ciphertextText] = value.split(".");
+  const decipher = createDecipheriv("aes-256-gcm", encryptionKey(), Buffer.from(ivText, "base64url"));
+  decipher.setAuthTag(Buffer.from(tagText, "base64url"));
+  return Buffer.concat([decipher.update(Buffer.from(ciphertextText, "base64url")), decipher.final()]).toString("utf8");
+}
 
 export function generateSecret(): string {
   return new OTPAuth.Secret({ size: 20 }).base32;
