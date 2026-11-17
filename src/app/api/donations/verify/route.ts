@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { sendDonationReceiptEmail } from "@/lib/donation-email";
+import { createReceiptConfirmationToken } from "@/lib/auth";
 
 const schema = z.object({
   razorpay_order_id: z.string().min(1),
@@ -65,7 +66,8 @@ export async function POST(req: NextRequest) {
       paidAt,
     });
     if (!emailSent) console.error("Donation receipt email was not accepted by the provider", { donationNumber: payment.donation.donationNumber });
-    return NextResponse.json({ success: true, receiptNumber: receipt.receiptNumber, amountPaise: payment.amountPaise, emailSent });
+    const confirmationToken = createReceiptConfirmationToken(receipt.receiptNumber, payment.amountPaise);
+    return NextResponse.json({ success: true, receiptNumber: receipt.receiptNumber, amountPaise: payment.amountPaise, emailSent, confirmationToken });
   } catch (error) {
     console.error("Donation payment verification failed", error);
     return NextResponse.json({ success: false, error: { message: "Payment was received but confirmation is pending. Contact support if it is not confirmed shortly." } }, { status: 500 });
