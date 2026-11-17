@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import { format } from "date-fns";
 import Link from "next/link";
 import { PreArnManager } from "@/components/admin/pre-arn-manager";
+import { requireAdminPage } from "@/lib/require-admin-page";
 
 type DonorTaxRecord = {
   id: string;
@@ -14,6 +15,7 @@ type DonorTaxRecord = {
 };
 
 export default async function Admin80GPage() {
+  await requireAdminPage(["SUPER_ADMIN", "ADMIN", "FINANCE_ADMIN"]);
   const records = await db.listDonorTaxInformation() as DonorTaxRecord[];
 
   return (
