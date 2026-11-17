@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -11,13 +11,22 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [resendAvailable, setResendAvailable] = useState(false);
+  const [resending, setResending] = useState(false);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    if (mode === "login" && new URLSearchParams(window.location.search).get("account") === "deactivated") {
+      setNotice("Your account is deactivated. Your donation records are retained; register again with the same email and verify it to restore access.");
+    }
+  }, [mode]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setNotice(null);
+    setResendAvailable(false);
     setLoading(true);
     const endpoint = mode === "login" ? "/api/auth/login" : "/api/auth/register";
     try {
@@ -30,10 +39,16 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
     setLoading(false);
     if (!data.success) {
       setError(data.error?.message ?? "Something went wrong.");
+      if (data.error?.code === "VERIFICATION_EMAIL_FAILED" || data.error?.code === "EMAIL_IN_USE") setResendAvailable(true);
       return;
     }
     if (data.verificationRequired) {
-      setNotice(`We sent a verification link to ${data.email || form.email}. Open it to verify your email, then log in. Only donations made with that exact email address will be linked to your account.`);
+      setResendAvailable(true);
+      setNotice(mode === "login"
+        ? "This account’s email is not verified yet. Request a verification link below, then use the link in your inbox before logging in."
+        : data.accountRestored
+          ? `We sent an account recovery link to ${data.email || form.email}. Open it, verify this same email, and choose a new password to restore access to your retained donation history.`
+          : `We sent a verification link to ${data.email || form.email}. Open it to verify your email, then log in. Only donations made with that exact email address will be linked to your account.`);
       return;
     }
     router.push("/user/dashboard");
@@ -43,6 +58,21 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
     } finally {
       setLoading(false);
     }
+  };
+
+  const resendVerification = async () => {
+    setError(null); setResending(true);
+    try {
+      const res = await fetch("/api/auth/verification/resend", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: form.email }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.error?.message || "Could not send the verification email.");
+      setNotice(data.message || "If this address needs verification, we’ve sent an email with the next steps.");
+    } catch (cause) { setError(cause instanceof Error ? cause.message : "Could not send the verification email."); }
+    finally { setResending(false); }
   };
 
   return (
@@ -107,6 +137,8 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
         </div>
         {error && <p role="alert" className="text-sm text-red">{error}</p>}
         {notice && <p role="status" className="rounded-lg border border-primary/20 bg-cream p-3 text-sm text-maroon">{notice}</p>}
+        {resendAvailable && <button type="button" disabled={resending || !form.email} onClick={resendVerification} className="w-full text-sm font-medium text-primary underline disabled:opacity-60">{resending ? "Sending verification email…" : "Resend verification email"}</button>}
+        {mode === "login" && <div className="text-right"><Link href="/forgot-password" className="text-sm text-primary hover:underline">Forgot password?</Link></div>}
         <Button type="submit" size="lg" className="w-full" disabled={loading}>
           {loading ? "Please wait…" : mode === "login" ? "Login" : "Create Account"}
         </Button>
