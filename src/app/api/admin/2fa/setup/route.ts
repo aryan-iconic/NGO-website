@@ -4,7 +4,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { generateSecret, generateQrCodeDataUrl } from "@/lib/totp";
 
 export async function POST() {
-  const guard = await requireAdmin();
+  const guard = await requireAdmin(["SUPER_ADMIN", "ADMIN"]);
   if (guard.error) return guard.error;
   const admin = guard.admin!;
 
