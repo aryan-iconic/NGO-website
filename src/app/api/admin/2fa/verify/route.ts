@@ -7,7 +7,7 @@ import { z } from "zod";
 const schema = z.object({ code: z.string().min(6).max(6) });
 
 export async function POST(req: NextRequest) {
-  const guard = await requireAdmin();
+  const guard = await requireAdmin(["SUPER_ADMIN", "ADMIN"]);
   if (guard.error) return guard.error;
   const admin = guard.admin!;
 
