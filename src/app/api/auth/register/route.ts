@@ -18,22 +18,25 @@ export async function POST(req: NextRequest) {
   }
   const { name, email, phone, password } = parsed.data;
 
-  if (await db.findUserByEmail(email)) {
+  const existing = await db.findUserByEmail(email);
+  if (existing && existing.status !== "DELETED") {
     return NextResponse.json(
       { success: false, error: { code: "EMAIL_IN_USE", message: "An account with this email already exists." } },
       { status: 409 }
     );
   }
 
-  const user = await db.createUser(name, email, phone, password);
-  const emailSent = await sendUserEmailVerification({ id: user.id, name: user.name, email: user.email });
+  const restoringAccount = existing?.status === "DELETED";
+  const user = restoringAccount
+    ? existing
+    : await db.createUser(name, email, phone, password);
+  const emailSent = await sendUserEmailVerification({ id: user.id, name: user.name, email: user.email }, { restoringAccount });
   if (!emailSent) {
-    await db.deleteUnverifiedUser(user.id);
     return NextResponse.json(
-      { success: false, error: { code: "VERIFICATION_EMAIL_FAILED", message: "We couldn’t send the verification email. Check the email settings and try creating your account again." } },
+      { success: false, error: { code: "VERIFICATION_EMAIL_FAILED", accountExists: true, message: restoringAccount ? "We received your account restoration request but couldn’t send its verification email. Please try again later." : "Your account was created, but we couldn’t send the verification email. You can try resending it below." } },
       { status: 503 },
     );
   }
 
-  return NextResponse.json({ success: true, verificationRequired: true, email: user.email });
+  return NextResponse.json({ success: true, verificationRequired: true, email: user.email, accountRestored: restoringAccount });
 }
