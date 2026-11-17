@@ -32,6 +32,7 @@ interface CampaignSummary {
   slug: string;
   minimumAmountPaise: number;
   allowCustomAmount: boolean;
+  donationMode: "PRODUCTS" | "GENERAL" | "BOTH";
 }
 
 function CheckoutContent() {
@@ -53,8 +54,14 @@ function CheckoutContent() {
       fetch(`/api/campaigns/${campaignSlug}`)
         .then((r) => r.json())
         .then((d) => {
-          if (d.success) setCampaign(d.campaign);
-        });
+          if (d.success) {
+            setCampaign(d.campaign);
+            if (wantsCustom && (!d.campaign.allowCustomAmount || d.campaign.donationMode === "PRODUCTS")) {
+              setError("This campaign does not accept custom amount donations. Choose one of its available sponsorship items.");
+            }
+          }
+          else setError(d.error?.message || "Could not load campaign details. Please go back and try again.");
+        }).catch(() => setError("Could not load campaign details. Please check your connection and try again."));
     }
   }, [campaignSlug]);
 
@@ -130,7 +137,7 @@ function CheckoutContent() {
           const verified = await verifyResponse.json();
           if (!verifyResponse.ok || !verified.success) throw new Error(verified.error?.message || "Payment confirmation is pending.");
           clear();
-          router.push(`/thank-you?receipt=${encodeURIComponent(verified.receiptNumber)}&amount=${verified.amountPaise}&email=${verified.emailSent ? "sent" : "retry"}`);
+          router.push(`/thank-you?confirmation=${encodeURIComponent(verified.confirmationToken)}`);
         } catch (verificationError) {
           setSubmitting(false);
           setError(verificationError instanceof Error ? verificationError.message : "Payment confirmation is pending.");
@@ -184,7 +191,7 @@ function CheckoutContent() {
                 placeholder={`Min ${formatPaise(campaign.minimumAmountPaise)}`}
                 className="flex-1 rounded-lg border border-border px-4 py-2.5 bg-surface"
               />
-              <Button type="button" onClick={addCustomAmount}>
+              <Button type="button" disabled={!customAmount || Number(customAmount) < campaign.minimumAmountPaise / 100} onClick={addCustomAmount}>
                 Add
               </Button>
             </div>
