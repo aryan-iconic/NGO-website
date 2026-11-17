@@ -7,13 +7,143 @@ export const runtime = "nodejs";
 
 const paymentEvents = new Set(["payment.captured", "payment.failed"]);
 const refundEvents = new Set(["refund.created", "refund.processed", "refund.failed"]);
+const subscriptionEvents = new Set([
+  "subscription.authenticated", "subscription.activated", "subscription.charged",
+  "subscription.completed", "subscription.pending", "subscription.halted",
+  "subscription.cancelled", "subscription.paused", "subscription.resumed",
+]);
 
-type PaymentEntity = { id?: string; order_id?: string; amount?: number; currency?: string; method?: string; created_at?: number };
+type PaymentEntity = { id?: string; order_id?: string; amount?: number; currency?: string; method?: string; created_at?: number; status?: string };
 type RefundEntity = { payment_id?: string; amount?: number };
+type SubscriptionEntity = {
+  id?: string;
+  status?: string;
+  plan_id?: string;
+  charge_at?: number | null;
+  ended_at?: number | null;
+  has_scheduled_changes?: boolean;
+  notes?: Record<string, string> | null;
+};
 type RazorpayEvent = {
   event?: string;
-  payload?: { payment?: { entity?: PaymentEntity }; refund?: { entity?: RefundEntity } };
+  payload?: {
+    payment?: { entity?: PaymentEntity };
+    refund?: { entity?: RefundEntity };
+    subscription?: { entity?: SubscriptionEntity };
+  };
 };
+
+class InvalidSubscriptionWebhookEvent extends Error {}
+
+async function processSubscriptionEvent(event: RazorpayEvent, eventType: string, eventId: string) {
+  const subscriptionEntity = event.payload?.subscription?.entity;
+  if (!subscriptionEntity?.id) return { ignored: true as const };
+  const paymentEntity = event.payload?.payment?.entity;
+  const localId = subscriptionEntity.notes?.local_subscription_id;
+  const existing = await prisma.monthlySubscription.findFirst({
+    where: {
+      OR: [
+        { gatewaySubscriptionId: subscriptionEntity.id },
+        ...(localId ? [{ id: localId }] : []),
+      ],
+    },
+    include: { user: { select: { id: true, name: true, email: true } }, plan: { select: { name: true } } },
+  });
+  // Events for other Razorpay integrations can share this endpoint/account.
+  if (!existing) return { ignored: true as const };
+
+  const paid = eventType === "subscription.charged";
+  if (paid && (!paymentEntity?.id || !Number.isSafeInteger(paymentEntity.amount) || paymentEntity.amount !== existing.amountPaise || paymentEntity.currency !== "INR")) {
+    throw new InvalidSubscriptionWebhookEvent("Recurring charge amount or payment data does not match the local plan.");
+  }
+
+  const statusMap: Record<string, string> = {
+    "subscription.authenticated": "AUTHENTICATED",
+    "subscription.activated": "ACTIVE",
+    "subscription.completed": "COMPLETED",
+    "subscription.pending": "PENDING",
+    "subscription.halted": "HALTED",
+    "subscription.cancelled": "CANCELLED",
+    "subscription.paused": "PAUSED",
+    "subscription.resumed": "ACTIVE",
+  };
+  const status = statusMap[eventType] ?? (subscriptionEntity.status ? subscriptionEntity.status.toUpperCase() : existing.status);
+  const chargeResult = await prisma.$transaction(async (tx) => {
+    await tx.razorpaySubscriptionEvent.create({
+      data: { gatewayEventId: eventId, subscriptionId: subscriptionEntity.id, eventType, payload: event, processed: true },
+    });
+    await tx.monthlySubscription.update({
+      where: { id: existing.id },
+      data: {
+        gatewaySubscriptionId: subscriptionEntity.id,
+        status,
+        // A scheduled change can mean something other than cancellation. The
+        // donor/admin cancel endpoint records this flag explicitly.
+        nextChargeAt: subscriptionEntity.charge_at ? new Date(subscriptionEntity.charge_at * 1000) : (status === "CANCELLED" || status === "COMPLETED" ? null : existing.nextChargeAt),
+        cancelledAt: status === "CANCELLED" ? (subscriptionEntity.ended_at ? new Date(subscriptionEntity.ended_at * 1000) : new Date()) : existing.cancelledAt,
+        ...(paid ? { lastChargeAt: paymentEntity?.created_at ? new Date(paymentEntity.created_at * 1000) : new Date() } : {}),
+      },
+    });
+
+    if (paid && paymentEntity?.id) {
+      const priorPayment = await tx.payment.findUnique({ where: { gatewayPaymentId: paymentEntity.id }, select: { id: true, donation: { select: { donationNumber: true, receipt: { select: { receiptNumber: true } } } } } });
+      if (priorPayment) {
+        return { donation: null, receiptNumber: priorPayment.donation.receipt?.receiptNumber ?? null };
+      }
+      const donationNumber = `SUB-${paymentEntity.id}`;
+      const donation = await tx.donation.create({
+        data: {
+          donationNumber,
+          userId: existing.user.id,
+          donorName: existing.user.name,
+          donorEmail: existing.user.email,
+          donorPhone: null,
+          itemsTotalPaise: existing.amountPaise,
+          totalPaise: existing.amountPaise,
+          status: "SUCCESS",
+          isAnonymous: false,
+          isGuest: false,
+          idempotencyKey: `razorpay-subscription:${paymentEntity.id}`,
+        },
+      });
+      const gatewayOrderId = `sub_${subscriptionEntity.id}_${paymentEntity.id}`;
+      await tx.payment.create({
+        data: {
+          donationId: donation.id,
+          gatewayOrderId,
+          gatewayPaymentId: paymentEntity.id,
+          amountPaise: existing.amountPaise,
+          status: "SUCCESS",
+          method: paymentEntity.method,
+          paidAt: paymentEntity.created_at ? new Date(paymentEntity.created_at * 1000) : new Date(),
+        },
+      });
+      const receipt = await tx.receipt.create({ data: { donationId: donation.id, receiptNumber: `REC-${donation.donationNumber}` } });
+      return { donation, receiptNumber: receipt.receiptNumber };
+    }
+    return { donation: null, receiptNumber: null };
+  });
+
+  if (chargeResult.donation && chargeResult.receiptNumber && paymentEntity?.id) {
+    try {
+      const emailSent = await sendDonationReceiptEmail({
+        email: existing.user.email,
+        name: existing.user.name,
+        donationNumber: chargeResult.donation.donationNumber,
+        receiptNumber: chargeResult.receiptNumber,
+        amountPaise: chargeResult.donation.totalPaise,
+        paymentId: paymentEntity.id,
+        paymentMethod: paymentEntity?.method,
+        campaignTitle: `Monthly giving — ${existing.plan.name}`,
+        paidAt: paymentEntity.created_at ? new Date(paymentEntity.created_at * 1000).toISOString() : chargeResult.donation.createdAt.toISOString(),
+      });
+      if (!emailSent) console.error("Monthly donation receipt email was not accepted", { donationNumber: chargeResult.donation.donationNumber });
+    } catch (error) {
+      console.error("Monthly donation receipt email failed after webhook was processed", error);
+    }
+  }
+  return { ignored: false as const };
+}
 
 function refundAmountFromPayload(payload: unknown): number {
   if (!payload || typeof payload !== "object") return 0;
@@ -51,24 +181,52 @@ export async function POST(req: NextRequest) {
   }
 
   const eventType = event.event ?? "";
-  if (!paymentEvents.has(eventType) && !refundEvents.has(eventType)) {
+  if (!paymentEvents.has(eventType) && !refundEvents.has(eventType) && !subscriptionEvents.has(eventType)) {
     return NextResponse.json({ received: true, ignored: true });
+  }
+
+  const eventId = req.headers.get("x-razorpay-event-id") || createHash("sha256").update(rawBody).digest("hex");
+  if (subscriptionEvents.has(eventType)) {
+    try {
+      const result = await processSubscriptionEvent(event, eventType, eventId);
+      return NextResponse.json({ received: true, ...result });
+    } catch (error: unknown) {
+      if (error && typeof error === "object" && "code" in error && error.code === "P2002") {
+        const previousEvent = await prisma.razorpaySubscriptionEvent.findUnique({ where: { gatewayEventId: eventId }, select: { id: true } });
+        if (previousEvent) return NextResponse.json({ received: true, duplicate: true });
+        const paymentId = event.payload?.payment?.entity?.id;
+        if (eventType === "subscription.charged" && paymentId) {
+          const priorCharge = await prisma.payment.findUnique({ where: { gatewayPaymentId: paymentId }, select: { id: true } });
+          if (priorCharge) {
+            await prisma.razorpaySubscriptionEvent.create({
+              data: { gatewayEventId: eventId, subscriptionId: event.payload?.subscription?.entity?.id, eventType, payload: event, processed: true },
+            }).catch(() => undefined);
+            return NextResponse.json({ received: true, duplicate: true });
+          }
+        }
+      }
+      if (error instanceof InvalidSubscriptionWebhookEvent) return NextResponse.json({ error: error.message }, { status: 400 });
+      console.error("Razorpay subscription webhook processing failed", error);
+      return NextResponse.json({ error: "Subscription webhook processing failed." }, { status: 500 });
+    }
   }
 
   const paymentEntity = event.payload?.payment?.entity;
   const refundEntity = event.payload?.refund?.entity;
   const orderId = paymentEntity?.order_id;
   const paymentId = paymentEntity?.id ?? refundEntity?.payment_id;
-  if (paymentEvents.has(eventType) && (typeof orderId !== "string" || typeof paymentId !== "string")) {
+  // Subscription payment events are handled through subscription.charged.
+  // Razorpay can also emit a payment event without an order_id for those
+  // charges; acknowledge it so it does not retry as a malformed one-time order.
+  if (paymentEvents.has(eventType) && typeof orderId !== "string") {
+    return NextResponse.json({ received: true, ignored: true });
+  }
+  if (paymentEvents.has(eventType) && typeof paymentId !== "string") {
     return NextResponse.json({ error: "Invalid payment event." }, { status: 400 });
   }
   if (refundEvents.has(eventType) && typeof paymentId !== "string") {
     return NextResponse.json({ error: "Invalid refund event." }, { status: 400 });
   }
-
-  // Razorpay supplies a stable ID. The body hash fallback is deterministic for
-  // retries where the event ID header is absent.
-  const eventId = req.headers.get("x-razorpay-event-id") || createHash("sha256").update(rawBody).digest("hex");
 
   try {
     const payment = paymentEvents.has(eventType)
