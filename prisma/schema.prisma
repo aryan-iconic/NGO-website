@@ -20,6 +20,7 @@ model User {
   updatedAt       DateTime   @updatedAt @map("updated_at")
   donations       Donation[]
   favorites       Favorite[]
+  monthlySubscriptions MonthlySubscription[]
 
   @@map("users")
 }
@@ -296,6 +297,55 @@ model Favorite {
   @@map("favorites")
 }
 
+model MonthlyGivingPlan {
+  id            String                @id @default(uuid())
+  gatewayPlanId String                @unique @map("gateway_plan_id")
+  name          String
+  description   String?
+  amountPaise   Int                   @map("amount_paise")
+  totalCycles   Int                   @map("total_cycles")
+  isActive      Boolean               @default(true) @map("is_active")
+  createdAt     DateTime              @default(now()) @map("created_at")
+  updatedAt     DateTime              @updatedAt @map("updated_at")
+  subscriptions MonthlySubscription[]
+
+  @@map("monthly_giving_plans")
+}
+
+model MonthlySubscription {
+  id                    String            @id @default(uuid())
+  userId                String            @map("user_id")
+  planId                String            @map("plan_id")
+  gatewaySubscriptionId String?           @unique @map("gateway_subscription_id")
+  amountPaise           Int               @map("amount_paise")
+  status                String            @default("CREATED")
+  shortUrl              String?           @map("short_url")
+  nextChargeAt          DateTime?         @map("next_charge_at")
+  lastChargeAt          DateTime?         @map("last_charge_at")
+  cancelAtCycleEnd      Boolean           @default(false) @map("cancel_at_cycle_end")
+  cancelledAt           DateTime?         @map("cancelled_at")
+  createdAt             DateTime          @default(now()) @map("created_at")
+  updatedAt             DateTime          @updatedAt @map("updated_at")
+  user                  User              @relation(fields: [userId], references: [id])
+  plan                  MonthlyGivingPlan @relation(fields: [planId], references: [id])
+
+  @@index([userId, status, createdAt])
+  @@index([planId, status])
+  @@map("monthly_subscriptions")
+}
+
+model RazorpaySubscriptionEvent {
+  id             String   @id @default(uuid())
+  gatewayEventId String   @unique @map("gateway_event_id")
+  subscriptionId String?  @map("gateway_subscription_id")
+  eventType      String   @map("event_type")
+  payload        Json
+  processed      Boolean  @default(false)
+  receivedAt     DateTime @default(now()) @map("received_at")
+
+  @@index([subscriptionId, receivedAt])
+  @@map("razorpay_subscription_events")
+}
 model VolunteerApplication {
   id           String   @id @default(uuid())
   name         String
