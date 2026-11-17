@@ -2,8 +2,10 @@ import { db } from "@/lib/db";
 import { format } from "date-fns";
 import { Eye, CheckCircle2, Circle, Trash2 } from "lucide-react";
 import { DeleteButton } from "@/components/admin/delete-button";
+import { requireAdminPage } from "@/lib/require-admin-page";
 
 export default async function AdminContactPage() {
+  await requireAdminPage(["SUPER_ADMIN", "ADMIN"]);
   const inquiries = await db.listContactMessages();
 
   return (
