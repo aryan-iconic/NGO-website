@@ -38,7 +38,7 @@ function parseEntries(value?: string | null): PreArnEntry[] {
 }
 
 export async function GET(req: NextRequest) {
-  const adminRes = await requireAdmin();
+  const adminRes = await requireAdmin(["SUPER_ADMIN", "ADMIN", "FINANCE_ADMIN"]);
   if (adminRes.error) return adminRes.error;
 
   const taxYear = req.nextUrl.searchParams.get("taxYear") || "";
@@ -57,7 +57,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const adminRes = await requireAdmin();
+  const adminRes = await requireAdmin(["SUPER_ADMIN", "ADMIN", "FINANCE_ADMIN"]);
   if (adminRes.error) return adminRes.error;
 
   try {
