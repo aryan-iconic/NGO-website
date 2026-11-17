@@ -19,6 +19,7 @@ export default function AdminLoginPage() {
     e.preventDefault();
     setError(null);
     setLoading(true);
+    try {
     const res = await fetch("/api/admin/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -34,14 +35,18 @@ export default function AdminLoginPage() {
       setPendingToken(data.pendingToken);
       return;
     }
+    if (data.mustChangePassword) { router.push("/admin/change-password"); router.refresh(); return; }
     router.push("/admin");
     router.refresh();
+    } catch { setError("Could not reach the server. Check your connection and try again."); }
+    finally { setLoading(false); }
   };
 
   const handleCodeSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
+    try {
     const res = await fetch("/api/admin/2fa/challenge", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -53,8 +58,11 @@ export default function AdminLoginPage() {
       setError(data.error?.message ?? "Invalid code.");
       return;
     }
+    if (data.mustChangePassword) { router.push("/admin/change-password"); router.refresh(); return; }
     router.push("/admin");
     router.refresh();
+    } catch { setError("Could not reach the server. Check your connection and try again."); }
+    finally { setLoading(false); }
   };
 
   return (
@@ -90,6 +98,7 @@ export default function AdminLoginPage() {
                   />
                   <button
                     type="button"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 mt-[3px] text-muted hover:text-text"
                   >
