@@ -1,7 +1,9 @@
 import { db } from "@/lib/db";
 import { formatPaise } from "@/lib/types";
+import { requireAdminPage } from "@/lib/require-admin-page";
 
 export default async function AdminDashboard() {
+  await requireAdminPage(["SUPER_ADMIN", "ADMIN", "FINANCE_ADMIN"]);
   const [campaigns, donationSummary, volunteers] = await Promise.all([
     db.listAllCampaigns(),
     db.getCompletedDonationSummary(),
