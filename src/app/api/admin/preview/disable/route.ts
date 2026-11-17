@@ -3,7 +3,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { redirect } from "next/navigation";
 
 export async function GET(request: Request) {
-  const guard = await requireAdmin();
+  const guard = await requireAdmin(["SUPER_ADMIN", "ADMIN", "CONTENT_ADMIN"]);
   if (guard.error) return guard.error;
 
   const { searchParams } = new URL(request.url);
