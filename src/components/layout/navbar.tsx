@@ -111,9 +111,9 @@ export function Navbar({ initialUser = null }: { initialUser?: { name: string } 
         </nav>
 
         <div className="hidden lg:flex items-center gap-3">
-          <button aria-label="Search" className="p-2 text-muted hover:text-primary transition-colors">
+          <Link href="/search" aria-label="Search the website" className="p-2 text-muted hover:text-primary transition-colors">
             <Search size={18} />
-          </button>
+          </Link>
           <LanguageDropdown 
             locale={locale} 
             setLocale={setLocale} 
