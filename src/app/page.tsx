@@ -71,7 +71,7 @@ export default async function HomePage() {
         "@id": `${siteUrl}#organization`,
         name: "Shri Nityanikunj Ras Seva Sansthan Trust",
         url: siteUrl,
-        logo: "https://www.shrinityanikunjtrust.com/logo.PNG",
+        logo: "https://www.shrinityanikunjtrust.com/logo.png",
       },
     ],
   };
