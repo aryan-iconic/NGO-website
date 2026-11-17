@@ -5,13 +5,11 @@ import { Footer } from "@/components/layout/footer";
 import { CartProvider } from "@/lib/cart-context";
 import { I18nProvider } from "@/lib/i18n";
 
-// Using next/font/google (Inter + Playfair Display) is recommended once the
-// deployment environment has outbound internet access to fonts.googleapis.com —
-// see the commented block below. Falling back to system fonts here since this
-// sandbox has no external network access to verify the build.
-const fontVars = "" as const;
+// next/font self-hosts the chosen brand fonts in the deployment output.
+import { Inter, Playfair_Display } from "next/font/google";
 
-export const dynamic = "force-dynamic";
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
+const playfair = Playfair_Display({ subsets: ["latin"], variable: "--font-playfair", display: "swap" });
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.shrinityanikunjtrust.com"),
@@ -47,8 +45,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   try {
     const settings = await getServerSettings();
     whatsappHref = getWhatsAppHref(settings.find((setting) => setting.key === "contact.whatsapp")?.value);
-    settingsMap = Object.fromEntries(settings.map((setting) => [setting.key, { value: setting.value, translations: setting.translations }]));
-    publicSettings = Object.fromEntries(settings.map((setting) => [setting.key, setting.value]));
+    const publicSetting = (key: string) => key.startsWith("contact.") || key.startsWith("social.") || key.startsWith("home.") || key.startsWith("about.") || key.startsWith("legal.");
+    settingsMap = Object.fromEntries(settings.filter((setting) => publicSetting(setting.key)).map((setting) => [setting.key, { value: setting.value, translations: setting.translations }]));
+    publicSettings = Object.fromEntries(settings.filter((setting) => publicSetting(setting.key)).map((setting) => [setting.key, setting.value]));
   } catch (error) {
     console.error("Failed to load settings in layout:", error);
   }
@@ -62,7 +61,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${fontVars} antialiased`} suppressHydrationWarning>
+      <body className={`${inter.variable} ${playfair.variable} antialiased`} suppressHydrationWarning>
         <I18nProvider settings={settingsMap}>
           <CartProvider>
             {isDraftMode && (
