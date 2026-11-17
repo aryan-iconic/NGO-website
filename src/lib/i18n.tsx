@@ -10,12 +10,20 @@ export type { Locale, TranslationKey };
 // Client-side translation cache
 const translationCache: Record<string, Record<string, string>> = {};
 
-let batchQueue: { text: string, isSensitive?: boolean }[] = [];
+let batchQueue: { locale: Locale; text: string; isSensitive?: boolean }[] = [];
 let batchTimer: any = null;
 let activeTranslations = new Set<string>();
 
 type NotifyCallback = () => void;
 const subscribers = new Set<NotifyCallback>();
+
+const flushTranslationQueue = () => {
+  const queue = batchQueue;
+  batchQueue = [];
+  for (const locale of new Set(queue.map((item) => item.locale))) {
+    void fetchTranslations(locale, queue.filter((item) => item.locale === locale));
+  }
+};
 
 const notifySubscribers = () => {
   subscribers.forEach((cb) => cb());
@@ -50,19 +58,15 @@ const queueTranslation = (locale: Locale, text: string, options?: { isSensitive?
   if (activeTranslations.has(`${locale}:${text}`)) return;
   
   activeTranslations.add(`${locale}:${text}`);
-  batchQueue.push({ text, isSensitive: options?.isSensitive });
+  batchQueue.push({ locale, text, isSensitive: options?.isSensitive });
 
   if (batchTimer) clearTimeout(batchTimer);
   
-  if (batchQueue.length >= 50) {
-    const queueToProcess = [...batchQueue];
-    batchQueue = [];
-    fetchTranslations(locale, queueToProcess);
+  if (batchQueue.length >= 20) {
+    flushTranslationQueue();
   } else {
     batchTimer = setTimeout(() => {
-      const queueToProcess = [...batchQueue];
-      batchQueue = [];
-      fetchTranslations(locale, queueToProcess);
+      flushTranslationQueue();
     }, 40);
   }
 };
@@ -90,6 +94,7 @@ export function I18nProvider({ children, settings = {} }: { children: ReactNode,
     }
     if (isLocale(saved)) {
       setLocaleState(saved);
+      document.documentElement.lang = saved;
       document.documentElement.dir = ["ur", "ar"].includes(saved) ? "rtl" : "ltr";
     }
     
@@ -106,6 +111,7 @@ export function I18nProvider({ children, settings = {} }: { children: ReactNode,
     localStorage.setItem(STORAGE_KEY, l);
     document.cookie = `NEXT_LOCALE=${l}; path=/; max-age=31536000; SameSite=Lax`;
     document.documentElement.dir = ["ur", "ar"].includes(l) ? "rtl" : "ltr";
+    document.documentElement.lang = l;
     
     startTransition(() => {
       setLocaleState(l);
