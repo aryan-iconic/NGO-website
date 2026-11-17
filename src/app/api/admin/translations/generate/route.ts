@@ -11,7 +11,7 @@ type TranslationDelegate = {
 };
 
 export async function POST(request: Request) {
-  const auth = await requireAdmin();
+  const auth = await requireAdmin(["SUPER_ADMIN", "ADMIN", "CONTENT_ADMIN"]);
   if (auth.error) return auth.error;
   if (!hasTranslationProvider()) {
     return NextResponse.json({ success: false, error: { message: "Configure GOOGLE_TRANSLATE_API_KEY or LIBRETRANSLATE_URL in the hosting environment to generate translations. LIBRETRANSLATE_API_KEY is optional and depends on the instance." } }, { status: 503 });
