@@ -1,6 +1,8 @@
 import { db } from "@/lib/db";
+import { requireAdminPage } from "@/lib/require-admin-page";
 
 export default async function AdminAuditLogsPage() {
+  await requireAdminPage(["SUPER_ADMIN", "ADMIN", "FINANCE_ADMIN"]);
   const logs = await db.listAuditLogs();
 
   return (
