@@ -9,11 +9,14 @@ export function NewsletterSection() {
   const [form, setForm] = useState({ name: "", email: "", city: "" });
   const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
+  const [emailWarning, setEmailWarning] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setStatus("loading");
     setError(null);
+    setEmailWarning(null);
+    try {
     const res = await fetch("/api/newsletter", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -25,7 +28,12 @@ export function NewsletterSection() {
       setError(data.error?.message || "Something went wrong.");
       return;
     }
+    if (!data.emailSent) setEmailWarning("Your subscription was saved, but we could not send the welcome email yet.");
     setStatus("done");
+    } catch {
+      setStatus("error");
+      setError("We couldn’t reach the server. Check your connection and try again.");
+    }
   };
 
   return (
@@ -43,18 +51,23 @@ export function NewsletterSection() {
             <div className="p-6 rounded-lg bg-success/10 text-success text-center border border-success/20">
               <h3 className="font-semibold text-lg">{t("nl.success")}</h3>
               <p className="text-sm mt-1">You have successfully subscribed to our newsletter.</p>
+              {emailWarning && <p role="status" className="mt-2 text-sm">{emailWarning}</p>}
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4 bg-white p-6 rounded-xl border border-border shadow-[var(--shadow-soft)]">
               <h3 className="font-medium text-maroon mb-2">{t("nl.label")}</h3>
+              <label className="sr-only" htmlFor="newsletter-name">Name</label>
               <input
+                id="newsletter-name"
                 required
                 placeholder={t("nl.f.name")}
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
                 className="w-full rounded-lg border border-border px-4 py-2.5 bg-surface text-sm"
               />
+              <label className="sr-only" htmlFor="newsletter-email">Email</label>
               <input
+                id="newsletter-email"
                 required
                 type="email"
                 placeholder={t("nl.f.email")}
@@ -62,7 +75,9 @@ export function NewsletterSection() {
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
                 className="w-full rounded-lg border border-border px-4 py-2.5 bg-surface text-sm"
               />
+              <label className="sr-only" htmlFor="newsletter-city">City (optional)</label>
               <input
+                id="newsletter-city"
                 placeholder={t("nl.f.city")}
                 value={form.city}
                 onChange={(e) => setForm({ ...form, city: e.target.value })}
