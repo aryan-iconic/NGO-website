@@ -17,7 +17,7 @@ const createSevaAreaSchema = z.object({
 });
 
 export async function GET() {
-  const guard = await requireAdmin();
+  const guard = await requireAdmin(["SUPER_ADMIN", "ADMIN", "CONTENT_ADMIN"]);
   if (guard.error) return guard.error;
   revalidatePath("/");
     revalidatePath("/campaigns");
@@ -25,7 +25,7 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const guard = await requireAdmin();
+  const guard = await requireAdmin(["SUPER_ADMIN", "ADMIN", "CONTENT_ADMIN"]);
   if (guard.error) return guard.error;
 
   const parsed = createSevaAreaSchema.safeParse(await req.json());
