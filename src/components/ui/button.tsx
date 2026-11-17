@@ -25,7 +25,7 @@ const sizeClasses: Record<Size, string> = {
 };
 
 const base =
-  "inline-flex items-center justify-center gap-2 rounded-full font-medium transition-colors duration-200 min-h-11 disabled:opacity-50 disabled:pointer-events-none";
+  "inline-flex items-center justify-center gap-2 rounded-full font-medium transition-colors duration-200 min-h-11 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-maroon disabled:opacity-50 disabled:pointer-events-none";
 
 export const Button = forwardRef<
   HTMLButtonElement,
