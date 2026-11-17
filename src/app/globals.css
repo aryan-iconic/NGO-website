@@ -6,8 +6,8 @@
   --color-cream: #FDF5E6;
   --color-surface: #FFFFFF;
 
-  --color-primary: #D97706;
-  --color-secondary: #EA8C24;
+  --color-primary: #A54B00;
+  --color-secondary: #914000;
   --color-red: #8F2D2D;
   --color-maroon: #6F1D1B;
   --color-gold: #C99A3D;
@@ -17,10 +17,8 @@
   --color-border: #E9DED0;
   --color-success: #3F7D58;
 
-  /* Swap these for var(--font-inter) / var(--font-playfair) once next/font/google
-     can reach fonts.googleapis.com in your deployment environment. */
-  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
-  --font-serif: "Playfair Display", Georgia, "Noto Serif", serif;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-serif: var(--font-playfair), Georgia, "Noto Serif", serif;
 
   --shadow-soft: 0 4px 24px -6px rgba(111, 29, 27, 0.08);
   --shadow-lift: 0 12px 32px -8px rgba(111, 29, 27, 0.16);
@@ -84,6 +82,13 @@
 
   strong, b {
     font-weight: 700;
+  }
+}
+
+@layer base {
+  :focus-visible {
+    outline: 3px solid var(--color-maroon);
+    outline-offset: 3px;
   }
 }
 
