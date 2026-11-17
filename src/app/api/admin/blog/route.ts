@@ -18,13 +18,13 @@ function slugify(title: string) {
 }
 
 export async function GET() {
-  const guard = await requireAdmin();
+  const guard = await requireAdmin(["SUPER_ADMIN", "ADMIN", "CONTENT_ADMIN"]);
   if (guard.error) return guard.error;
   return NextResponse.json({ success: true, posts: await db.listBlogPosts(false) });
 }
 
 export async function POST(req: NextRequest) {
-  const guard = await requireAdmin();
+  const guard = await requireAdmin(["SUPER_ADMIN", "ADMIN", "CONTENT_ADMIN"]);
   if (guard.error) return guard.error;
 
   const parsed = schema.safeParse(await req.json());
