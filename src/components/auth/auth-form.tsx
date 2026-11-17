@@ -20,6 +20,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
     setNotice(null);
     setLoading(true);
     const endpoint = mode === "login" ? "/api/auth/login" : "/api/auth/register";
+    try {
     const res = await fetch(endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -37,6 +38,11 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
     }
     router.push("/user/dashboard");
     router.refresh();
+    } catch {
+      setError("We couldn’t reach the server. Check your connection and try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -92,6 +98,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
+              aria-label={showPassword ? "Hide password" : "Show password"}
               className="absolute right-3 top-1/2 -translate-y-1/2 mt-[3px] text-muted hover:text-text"
             >
               {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
