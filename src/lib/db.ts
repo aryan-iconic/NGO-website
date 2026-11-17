@@ -1,17 +1,16 @@
 import { prisma } from "./prisma";
 import bcrypt from "bcryptjs";
 import { Prisma } from "@prisma/client";
+import { randomUUID } from "node:crypto";
 import { getLocale } from "./get-locale";
 import { resolveLocalizedRecord, generateAllTranslations, TRANSLATABLE_MODELS } from "./translation";
 import type { PublicCampaign } from "./types";
+import { decryptTotpSecret, encryptTotpSecret } from "./totp";
 
 
 // ---------------------------------------------------------------------------
-// A real, working data layer for this environment: in-memory, persisted to a
-// JSON file on disk so data survives dev-server restarts. Every shape here
-// mirrors prisma/schema.prisma exactly. In production, swap the functions
-// below for `prisma.<model>.*` calls against real Postgres — call sites
-// (API routes / server components) don't need to change, only this file.
+// Prisma-backed data access for PostgreSQL. Keep database operations here so
+// route handlers and server components share the same persistence rules.
 // ---------------------------------------------------------------------------
 
 export type Role = "USER";
@@ -444,7 +443,7 @@ export const db = {
         description: product.description,
         unitName: product.unitName,
         pricePaise: product.pricePaise,
-        available: product.quantityLimit ? product.quantitySponsored < product.quantityLimit : true,
+        available: product.quantityLimit ? product.quantitySponsored + product.quantityReserved < product.quantityLimit : true,
       })),
     })) as unknown as PublicCampaign[];
   },
@@ -536,7 +535,7 @@ export const db = {
   },
   deleteUnverifiedUser: async (id: string) => prisma.user.deleteMany({ where: { id, emailVerifiedAt: null } }),
   verifyUserPassword: async (email: string, password: string) => {
-    const user = await prisma.user.findFirst({ where: { email: { equals: email.trim(), mode: "insensitive" } } });
+    const user = await prisma.user.findFirst({ where: { email: { equals: email.trim(), mode: "insensitive" }, status: "ACTIVE" } });
     if (!user) return null;
     return bcrypt.compareSync(password, user.passwordHash) ? mapDates(user) : null;
   },
@@ -569,20 +568,25 @@ export const db = {
     });
     return linked.count;
   }),
-  findAdminByEmail: async (email: string) => mapDates(await prisma.admin.findUnique({ where: { email } })),
-  findAdminById: async (id: string) => mapDates(await prisma.admin.findUnique({ where: { id } })),
+  findAdminByEmail: async (email: string) => {
+    const admin = await prisma.admin.findFirst({ where: { email: { equals: email.trim(), mode: "insensitive" } } });
+    return admin ? { ...mapDates(admin), twoFactorSecret: decryptTotpSecret(admin.twoFactorSecret), twoFactorPendingSecret: decryptTotpSecret(admin.twoFactorPendingSecret) } : null;
+  },
+  findAdminById: async (id: string) => {
+    const admin = await prisma.admin.findUnique({ where: { id } });
+    return admin ? { ...mapDates(admin), twoFactorSecret: decryptTotpSecret(admin.twoFactorSecret), twoFactorPendingSecret: decryptTotpSecret(admin.twoFactorPendingSecret) } : null;
+  },
   verifyAdminPassword: async (email: string, password: string) => {
-    const admin = await prisma.admin.findUnique({ where: { email } });
+    const admin = await prisma.admin.findFirst({ where: { email: { equals: email.trim(), mode: "insensitive" } } });
     if (!admin) return null;
     return bcrypt.compareSync(password, admin.passwordHash) ? mapDates(admin) : null;
   },
+  changeAdminPassword: async (id: string, password: string) => prisma.admin.update({ where: { id }, data: { passwordHash: bcrypt.hashSync(password, 12), mustChangePassword: false } }),
 
   // Donations
   createDonation: async (input: any) => {
     const year = new Date().getFullYear();
-    const count = await prisma.donation.count();
-    const seq = count + 1;
-    const donationNumber = `DN-${year}-${String(seq).padStart(6, "0")}`;
+    const donationNumber = `DN-${year}-${randomUUID().slice(0, 8).toUpperCase()}`;
 
     const donation = await prisma.donation.create({
       data: {
@@ -613,9 +617,18 @@ export const db = {
   },
   createDonationWithOrder: async (input: any, orderId: string) => {
     const year = new Date().getFullYear();
-    const count = await prisma.donation.count();
-    const donationNumber = `DN-${year}-${String(count + 1).padStart(6, "0")}`;
-    return mapDates(await prisma.donation.create({
+    const donationNumber = `DN-${year}-${randomUUID().slice(0, 8).toUpperCase()}`;
+    return mapDates(await prisma.$transaction(async (tx) => {
+      for (const item of input.items.filter((entry: any) => entry.productId)) {
+        const reserved = await tx.$executeRaw`
+          UPDATE "campaign_products"
+          SET "quantity_reserved" = "quantity_reserved" + ${item.quantity}
+          WHERE "id" = ${item.productId}
+            AND ("quantity_limit" IS NULL OR "quantity_sponsored" + "quantity_reserved" + ${item.quantity} <= "quantity_limit")
+        `;
+        if (reserved !== 1) throw new Error("PRODUCT_STOCK_UNAVAILABLE");
+      }
+      return tx.donation.create({
       data: {
         donationNumber,
         userId: input.userId,
@@ -639,6 +652,7 @@ export const db = {
         payments: { create: { gatewayOrderId: orderId, amountPaise: input.totalPaise, status: "PENDING" } },
       },
       include: { items: true },
+      });
     }));
   },
   getDonation: async (id: string) => mapDates(await prisma.donation.findUnique({ where: { id }, include: { items: true } })),
@@ -679,6 +693,7 @@ export const db = {
             where: { id: item.campaignProductId },
             data: { quantitySponsored: { increment: item.quantity } }
           });
+          await tx.$executeRaw`UPDATE "campaign_products" SET "quantity_reserved" = GREATEST(0, "quantity_reserved" - ${item.quantity}) WHERE "id" = ${item.campaignProductId}`;
         }
       }
 
@@ -704,7 +719,23 @@ export const db = {
       const payment = await tx.payment.findUnique({ where: { gatewayOrderId: orderId } });
       if (!payment) return;
       await tx.payment.updateMany({ where: { gatewayOrderId: orderId, status: { not: "SUCCESS" } }, data: { status: "FAILED" } });
-      await tx.donation.updateMany({ where: { id: payment.donationId, status: "PENDING_PAYMENT" }, data: { status: "FAILED" } });
+      const failed = await tx.donation.updateMany({ where: { id: payment.donationId, status: "PENDING_PAYMENT" }, data: { status: "FAILED" } });
+      if (failed.count) {
+        const items = await tx.donationItem.findMany({ where: { donationId: payment.donationId, campaignProductId: { not: null } } });
+        for (const item of items) {
+          await tx.$executeRaw`UPDATE "campaign_products" SET "quantity_reserved" = GREATEST(0, "quantity_reserved" - ${item.quantity}) WHERE "id" = ${item.campaignProductId!}`;
+        }
+      }
+    });
+  },
+  expireStaleDonations: async () => {
+    const stale = await prisma.donation.findMany({ where: { status: "PENDING_PAYMENT", expiresAt: { lte: new Date() } }, select: { id: true }, take: 100 });
+    for (const donation of stale) await prisma.$transaction(async (tx) => {
+      const expired = await tx.donation.updateMany({ where: { id: donation.id, status: "PENDING_PAYMENT" }, data: { status: "EXPIRED" } });
+      if (!expired.count) return;
+      const items = await tx.donationItem.findMany({ where: { donationId: donation.id, campaignProductId: { not: null } } });
+      for (const item of items) await tx.$executeRaw`UPDATE "campaign_products" SET "quantity_reserved" = GREATEST(0, "quantity_reserved" - ${item.quantity}) WHERE "id" = ${item.campaignProductId!}`;
+      await tx.payment.updateMany({ where: { donationId: donation.id, status: { not: "SUCCESS" } }, data: { status: "CANCELLED" } });
     });
   },
   
@@ -752,10 +783,12 @@ export const db = {
   getAdmin: async (email: string) => await prisma.admin.findUnique({ where: { email } }),
   getAdminById: async (id: string) => await prisma.admin.findUnique({ where: { id } }),
   createAdmin: async (data: any) => await prisma.admin.create({ data }),
-  disableTwoFactor: async (adminId: string) => await prisma.admin.update({ where: { id: adminId }, data: { twoFactorEnabled: false } }),
-  setTwoFactorPendingSecret: async (adminId: string, secret: string) => { /* Mocked */ },
+  disableTwoFactor: async (adminId: string) => await prisma.admin.update({ where: { id: adminId }, data: { twoFactorEnabled: false, twoFactorSecret: null, twoFactorPendingSecret: null } }),
+  setTwoFactorPendingSecret: async (adminId: string, secret: string) => prisma.admin.update({ where: { id: adminId }, data: { twoFactorPendingSecret: encryptTotpSecret(secret) } }),
   confirmTwoFactor: async (adminId: string) => {
-    await prisma.admin.update({ where: { id: adminId }, data: { twoFactorEnabled: true } });
+    const admin = await prisma.admin.findUnique({ where: { id: adminId }, select: { twoFactorPendingSecret: true } });
+    if (!admin?.twoFactorPendingSecret) throw new Error("2FA setup secret is missing");
+    await prisma.admin.update({ where: { id: adminId }, data: { twoFactorSecret: admin.twoFactorPendingSecret, twoFactorPendingSecret: null, twoFactorEnabled: true } });
     return true;
   },
   getEventById: async (id: string) => mapDates(await prisma.event.findUnique({ where: { id } })),
@@ -772,7 +805,19 @@ export const db = {
     return resolve(Promise.resolve(record));
   },
   deleteEvent: async (id: string) => { await prisma.event.delete({ where: { id } }); return true; },
-  createEventRegistration: async (data: any) => mapDates(await prisma.eventRegistration.create({ data })),
+  createEventRegistration: async (data: any) => prisma.$transaction(async (tx) => {
+    await tx.$queryRaw`SELECT id FROM "events" WHERE id = ${data.eventId} FOR UPDATE`;
+    const event = await tx.event.findUnique({ where: { id: data.eventId }, select: { registrationEnabled: true, maxParticipants: true, status: true } });
+    if (!event || event.status !== "PUBLISHED" || !event.registrationEnabled) return { alreadyRegistered: false, capacityReached: true };
+    const duplicate = await tx.eventRegistration.findFirst({ where: { eventId: data.eventId, email: { equals: data.email, mode: "insensitive" } }, select: { id: true } });
+    if (duplicate) return { alreadyRegistered: true, capacityReached: false };
+    if (event.maxParticipants !== null) {
+      const count = await tx.eventRegistration.count({ where: { eventId: data.eventId } });
+      if (count >= event.maxParticipants) return { alreadyRegistered: false, capacityReached: true };
+    }
+    await tx.eventRegistration.create({ data });
+    return { alreadyRegistered: false, capacityReached: false };
+  }),
   listEventRegistrations: async (eventId: string) => mapDates(await prisma.eventRegistration.findMany({ where: { eventId } })),
 
   // Blog
