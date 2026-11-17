@@ -20,38 +20,39 @@ export async function POST(req: NextRequest) {
 
   // 1. Save to database
   const msg = await db.createContactMessage(parsed.data);
+  const escapeHtml = (value: string) => value.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
 
   // 2. Send email to admin
   const adminEmail = process.env.EMAIL_FROM || "onboarding@resend.dev";
-  await sendEmail({
+  const adminEmailSent = await sendEmail({
     to: adminEmail,
     subject: `New Contact Inquiry: ${parsed.data.name}`,
     html: `
       <h2>New Inquiry from Website</h2>
-      <p><strong>Name:</strong> ${parsed.data.name}</p>
-      <p><strong>Email:</strong> ${parsed.data.email}</p>
-      <p><strong>Phone:</strong> ${parsed.data.phone || "Not provided"}</p>
+      <p><strong>Name:</strong> ${escapeHtml(parsed.data.name)}</p>
+      <p><strong>Email:</strong> ${escapeHtml(parsed.data.email)}</p>
+      <p><strong>Phone:</strong> ${escapeHtml(parsed.data.phone || "Not provided")}</p>
       <p><strong>Message:</strong></p>
       <blockquote style="border-left: 4px solid #ccc; padding-left: 10px;">
-        ${parsed.data.message.replace(/\n/g, "<br>")}
+        ${escapeHtml(parsed.data.message).replace(/\n/g, "<br>")}
       </blockquote>
     `,
   });
 
   // 3. Send acknowledgement to user
-  await sendEmail({
+  const acknowledgementSent = await sendEmail({
     to: parsed.data.email,
     subject: "Thank you for contacting Shri Nityanikunj Trust",
     html: `
-      <p>Dear ${parsed.data.name},</p>
+      <p>Dear ${escapeHtml(parsed.data.name)},</p>
       <p>Thank you for reaching out to us. We have received your inquiry and will get back to you shortly.</p>
       <p><strong>Your message:</strong></p>
       <blockquote style="border-left: 4px solid #ccc; padding-left: 10px;">
-        ${parsed.data.message.replace(/\n/g, "<br>")}
+        ${escapeHtml(parsed.data.message).replace(/\n/g, "<br>")}
       </blockquote>
       <p>Warm regards,<br>The Shri Nityanikunj Trust Team</p>
     `,
   });
 
-  return NextResponse.json({ success: true, messageId: msg.id });
+  return NextResponse.json({ success: true, messageId: msg.id, notificationSent: adminEmailSent, acknowledgementSent, emailWarning: !(adminEmailSent && acknowledgementSent) });
 }
