@@ -30,6 +30,8 @@ model Admin {
   passwordHash       String     @map("password_hash")
   role               AdminRole  @default(ADMIN)
   twoFactorEnabled   Boolean    @default(false) @map("two_factor_enabled")
+  twoFactorSecret    String?    @map("two_factor_secret")
+  twoFactorPendingSecret String? @map("two_factor_pending_secret")
   mustChangePassword Boolean    @default(true) @map("must_change_password")
   createdAt          DateTime   @default(now()) @map("created_at")
   updatedAt          DateTime   @updatedAt @map("updated_at")
@@ -501,6 +503,23 @@ model Setting {
 
   translations Json?  @map("translations")
   @@map("settings")
+}
+
+model EmailDelivery {
+  id             String   @id @default(uuid())
+  idempotencyKey String   @unique @map("idempotency_key")
+  toEmail        String   @map("to_email")
+  subject        String
+  html           String
+  status         String   @default("PENDING")
+  attempts       Int      @default(0)
+  lastError      String?  @map("last_error")
+  nextAttemptAt  DateTime @default(now()) @map("next_attempt_at")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@index([status, nextAttemptAt])
+  @@map("email_deliveries")
 }
 
 model TeamMember {
