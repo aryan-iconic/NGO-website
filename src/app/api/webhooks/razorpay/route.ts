@@ -99,7 +99,7 @@ export async function POST(req: NextRequest) {
         if (payment.status === "REFUNDED" || payment.status === "PARTIALLY_REFUNDED") return;
 
         const settlement = await tx.donation.updateMany({
-          where: { id: payment.donationId, status: { not: "SUCCESS" } },
+          where: { id: payment.donationId, status: { notIn: ["SUCCESS", "REFUNDED", "PARTIALLY_REFUNDED"] } },
           data: { status: "SUCCESS" },
         });
         await tx.payment.update({
@@ -119,6 +119,7 @@ export async function POST(req: NextRequest) {
                 where: { id: item.campaignProductId },
                 data: { quantitySponsored: { increment: item.quantity } },
               });
+              await tx.$executeRaw`UPDATE "campaign_products" SET "quantity_reserved" = GREATEST(0, "quantity_reserved" - ${item.quantity}) WHERE "id" = ${item.campaignProductId}`;
             }
           }
         }
@@ -126,7 +127,12 @@ export async function POST(req: NextRequest) {
 
       if (eventType === "payment.failed") {
         await tx.payment.updateMany({ where: { id: payment.id, status: { not: "SUCCESS" } }, data: { status: "FAILED" } });
-        await tx.donation.updateMany({ where: { id: payment.donationId, status: "PENDING_PAYMENT" }, data: { status: "FAILED" } });
+        const failed = await tx.donation.updateMany({ where: { id: payment.donationId, status: "PENDING_PAYMENT" }, data: { status: "FAILED" } });
+        if (failed.count) {
+          for (const item of payment.donation.items) {
+            if (item.campaignProductId) await tx.$executeRaw`UPDATE "campaign_products" SET "quantity_reserved" = GREATEST(0, "quantity_reserved" - ${item.quantity}) WHERE "id" = ${item.campaignProductId}`;
+          }
+        }
       }
 
       if (eventType === "refund.processed") {
