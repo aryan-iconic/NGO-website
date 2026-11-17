@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/require-admin";
 import { z } from "zod";
@@ -19,13 +19,11 @@ const settingsSchema = z.record(
 
 export async function GET() {
   try {
-    const auth = await requireAdmin();
+    const auth = await requireAdmin(["SUPER_ADMIN", "ADMIN"]);
     if (auth.error) return auth.error;
 
     const settings = await prisma.setting.findMany();
     const settingsMap = Object.fromEntries(settings.map((setting) => [setting.key, { value: setting.value, translations: setting.translations }]));
-    
-    revalidatePath("/", "layout");
     return NextResponse.json({ success: true, data: settingsMap });
   } catch (error) {
     console.error(error);
@@ -35,7 +33,7 @@ export async function GET() {
 
 export async function PATCH(request: NextRequest) {
   try {
-    const auth = await requireAdmin();
+    const auth = await requireAdmin(["SUPER_ADMIN", "ADMIN"]);
     if (auth.error) return auth.error;
 
     const body = await request.json();
@@ -43,6 +41,13 @@ export async function PATCH(request: NextRequest) {
     if (!result.success) return NextResponse.json({ success: false, error: result.error }, { status: 400 });
 
     const updates = result.data;
+    if (Object.hasOwn(updates, "donation.minimumAmountPaise")) {
+      const value = updates["donation.minimumAmountPaise"];
+      const amount = Number(typeof value === "string" ? value : value.value);
+      if (!Number.isSafeInteger(amount) || amount < 100) {
+        return NextResponse.json({ success: false, error: { message: "Minimum donation must be at least ₹1 (100 paise)." } }, { status: 400 });
+      }
+    }
     const keys = Object.keys(updates);
     const previousSettings = await prisma.setting.findMany({ where: { key: { in: keys } } });
     const previousByKey = new Map(previousSettings.map((setting) => [setting.key, setting]));
@@ -101,6 +106,7 @@ export async function PATCH(request: NextRequest) {
     );
 
     revalidatePath("/", "layout");
+    revalidateTag("public-site-settings", { expire: 0 });
     return NextResponse.json({ success: true, warning: translationWarning });
   } catch (error) {
     console.error(error);
