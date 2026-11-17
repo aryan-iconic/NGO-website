@@ -3,8 +3,11 @@ import { db } from "@/lib/db";
 import { loginSchema } from "@/lib/schemas";
 import { createUserSession } from "@/lib/auth";
 import { sendUserEmailVerification } from "@/lib/user-email-verification";
+import { rateLimit } from "@/lib/rate-limit";
 
 export async function POST(req: NextRequest) {
+  const emailKey = req.headers.get("x-real-ip") || req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  if (!rateLimit(`login:${emailKey}`, 10, 15 * 60 * 1000)) return NextResponse.json({ success: false, error: { code: "RATE_LIMITED", message: "Too many sign-in attempts. Please wait and try again." } }, { status: 429 });
   const parsed = loginSchema.safeParse(await req.json());
   if (!parsed.success) {
     return NextResponse.json(
