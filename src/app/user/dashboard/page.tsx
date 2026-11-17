@@ -21,6 +21,10 @@ export default async function UserDashboardPage() {
     <div className="container-app py-14">
       <h1 className="text-3xl">Welcome back, {user.name.split(" ")[0]}</h1>
       <p className="text-muted mt-1">Here&apos;s a summary of your giving.</p>
+      <div className="mt-5 flex flex-wrap gap-3">
+        <LinkButton href="/user/settings" size="sm" variant="outline">Account settings</LinkButton>
+        <LinkButton href="/user/subscriptions" size="sm" variant="outline">Monthly subscriptions</LinkButton>
+      </div>
 
       {!user.emailVerifiedAt ? (
         <section className="mt-8 rounded-lg border border-border bg-surface p-6">
