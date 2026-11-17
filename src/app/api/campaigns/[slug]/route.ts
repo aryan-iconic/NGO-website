@@ -17,6 +17,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ slu
       slug: campaign.slug,
       minimumAmountPaise: campaign.minimumAmountPaise,
       allowCustomAmount: campaign.allowCustomAmount,
+      donationMode: campaign.donationMode,
     },
   });
 }
