@@ -19,6 +19,8 @@ export default async function CampaignDetailPage({
   const raw = await db.getPublicCampaignBySlug(slug, isDraftMode);
   if (!raw) notFound();
   const campaign = await toPublicCampaign(raw);
+  const allowCustomDonation = campaign.allowCustomAmount && campaign.donationMode !== "PRODUCTS";
+  const allowProductDonations = campaign.donationMode !== "GENERAL" && campaign.products.length > 0;
 
   const campaignsList = await db.listPublicCampaigns(campaign.sevaArea?.slug);
   const related = (await Promise.all(campaignsList.map(toPublicCampaign)))
@@ -51,9 +53,11 @@ export default async function CampaignDetailPage({
             )}
             <p className="mt-4 text-muted">{campaign.shortDescription}</p>
             <div className="mt-6 flex gap-3">
-              <LinkButton href={`/donate/checkout?campaign=${campaign.slug}`} size="lg">
-                {t("Donate Now")}
-              </LinkButton>
+              {(allowCustomDonation || allowProductDonations) && (
+                <LinkButton href={allowCustomDonation ? `/donate/checkout?campaign=${campaign.slug}&custom=1` : "#support-this-cause"} size="lg">
+                  {t("Donate Now")}
+                </LinkButton>
+              )}
               <LinkButton href="/volunteer" variant="outline" size="lg">
                 {t("Volunteer")}
               </LinkButton>
@@ -104,8 +108,8 @@ export default async function CampaignDetailPage({
           )}
 
           {/* Products */}
-          {campaign.products.length > 0 && (
-            <section>
+          {allowProductDonations && (
+            <section id="support-this-cause">
               <h2 className="text-2xl">{t("Support This Cause")}</h2>
               <p className="text-muted text-sm mt-1">
                 {t("Choose what to sponsor — every item goes directly toward this campaign.")}
@@ -125,7 +129,7 @@ export default async function CampaignDetailPage({
           )}
 
           {/* Custom amount */}
-          {campaign.allowCustomAmount && (
+          {allowCustomDonation && (
             <section>
               <h2 className="text-2xl">{t("Or Give a Custom Amount")}</h2>
               <LinkButton
@@ -204,9 +208,11 @@ export default async function CampaignDetailPage({
           <div className="p-6 rounded-lg border border-border bg-cream sticky top-24">
             <p className="text-sm text-muted">{t("Status")}</p>
             <p className="font-semibold text-maroon capitalize">{t(campaign.status.toLowerCase())}</p>
-            <LinkButton href={`/donate/checkout?campaign=${campaign.slug}`} className="w-full mt-5">
-              {t("Donate Now")}
-            </LinkButton>
+            {(allowCustomDonation || allowProductDonations) && (
+              <LinkButton href={allowCustomDonation ? `/donate/checkout?campaign=${campaign.slug}&custom=1` : "#support-this-cause"} className="w-full mt-5">
+                {t("Donate Now")}
+              </LinkButton>
+            )}
           </div>
         </aside>
       </div>
