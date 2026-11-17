@@ -15,11 +15,14 @@ export default function ContactPage() {
   const [form, setForm] = useState({ name: "", email: "", phone: "", subject: "", message: "" });
   const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
+  const [emailWarning, setEmailWarning] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setStatus("loading");
     setError(null);
+    setEmailWarning(null);
+    try {
     const res = await fetch("/api/contact", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -31,7 +34,12 @@ export default function ContactPage() {
       setError(data.error?.message ?? "Something went wrong.");
       return;
     }
+    if (data.emailWarning) setEmailWarning("Your message was saved, but one of the confirmation emails could not be sent yet. Please contact us by phone if your request is urgent.");
     setStatus("done");
+    } catch {
+      setStatus("error");
+      setError("We couldn’t send your message because of a connection problem. Please try again.");
+    }
   };
 
   return (
@@ -116,14 +124,15 @@ export default function ContactPage() {
                   </div>
                   <h3 className="text-2xl font-serif text-success mb-2">{t("Message Sent!")}</h3>
                   <p className="text-success/80 max-w-md mx-auto"><T k="contact.done" /></p>
+                  {emailWarning && <p role="status" className="mt-3 text-sm text-red">{emailWarning}</p>}
                 </div>
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-5">
                   <div className="grid sm:grid-cols-2 gap-5">
                     <div className="space-y-1.5">
-                      <label className="text-sm font-medium text-text ml-1"><T k="contact.f.name" /> *</label>
+                      <label htmlFor="contact-name" className="text-sm font-medium text-text ml-1"><T k="contact.f.name" /> *</label>
                       <input
-                        required
+                        id="contact-name" required
                         placeholder="John Doe"
                         value={form.name}
                         onChange={(e) => setForm({ ...form, name: e.target.value })}
@@ -131,9 +140,9 @@ export default function ContactPage() {
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-sm font-medium text-text ml-1"><T k="contact.f.email" /> *</label>
+                      <label htmlFor="contact-email" className="text-sm font-medium text-text ml-1"><T k="contact.f.email" /> *</label>
                       <input
-                        required
+                        id="contact-email" required
                         type="email"
                         placeholder="john@example.com"
                         value={form.email}
@@ -144,7 +153,7 @@ export default function ContactPage() {
                   </div>
                   
                   <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-text ml-1"><T k="contact.f.phone" /></label>
+                    <label htmlFor="contact-phone" className="text-sm font-medium text-text ml-1"><T k="contact.f.phone" /></label>
                     <div className="flex gap-2">
                       <select 
                         className="w-28 rounded-xl border border-border px-3 py-3 bg-surface focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none text-sm font-medium"
@@ -157,7 +166,7 @@ export default function ContactPage() {
                         <option value="+61">🇦🇺 +61</option>
                       </select>
                       <input
-                        required
+                        id="contact-phone" required
                         placeholder="98765 43210"
                         value={form.phone}
                         onChange={(e) => setForm({ ...form, phone: e.target.value })}
@@ -167,9 +176,9 @@ export default function ContactPage() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-text ml-1"><T k="contact.f.sub" /> *</label>
+                    <label htmlFor="contact-subject" className="text-sm font-medium text-text ml-1"><T k="contact.f.sub" /> *</label>
                     <input
-                      required
+                      id="contact-subject" required
                       placeholder="How can we help?"
                       value={form.subject}
                       onChange={(e) => setForm({ ...form, subject: e.target.value })}
@@ -178,9 +187,9 @@ export default function ContactPage() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-text ml-1"><T k="contact.f.msg" /> *</label>
+                    <label htmlFor="contact-message" className="text-sm font-medium text-text ml-1"><T k="contact.f.msg" /> *</label>
                     <textarea
-                      required
+                      id="contact-message" required
                       rows={5}
                       placeholder="Write your message here..."
                       value={form.message}
