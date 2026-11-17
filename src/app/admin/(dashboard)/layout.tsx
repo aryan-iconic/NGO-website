@@ -43,7 +43,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   if (!admin) redirect("/admin/login");
   if (admin.mustChangePassword) redirect("/admin/change-password");
   const visibleNav = admin.role === "SUPER_ADMIN" || admin.role === "ADMIN" ? nav : admin.role === "FINANCE_ADMIN"
-    ? nav.filter((item) => ["/admin", "/admin/donations", "/admin/donation-settings", "/admin/80g", "/admin/audit-logs"].includes(item.href))
+    ? nav.filter((item) => ["/admin", "/admin/donations", "/admin/donation-settings", "/admin/recurring", "/admin/80g", "/admin/audit-logs"].includes(item.href))
     : nav.filter((item) => ["/admin/campaigns", "/admin/seva-areas", "/admin/people", "/admin/content", "/admin/social", "/admin/transparency", "/admin/translations"].includes(item.href));
   return (
     <div className="min-h-screen flex bg-background-alt">
