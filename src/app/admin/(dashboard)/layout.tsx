@@ -5,6 +5,7 @@ import {
   LayoutDashboard,
   Megaphone,
   HandCoins,
+  Wallet,
   RefreshCw,
   Users,
   Image as ImageIcon,
@@ -12,12 +13,16 @@ import {
   ScrollText,
   Languages,
 } from "lucide-react";
+import { redirect } from "next/navigation";
+import { getCurrentAdminId } from "@/lib/auth";
+import { db } from "@/lib/db";
 
 const nav = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/campaigns", label: "Campaigns", icon: Megaphone },
   { href: "/admin/seva-areas", label: "Seva Areas", icon: LayoutDashboard },
   { href: "/admin/donations", label: "Donations", icon: HandCoins },
+  { href: "/admin/donation-settings", label: "Donation Rules", icon: Wallet },
   { href: "/admin/recurring", label: "Monthly Giving", icon: RefreshCw },
   { href: "/admin/80g", label: "80G Tax Requests", icon: ScrollText },
   { href: "/admin/people", label: "People", icon: Users },
@@ -31,7 +36,15 @@ const nav = [
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ];
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+  const adminId = await getCurrentAdminId();
+  if (!adminId) redirect("/admin/login");
+  const admin = await db.findAdminById(adminId);
+  if (!admin) redirect("/admin/login");
+  if (admin.mustChangePassword) redirect("/admin/change-password");
+  const visibleNav = admin.role === "SUPER_ADMIN" || admin.role === "ADMIN" ? nav : admin.role === "FINANCE_ADMIN"
+    ? nav.filter((item) => ["/admin", "/admin/donations", "/admin/donation-settings", "/admin/80g", "/admin/audit-logs"].includes(item.href))
+    : nav.filter((item) => ["/admin/campaigns", "/admin/seva-areas", "/admin/people", "/admin/content", "/admin/social", "/admin/transparency", "/admin/translations"].includes(item.href));
   return (
     <div className="min-h-screen flex bg-background-alt">
       <aside className="hidden md:flex w-64 flex-col border-r border-border bg-surface p-5">
@@ -39,7 +52,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <Logo />
         </div>
         <nav className="flex flex-col gap-1">
-          {nav.map(({ href, label, icon: Icon }) => (
+          {visibleNav.map(({ href, label, icon: Icon }) => (
             <Link
               key={href}
               href={href}
@@ -53,9 +66,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </aside>
       <div className="flex-1 min-w-0">
         <header className="h-16 border-b border-border bg-surface flex items-center px-6 justify-between">
-          <span className="text-sm text-muted font-semibold">Admin Dashboard</span>
+            <span className="text-sm text-muted font-semibold">Admin Dashboard · {admin.role.replaceAll("_", " ")}</span>
           <div className="flex items-center gap-4">
-            <span className="text-sm font-medium text-maroon hidden sm:inline-block">admin@nityanikunj.org</span>
+            <span className="text-sm font-medium text-maroon hidden sm:inline-block">{admin.name}</span>
             <LogoutButton />
           </div>
         </header>
