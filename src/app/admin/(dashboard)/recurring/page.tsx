@@ -1,7 +1,9 @@
 import { db } from "@/lib/db";
 import { formatPaise } from "@/lib/types";
+import { requireAdminPage } from "@/lib/require-admin-page";
 
 export default async function AdminRecurringPage() {
+  await requireAdminPage(["SUPER_ADMIN", "ADMIN", "FINANCE_ADMIN"]);
   const recurring = await db.listRecurringDonations();
   const activeTotal = recurring.filter((r: any) => r.status === "ACTIVE").reduce((s: number, r: any) => s + r.amountPaise, 0);
 
