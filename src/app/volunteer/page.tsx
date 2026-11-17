@@ -41,6 +41,7 @@ export default function VolunteerPage() {
     }
     setStatus("loading");
     setError(null);
+    try {
     const res = await fetch("/api/volunteers", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -53,6 +54,10 @@ export default function VolunteerPage() {
       return;
     }
     setStatus("done");
+    } catch {
+      setStatus("error");
+      setError("We couldn’t reach the server. Check your connection and try again.");
+    }
   };
 
   if (status === "done") {
@@ -145,9 +150,9 @@ export default function VolunteerPage() {
                 
                 <div className="grid sm:grid-cols-2 gap-5">
                   <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-text ml-1"><T k="vol.f.name" /> *</label>
+                    <label htmlFor="vol-name" className="text-sm font-medium text-text ml-1"><T k="vol.f.name" /> *</label>
                     <input
-                      required
+                      id="vol-name" required
                       placeholder="John Doe"
                       value={form.name}
                       onChange={(e) => setForm({ ...form, name: e.target.value })}
@@ -155,9 +160,9 @@ export default function VolunteerPage() {
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-text ml-1"><T k="vol.f.email" /> *</label>
+                    <label htmlFor="vol-email" className="text-sm font-medium text-text ml-1"><T k="vol.f.email" /> *</label>
                     <input
-                      required
+                      id="vol-email" required
                       type="email"
                       placeholder="john@example.com"
                       value={form.email}
@@ -169,9 +174,9 @@ export default function VolunteerPage() {
                 
                 <div className="grid sm:grid-cols-2 gap-5">
                   <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-text ml-1"><T k="vol.f.phone" /> *</label>
+                    <label htmlFor="vol-phone" className="text-sm font-medium text-text ml-1"><T k="vol.f.phone" /> *</label>
                     <input
-                      required
+                      id="vol-phone" required
                       placeholder="+91 98765 43210"
                       value={form.phone}
                       onChange={(e) => setForm({ ...form, phone: e.target.value })}
@@ -179,9 +184,9 @@ export default function VolunteerPage() {
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-text ml-1"><T k="vol.f.city" /> *</label>
+                    <label htmlFor="vol-city" className="text-sm font-medium text-text ml-1"><T k="vol.f.city" /> *</label>
                     <input
-                      required
+                      id="vol-city" required
                       placeholder="Varanasi"
                       value={form.city}
                       onChange={(e) => setForm({ ...form, city: e.target.value })}
@@ -214,9 +219,9 @@ export default function VolunteerPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-text ml-1"><T k="vol.f.avail" /> *</label>
+                  <label htmlFor="vol-availability" className="text-sm font-medium text-text ml-1"><T k="vol.f.avail" /> *</label>
                   <input
-                    required
+                    id="vol-availability" required
                     placeholder="Weekends, Tuesday evenings, etc."
                     value={form.availability}
                     onChange={(e) => setForm({ ...form, availability: e.target.value })}
@@ -225,9 +230,9 @@ export default function VolunteerPage() {
                 </div>
                 
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-text ml-1"><T k="vol.f.msg" /></label>
+                  <label htmlFor="vol-message" className="text-sm font-medium text-text ml-1"><T k="vol.f.msg" /></label>
                   <textarea
-                    rows={4}
+                    id="vol-message" rows={4}
                     placeholder="Any relevant skills or previous experience? Let us know!"
                     value={form.message}
                     onChange={(e) => setForm({ ...form, message: e.target.value })}
