@@ -4,7 +4,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { statutoryRegistrationSchema } from "@/lib/schemas";
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const adminRes = await requireAdmin();
+  const adminRes = await requireAdmin(["SUPER_ADMIN", "ADMIN", "CONTENT_ADMIN"]);
   if (adminRes.error) return adminRes.error;
   
   const { id } = await params;
@@ -18,7 +18,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const adminRes = await requireAdmin();
+  const adminRes = await requireAdmin(["SUPER_ADMIN", "ADMIN", "CONTENT_ADMIN"]);
   if (adminRes.error) return adminRes.error;
   
   const { id } = await params;
