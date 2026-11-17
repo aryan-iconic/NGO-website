@@ -9,5 +9,5 @@ export async function POST(_req: NextRequest) {
 export async function GET() {
   const userId = await getCurrentUserId();
   if (!userId) return NextResponse.json({ success: false, error: { code: "UNAUTHORIZED", message: "Sign in required." } }, { status: 401 });
-  return NextResponse.json({ success: true, recurring: await db.listRecurringDonations(userId) });
+  return NextResponse.json({ success: true, enabled: false, recurring: [] });
 }
