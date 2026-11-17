@@ -17,8 +17,9 @@ const ADMIN_PASSWORD_CHANGE_COOKIE = "snt_admin_password_change";
 
 interface SessionPayload {
   sub: string;
-  kind: "user" | "admin" | "admin-password-change" | "email-verification" | "newsletter-unsubscribe" | "receipt-confirmation";
+  kind: "user" | "admin" | "admin-password-change" | "email-verification" | "password-reset" | "newsletter-unsubscribe" | "receipt-confirmation";
   exp: number;
+  sessionVersion?: number;
   email?: string;
   name?: string;
   receiptNumber?: string;
@@ -51,7 +52,9 @@ const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
 const TWO_HOURS = 2 * 60 * 60 * 1000;
 
 export async function createUserSession(userId: string, name?: string) {
-  const token = sign({ sub: userId, kind: "user", name, exp: Date.now() + SEVEN_DAYS });
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { status: true, sessionVersion: true } });
+  if (!user || user.status !== "ACTIVE") throw new Error("Cannot create a session for an inactive account.");
+  const token = sign({ sub: userId, kind: "user", name, sessionVersion: user.sessionVersion, exp: Date.now() + SEVEN_DAYS });
   const jar = await cookies();
   jar.set(USER_COOKIE, token, {
     httpOnly: true,
@@ -101,8 +104,8 @@ export async function getCurrentUserId(): Promise<string | null> {
   if (!token) return null;
   const payload = verify(token);
   if (payload?.kind !== "user") return null;
-  const user = await prisma.user.findUnique({ where: { id: payload.sub }, select: { status: true } });
-  return user?.status === "ACTIVE" ? payload.sub : null;
+  const user = await prisma.user.findUnique({ where: { id: payload.sub }, select: { status: true, sessionVersion: true } });
+  return user?.status === "ACTIVE" && payload.sessionVersion === user.sessionVersion ? payload.sub : null;
 }
 
 export async function getCurrentUserSummary(): Promise<{ name: string } | null> {
@@ -111,8 +114,8 @@ export async function getCurrentUserSummary(): Promise<{ name: string } | null> 
   if (!token) return null;
   const payload = verify(token);
   if (payload?.kind !== "user") return null;
-  const user = await prisma.user.findUnique({ where: { id: payload.sub }, select: { name: true, status: true } });
-  return user?.status === "ACTIVE" ? { name: user.name || "My Account" } : null;
+  const user = await prisma.user.findUnique({ where: { id: payload.sub }, select: { name: true, status: true, sessionVersion: true } });
+  return user?.status === "ACTIVE" && payload.sessionVersion === user.sessionVersion ? { name: user.name || "My Account" } : null;
 }
 
 export async function getCurrentAdminId(): Promise<string | null> {
@@ -140,6 +143,16 @@ export function verifyEmailVerificationToken(token: string) {
   const payload = verify(token);
   if (payload?.kind !== "email-verification" || !payload.email) return null;
   return { userId: payload.sub, email: payload.email };
+}
+
+export function createPasswordResetToken(userId: string, email: string, sessionVersion: number) {
+  return sign({ sub: userId, kind: "password-reset", email: email.trim().toLowerCase(), sessionVersion, exp: Date.now() + 60 * 60 * 1000 });
+}
+
+export function verifyPasswordResetToken(token: string) {
+  const payload = verify(token);
+  if (payload?.kind !== "password-reset" || !payload.email || !Number.isSafeInteger(payload.sessionVersion)) return null;
+  return { userId: payload.sub, email: payload.email, sessionVersion: payload.sessionVersion! };
 }
 
 export function createNewsletterUnsubscribeToken(email: string) {
