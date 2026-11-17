@@ -2,9 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { registerSchema } from "@/lib/schemas";
 import { sendUserEmailVerification } from "@/lib/user-email-verification";
+import { rateLimit } from "@/lib/rate-limit";
 
 export async function POST(req: NextRequest) {
-  const parsed = registerSchema.safeParse(await req.json());
+  const ipKey = req.headers.get("x-real-ip") || req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  if (!rateLimit(`register:${ipKey}`, 5, 60 * 60 * 1000)) {
+    return NextResponse.json({ success: false, error: { code: "RATE_LIMITED", message: "Too many account creation attempts. Please try again later." } }, { status: 429 });
+  }
+  const parsed = registerSchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) {
     return NextResponse.json(
       { success: false, error: { code: "VALIDATION_ERROR", message: parsed.error.issues[0]?.message } },
