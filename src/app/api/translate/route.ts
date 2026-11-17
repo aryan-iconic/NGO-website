@@ -3,6 +3,7 @@ import { isLocale } from "@/lib/locales";
 import { prisma } from "@/lib/prisma";
 import { createHash } from "crypto";
 import { ENABLED_LOCALES, translateTexts } from "@/lib/translation";
+import { rateLimit } from "@/lib/rate-limit";
 
 // Fallback to memory cache if Redis is not configured
 const memCache = new Map<string, string>();
@@ -18,6 +19,8 @@ function hashSource(text: string, locale: string) {
 
 export async function POST(req: Request) {
   try {
+    const ip = req.headers.get("x-real-ip") || req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+    if (!rateLimit(`translate:${ip}`, 20, 60_000)) return NextResponse.json({ error: "Translation request limit reached. Please wait a minute." }, { status: 429 });
     const body = await req.json() as { target?: unknown; items?: unknown };
     const { target, items } = body;
 
@@ -25,14 +28,17 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid target locale" }, { status: 400 });
     }
 
-    if (!Array.isArray(items) || items.length === 0 || items.length > 100) {
-      return NextResponse.json({ error: "Invalid items array" }, { status: 400 });
+    if (!Array.isArray(items) || items.length === 0 || items.length > 20) {
+      return NextResponse.json({ error: "Submit between 1 and 20 translation items at a time." }, { status: 400 });
     }
 
     // Filter items to ensure they are valid
     const validItems = items.filter((item): item is TranslateItem =>
-      isTranslateItem(item) && item.text.trim().length > 0 && item.text.length < 5000
+      isTranslateItem(item) && item.text.trim().length > 0 && item.text.length <= 1500
     );
+    if (validItems.length !== items.length || validItems.reduce((sum, item) => sum + item.text.length, 0) > 10_000) {
+      return NextResponse.json({ error: "Translation text is invalid or exceeds the 10,000 character request limit." }, { status: 400 });
+    }
     if (validItems.length === 0) return NextResponse.json({ translations: [] });
 
     // Step 1: Check DB for existing translations to avoid duplicate API calls
