@@ -3,9 +3,10 @@ import { db } from "@/lib/db";
 import { newsletterSchema } from "@/lib/schemas";
 import { sendEmail } from "@/lib/email";
 import { rateLimit } from "@/lib/rate-limit";
+import { createNewsletterUnsubscribeToken } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
-  const ip = req.headers.get("x-forwarded-for") || "unknown-ip";
+  const ip = req.headers.get("x-real-ip") || req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown-ip";
   if (!rateLimit(`newsletter_${ip}`, 3, 60 * 60 * 1000)) {
     return NextResponse.json({ success: false, error: { message: "Too many requests. Try again later." } }, { status: 429 });
   }
@@ -37,23 +38,26 @@ export async function POST(req: NextRequest) {
     }
 
     // Send welcome email
-    await sendEmail({
+    const token = createNewsletterUnsubscribeToken(parsed.data.email);
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://www.shrinityanikunjtrust.com";
+    const escapeHtml = (value: string) => value.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
+    const emailSent = await sendEmail({
       to: parsed.data.email,
       subject: "Welcome to Shri Nityanikunj Trust Newsletter",
       html: `
         <h2>Receive a Little Divine Inspiration</h2>
-        <p>Dear ${parsed.data.name},</p>
+        <p>Dear ${escapeHtml(parsed.data.name)},</p>
         <p>Thank you for subscribing to the Shri Nityanikunj Trust weekly newsletter. We will send you our latest stories, seva updates, and spiritual insights directly to your inbox.</p>
         <p>Warm regards,<br>The Shri Nityanikunj Trust Team</p>
         <hr>
         <p style="font-size: 12px; color: #666;">
           You are receiving this because you subscribed on our website. 
-          <a href="${process.env.NEXT_PUBLIC_BASE_URL || "https://shrinityanikunjtrust.org"}/api/newsletter/unsubscribe?email=${encodeURIComponent(parsed.data.email)}">Unsubscribe here</a>
+          <a href="${baseUrl}/api/newsletter/unsubscribe?token=${encodeURIComponent(token)}">Unsubscribe here</a>
         </p>
       `,
     });
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, emailSent });
   } catch (err: unknown) {
     if (typeof err === "object" && err !== null && "code" in err && err.code === "P2002") {
       return NextResponse.json({ success: false, error: { message: "This email address is already subscribed." } }, { status: 409 });
