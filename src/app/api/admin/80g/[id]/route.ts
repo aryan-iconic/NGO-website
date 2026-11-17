@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/require-admin";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const adminRes = await requireAdmin();
+  const adminRes = await requireAdmin(["SUPER_ADMIN", "ADMIN", "FINANCE_ADMIN"]);
   if (adminRes.error) return adminRes.error;
   
   const { id } = await params;
@@ -13,7 +13,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const adminRes = await requireAdmin();
+  const adminRes = await requireAdmin(["SUPER_ADMIN", "ADMIN", "FINANCE_ADMIN"]);
   if (adminRes.error) return adminRes.error;
 
   const { id } = await params;
