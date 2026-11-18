@@ -18,9 +18,7 @@ const schema = z.object({
 export async function GET() {
   const guard = await requireAdmin(["SUPER_ADMIN", "ADMIN", "CONTENT_ADMIN"]);
   if (guard.error) return guard.error;
-  revalidatePath("/gallery");
-    revalidatePath("/");
-    return NextResponse.json({ success: true, items: await db.listGalleryItems(true, false) });
+  return NextResponse.json({ success: true, items: await db.listGalleryItems(true, false) });
 }
 
 export async function POST(req: NextRequest) {
