@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { useI18n } from "@/lib/i18n";
 
 interface TranslationRow {
   id: string;
@@ -11,74 +12,117 @@ interface TranslationRow {
   sourceType: string;
   status: string;
   isManual: boolean;
+  stale?: boolean;
+  ownerType?: string;
+  ownerId?: string | null;
+  field?: string | null;
 }
 
+type BackfillCursor = { modelIndex: number; lastId: string | null };
+const BACKFILL_STORAGE_KEY = "snt_translation_backfill_cursor";
+
 export default function AdminTranslationsPage() {
+  const { t } = useI18n();
   const [translations, setTranslations] = useState<TranslationRow[]>([]);
+  const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [localeFilter, setLocaleFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [sourceFilter, setSourceFilter] = useState<"ui" | "content">("ui");
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [backfillRunning, setBackfillRunning] = useState(false);
   const [backfillProgress, setBackfillProgress] = useState("");
-  const [backfillCursor, setBackfillCursor] = useState<{ modelIndex: number; skip: number } | null>(null);
+  const [backfillCursor, setBackfillCursor] = useState<BackfillCursor | null>(null);
 
-  const fetchTranslations = async () => {
-    setLoading(true);
-    const params = new URLSearchParams();
-    if (searchTerm) params.append("q", searchTerm);
-    if (localeFilter) params.append("locale", localeFilter);
-    if (statusFilter) params.append("status", statusFilter);
-
-    const res = await fetch(`/api/admin/translations?${params.toString()}`);
-    const data = await res.json();
-    if (data.success) {
-      setTranslations(data.data);
+  useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem(BACKFILL_STORAGE_KEY);
+      if (saved) {
+        const cursor = JSON.parse(saved);
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- Restore a resumable Admin backfill cursor after hydration.
+        if (Number.isInteger(cursor.modelIndex) && (cursor.lastId === null || typeof cursor.lastId === "string")) setBackfillCursor(cursor);
+        else sessionStorage.removeItem(BACKFILL_STORAGE_KEY);
+      }
+    } catch {
+      sessionStorage.removeItem(BACKFILL_STORAGE_KEY);
     }
-    setLoading(false);
-  };
+  }, []);
+
+  const fetchTranslations = useCallback(async (cursor?: string | null, append = false) => {
+    if (!append) setLoading(true);
+    setError(null);
+    const params = new URLSearchParams({ source: sourceFilter });
+    if (searchTerm.trim()) params.set("q", searchTerm.trim());
+    if (localeFilter) params.set("locale", localeFilter);
+    if (statusFilter) params.set("status", statusFilter);
+    if (cursor) params.set("cursor", cursor);
+    try {
+      const response = await fetch(`/api/admin/translations?${params.toString()}`, { cache: "no-store" });
+      const result = await response.json();
+      if (!response.ok || !result.success) throw new Error(result.error?.message || "Could not load translations.");
+      setTranslations((current) => append ? [...current, ...result.data] : result.data);
+      setNextCursor(result.nextCursor ?? null);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not load translations.");
+    } finally {
+      setLoading(false);
+    }
+  }, [localeFilter, searchTerm, sourceFilter, statusFilter]);
 
   useEffect(() => {
     let active = true;
-    const params = new URLSearchParams();
-    if (searchTerm) params.append("q", searchTerm);
-    if (localeFilter) params.append("locale", localeFilter);
-    if (statusFilter) params.append("status", statusFilter);
-    fetch(`/api/admin/translations?${params.toString()}`)
-      .then((response) => response.json())
-      .then((data) => { if (active && data.success) setTranslations(data.data); })
-      .catch(() => { if (active) setError("Could not load translations."); })
+    const params = new URLSearchParams({ source: sourceFilter });
+    if (searchTerm.trim()) params.set("q", searchTerm.trim());
+    if (localeFilter) params.set("locale", localeFilter);
+    if (statusFilter) params.set("status", statusFilter);
+    fetch(`/api/admin/translations?${params.toString()}`, { cache: "no-store" })
+      .then(async (response) => {
+        const result = await response.json();
+        if (!response.ok || !result.success) throw new Error(result.error?.message || "Could not load translations.");
+        if (active) {
+          setError(null);
+          setTranslations(result.data);
+          setNextCursor(result.nextCursor ?? null);
+          setDrafts({});
+        }
+      })
+      .catch((cause) => { if (active) setError(cause instanceof Error ? cause.message : "Could not load translations."); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, [searchTerm, localeFilter, statusFilter]);
+  }, [searchTerm, localeFilter, statusFilter, sourceFilter]);
 
-  const handleUpdate = async (id: string, updates: Partial<TranslationRow>) => {
-    setSavingId(id);
+  const handleUpdate = async (row: TranslationRow, updates: Partial<TranslationRow>) => {
+    setSavingId(row.id);
     setError(null);
-    const res = await fetch(`/api/admin/translations/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(updates),
-    });
-    const data = await res.json();
-    setSavingId(null);
-    if (!data.success) {
-      setError(data.error?.message || "Failed to update translation");
-    } else {
-      setTranslations((prev) =>
-        prev.map((t) => (t.id === id ? { ...t, ...data.data } : t))
-      );
+    try {
+      const response = await fetch(`/api/admin/translations/${encodeURIComponent(row.id)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updates),
+      });
+      const result = await response.json();
+      if (!response.ok || !result.success) throw new Error(result.error?.message || "Failed to save translation.");
+      setTranslations((current) => current.map((item) => item.id === row.id ? { ...item, ...result.data } : item));
+      setDrafts((current) => { const next = { ...current }; delete next[row.id]; return next; });
+      if (result.data.sourceType === "UI" && result.data.sourceId) {
+        window.dispatchEvent(new CustomEvent("translation-updated", { detail: { locale: row.locale, key: result.data.sourceId, translatedText: result.data.translatedText, status: result.data.status } }));
+      }
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Failed to save translation.");
+    } finally {
+      setSavingId(null);
     }
   };
 
   const translateExistingContent = async () => {
     setBackfillRunning(true);
     setError(null);
-    let cursor = backfillCursor ?? { modelIndex: 0, skip: 0 };
+    let cursor = backfillCursor ?? { modelIndex: 0, lastId: null };
     let processed = 0;
-    setBackfillProgress("Starting translation of existing content...");
+    setBackfillProgress("Preparing UI and content translations...");
     try {
       for (let requestCount = 0; requestCount < 10000; requestCount++) {
         const response = await fetch("/api/admin/translations/generate", {
@@ -86,150 +130,85 @@ export default function AdminTranslationsPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(cursor),
         });
-        const data = await response.json();
-        if (!response.ok || !data.success) throw new Error(data.error?.message ?? "Could not translate existing content.");
-        if (data.done) {
+        const result = await response.json();
+        if (!response.ok || !result.success) throw new Error(result.error?.message ?? "Could not backfill translations.");
+        if (result.done) {
           setBackfillCursor(null);
-          setBackfillProgress(`Finished. Checked ${processed} existing content records.`);
+          sessionStorage.removeItem(BACKFILL_STORAGE_KEY);
+          setBackfillProgress(`Finished. Processed ${processed} source records.`);
           await fetchTranslations();
           return;
         }
-        cursor = data.cursor;
+        cursor = result.cursor;
         setBackfillCursor(cursor);
-        processed += data.processed ?? 0;
-        setBackfillProgress(`Checked ${processed} records. Processing ${data.model}...`);
+        sessionStorage.setItem(BACKFILL_STORAGE_KEY, JSON.stringify(cursor));
+        processed += result.processed ?? 0;
+        setBackfillProgress(`Processed ${processed} records. Current source: ${result.model}.`);
       }
-      throw new Error("Translation paused after reaching the safety limit. Click the button again to continue.");
+      throw new Error("Backfill paused at its safety limit. Continue to resume from the saved record cursor.");
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Could not translate existing content.");
-      setBackfillProgress(`Paused after checking ${processed} records.`);
+      setError(cause instanceof Error ? cause.message : "Could not backfill translations.");
+      setBackfillProgress(`Paused after processing ${processed} records.`);
     } finally {
       setBackfillRunning(false);
     }
   };
 
-  return (
-    <div className="space-y-6 max-w-7xl">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-serif text-maroon">Translations Management</h1>
-        <div className="flex flex-wrap gap-2">
-          <Button variant="outline" onClick={() => fetchTranslations()} disabled={loading || backfillRunning}>Refresh</Button>
-          <Button onClick={translateExistingContent} disabled={backfillRunning}>
-            {backfillRunning ? "Translating existing content..." : backfillCursor ? "Continue existing-content translation" : "Translate existing content"}
-          </Button>
-        </div>
-      </div>
-      
-      <p className="text-muted max-w-3xl text-sm">
-        Manage text translations and fill missing translations for existing campaigns, posts, events, FAQs, gallery entries, and other public content. New or edited content is translated when it is saved. Configure GOOGLE_TRANSLATE_API_KEY or LIBRETRANSLATE_URL on the server. Google is tried first; LibreTranslate is used when Google is unavailable or fails. LIBRETRANSLATE_API_KEY is optional and depends on the selected instance.
-      </p>
-      {backfillProgress && <p role="status" className="text-sm text-muted">{backfillProgress}</p>}
-
-      <div className="flex flex-wrap gap-4 items-center bg-surface p-4 border border-border rounded-lg">
-        <input 
-          type="text" 
-          placeholder="Search text..." 
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full max-w-sm rounded-lg border border-border px-3 py-2 text-sm bg-background"
-        />
-        <select 
-          value={localeFilter} 
-          onChange={(e) => setLocaleFilter(e.target.value)}
-          className="rounded-lg border border-border px-3 py-2 text-sm bg-background"
-        >
-          <option value="">All Locales</option>
-          <option value="hi">Hindi (hi)</option>
-          <option value="te">Telugu (te)</option>
-          <option value="ta">Tamil (ta)</option>
-        </select>
-        <select 
-          value={statusFilter} 
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="rounded-lg border border-border px-3 py-2 text-sm bg-background"
-        >
-          <option value="">All Statuses</option>
-          <option value="AUTO">Auto Translated</option>
-          <option value="REVIEW_REQUIRED">Review Required</option>
-          <option value="APPROVED">Approved</option>
-        </select>
-      </div>
-
-      {error && <p className="text-red text-sm">{error}</p>}
-
-      <div className="bg-surface border border-border rounded-lg overflow-hidden">
-        {loading && translations.length === 0 ? (
-          <div className="p-8 text-center text-muted">Loading translations...</div>
-        ) : (
-          <table className="w-full text-sm text-left">
-            <thead className="bg-cream">
-              <tr>
-                <th className="p-3 font-medium w-[30%]">Source Text (English)</th>
-                <th className="p-3 font-medium w-[10%]">Locale</th>
-                <th className="p-3 font-medium w-[35%]">Translated Text</th>
-                <th className="p-3 font-medium w-[15%]">Status</th>
-                <th className="p-3 font-medium w-[10%]">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {translations.map((t) => (
-                <tr key={t.id} className="hover:bg-background/50">
-                  <td className="p-3 align-top">
-                    <p className="line-clamp-3 text-muted">{t.sourceText}</p>
-                    <span className="text-xs text-muted-foreground mt-1 bg-border/50 px-1.5 py-0.5 rounded">{t.sourceType}</span>
-                  </td>
-                  <td className="p-3 align-top font-mono">{t.locale}</td>
-                  <td className="p-3 align-top">
-                    <textarea 
-                      rows={3}
-                      className="w-full rounded-md border border-border px-3 py-1.5 bg-background text-sm"
-                      value={t.translatedText}
-                      onChange={(e) => {
-                        const newText = e.target.value;
-                        setTranslations(prev => prev.map(item => item.id === t.id ? { ...item, translatedText: newText } : item));
-                      }}
-                      onBlur={(e) => {
-                        if (e.target.value !== t.translatedText) {
-                          handleUpdate(t.id, { translatedText: e.target.value, isManual: true });
-                        }
-                      }}
-                    />
-                  </td>
-                  <td className="p-3 align-top">
-                    <select
-                      value={t.status}
-                      onChange={(e) => handleUpdate(t.id, { status: e.target.value })}
-                      className={`w-full rounded-md border px-2 py-1.5 text-xs bg-background ${t.status === "REVIEW_REQUIRED" ? "border-amber-400 text-amber-700" : t.status === "APPROVED" ? "border-green-400 text-green-700" : "border-border text-muted"}`}
-                    >
-                      <option value="AUTO">AUTO</option>
-                      <option value="REVIEW_REQUIRED">REVIEW REQUIRED</option>
-                      <option value="APPROVED">APPROVED</option>
-                      <option value="REJECTED">REJECTED</option>
-                    </select>
-                  </td>
-                  <td className="p-3 align-top">
-                    <Button 
-                      size="sm" 
-                      variant="outline"
-                      onClick={() => handleUpdate(t.id, { translatedText: t.translatedText, isManual: true, status: "APPROVED" })}
-                      disabled={savingId === t.id || t.status === "APPROVED"}
-                    >
-                      Approve
-                    </Button>
-                  </td>
-                </tr>
-              ))}
-              {translations.length === 0 && !loading && (
-                <tr>
-                  <td colSpan={5} className="p-8 text-center text-muted">
-                    No translations found matching criteria.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        )}
+  return <div className="max-w-7xl space-y-6">
+    <div className="flex flex-wrap items-center justify-between gap-3">
+      <h1 className="font-serif text-2xl text-maroon">{t("Translations Management")}</h1>
+      <div className="flex flex-wrap gap-2">
+        <Button variant="outline" onClick={() => fetchTranslations()} disabled={loading || backfillRunning}>{t("Refresh")}</Button>
+        <Button onClick={translateExistingContent} disabled={backfillRunning}>
+          {backfillRunning ? t("Preparing translations…") : backfillCursor ? t("Continue backfill") : t("Initialize / backfill translations")}
+        </Button>
       </div>
     </div>
-  );
+    <p className="max-w-3xl text-sm text-muted">
+      {t("UI and page text is owned by stable translation keys. Campaigns, posts, events, and similar records keep translations with their content. This tool searches, edits, approves, rejects, and backfills both sources. New dynamic UI text is translated once and stored; saved content is translated when its source changes.")}
+    </p>
+    {backfillProgress && <p role="status" className="text-sm text-muted">{backfillProgress}</p>}
+    <div className="flex flex-wrap items-center gap-3 rounded-lg border border-border bg-surface p-4">
+      <input type="search" placeholder={t("Search source or translated text…")} value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} className="w-full max-w-sm rounded-lg border border-border bg-background px-3 py-2 text-sm" />
+      <select value={sourceFilter} onChange={(event) => setSourceFilter(event.target.value as "ui" | "content")} className="rounded-lg border border-border bg-background px-3 py-2 text-sm">
+        <option value="ui">{t("UI and page text")}</option><option value="content">{t("Managed content")}</option>
+      </select>
+      <select value={localeFilter} onChange={(event) => setLocaleFilter(event.target.value)} className="rounded-lg border border-border bg-background px-3 py-2 text-sm">
+        <option value="">{t("All locales")}</option><option value="hi">Hindi</option><option value="te">Telugu</option><option value="ta">Tamil</option>
+      </select>
+      <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} className="rounded-lg border border-border bg-background px-3 py-2 text-sm">
+        <option value="">{t("All statuses")}</option><option value="AUTO">{t("Auto translated")}</option><option value="REVIEW_REQUIRED">{t("Review required")}</option><option value="APPROVED">{t("Approved")}</option><option value="REJECTED">{t("Rejected")}</option>
+      </select>
+    </div>
+    {error && <p role="alert" className="text-sm text-red">{error}</p>}
+    <div className="overflow-x-auto rounded-lg border border-border bg-surface">
+      {loading && translations.length === 0 ? <div className="p-8 text-center text-muted">Loading translations…</div> : <table className="w-full min-w-[850px] text-left text-sm">
+        <thead className="bg-cream"><tr>
+          <th className="w-[28%] p-3 font-medium">{t("English source")}</th><th className="w-[9%] p-3 font-medium">{t("Locale")}</th><th className="w-[32%] p-3 font-medium">{t("Translation")}</th><th className="w-[13%] p-3 font-medium">{t("Status")}</th><th className="w-[18%] p-3 font-medium">{t("Owner / actions")}</th>
+        </tr></thead>
+        <tbody className="divide-y divide-border">
+          {translations.map((row) => {
+            const translatedText = drafts[row.id] ?? row.translatedText;
+            const isDirty = Object.hasOwn(drafts, row.id);
+            return <tr key={row.id} className="align-top hover:bg-background/50">
+              <td className="p-3"><p className="line-clamp-4 text-muted">{row.sourceText}</p><span className="mt-2 inline-block rounded bg-border/50 px-1.5 py-0.5 text-xs text-muted-foreground">{t(row.ownerType || row.sourceType)}</span>{row.stale && <p className="mt-1 text-xs text-amber-700">{t("Source changed; review required.")}</p>}</td>
+              <td className="p-3 font-mono">{row.locale}</td>
+              <td className="p-3"><textarea rows={3} className="w-full rounded-md border border-border bg-background px-3 py-1.5 text-sm" value={translatedText} onChange={(event) => setDrafts((current) => ({ ...current, [row.id]: event.target.value }))} /></td>
+              <td className="p-3"><select value={row.status} disabled={isDirty || savingId === row.id} onChange={(event) => handleUpdate(row, { status: event.target.value })} className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-xs disabled:opacity-50">
+                <option value="AUTO">{t("AUTO")}</option><option value="REVIEW_REQUIRED">{t("REVIEW REQUIRED")}</option><option value="APPROVED">{t("APPROVED")}</option><option value="REJECTED">{t("REJECTED")}</option>
+              </select></td>
+              <td className="space-y-2 p-3"><p className="break-all text-xs text-muted">{row.ownerId || row.field || "Legacy text"}</p>
+                <div className="flex flex-wrap gap-2">
+                  <Button size="sm" variant="outline" disabled={savingId === row.id || !isDirty} onClick={() => handleUpdate(row, { translatedText, isManual: true, status: "APPROVED" })}>{savingId === row.id ? t("Saving…") : t("Save & approve")}</Button>
+                  {!isDirty && row.status !== "APPROVED" && <Button size="sm" variant="outline" disabled={savingId === row.id} onClick={() => handleUpdate(row, { status: "APPROVED", isManual: true })}>{t("Approve")}</Button>}
+                </div>
+              </td>
+            </tr>;
+          })}
+          {!loading && translations.length === 0 && <tr><td colSpan={5} className="p-8 text-center text-muted">{t("No translations match these filters. Run the backfill to initialize dictionary and settings entries.")}</td></tr>}
+        </tbody>
+      </table>}
+    </div>
+    {nextCursor && <div className="flex justify-center"><Button variant="outline" onClick={() => fetchTranslations(nextCursor, true)} disabled={loading}>{t("Load more")}</Button></div>}
+  </div>;
 }
