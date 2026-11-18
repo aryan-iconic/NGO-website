@@ -28,7 +28,7 @@ export async function toPublicCampaign(c: Campaign): Promise<PublicCampaign> {
       : undefined,
     locationText: c.locationText,
     coverImage: c.coverImage ?? "",
-    gallery: media.map((m: any) => ({ type: m.type, url: m.url })),
+    gallery: media.map((m: { type: string; url: string; altText: string | null }) => ({ type: m.type, url: m.url, altText: m.altText })),
     status: c.status,
     isFeatured: c.isFeatured,
     isUrgent: c.isUrgent,
@@ -36,7 +36,7 @@ export async function toPublicCampaign(c: Campaign): Promise<PublicCampaign> {
     allowCustomAmount: c.allowCustomAmount,
     minimumAmountPaise: c.minimumAmountPaise,
     suggestedAmountsPaise: c.suggestedAmountsPaise,
-    products: products.map((p: any) => ({
+    products: products.map((p: { id: string; name: string; description: string | null; unitName: string; pricePaise: number; quantityLimit: number | null; quantitySponsored: number }) => ({
       id: p.id,
       name: p.name,
       description: p.description,
@@ -44,15 +44,15 @@ export async function toPublicCampaign(c: Campaign): Promise<PublicCampaign> {
       pricePaise: p.pricePaise,
       available: p.quantityLimit ? p.quantitySponsored < p.quantityLimit : true,
     })),
-    milestones: milestones.map((m: any) => ({
+    milestones: milestones.map((m: { id: string; title: string; value: number | null; unit: string | null; completed: boolean }) => ({
       id: m.id,
       title: m.title,
       value: m.value,
       unit: m.unit,
       completed: m.completed,
     })),
-    faqs: faqs.map((f: any) => ({ id: f.id, question: f.question, answer: f.answer })),
-    updates: updates.map((u: any) => ({
+    faqs: faqs.map((f: { id: string; question: string; answer: string }) => ({ id: f.id, question: f.question, answer: f.answer })),
+    updates: updates.map((u: { id: string; title: string; content: string; publishedAt: Date | string }) => ({
       id: u.id,
       title: u.title,
       content: u.content,
