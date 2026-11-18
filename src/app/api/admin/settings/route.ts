@@ -5,6 +5,8 @@ import { requireAdmin } from "@/lib/require-admin";
 import { z } from "zod";
 import { getWhatsAppHref } from "@/lib/whatsapp";
 import { ENABLED_LOCALES, hasTranslationProvider, isTranslatableSettingKey, translateTexts } from "@/lib/translation";
+import { findUiTranslation, upsertUiTranslation } from "@/lib/translation-store";
+import { invalidateServerTranslations } from "@/lib/i18n-server";
 
 const settingsSchema = z.record(
   z.string(),
@@ -105,8 +107,32 @@ export async function PATCH(request: NextRequest) {
       })
     );
 
+    // Keep the UI translation table canonical for rendered settings. The JSON
+    // map remains as a compatibility fallback while older clients are deployed.
+    for (const [key, raw] of Object.entries(updates)) {
+      if (!isTranslatableSettingKey(key)) continue;
+      const value = typeof raw === "string" ? raw : raw.value;
+      const explicit = typeof raw === "string" ? {} : raw.translations ?? {};
+      const generated = generatedSettingTranslations.get(key) ?? {};
+      const sourceChanged = changedTextSettingKeys.has(key);
+      for (const locale of ENABLED_LOCALES) {
+        const explicitText = explicit[locale];
+        const existing = await findUiTranslation(key, locale);
+        if (sourceChanged && existing?.isManual && !(typeof explicitText === "string" && explicitText.trim())) {
+          if (existing.status !== "REVIEW_REQUIRED") await prisma.translation.update({ where: { id: existing.id }, data: { status: "REVIEW_REQUIRED" } });
+          continue;
+        }
+        if (typeof explicitText === "string" && explicitText.trim()) {
+          await upsertUiTranslation({ key, sourceText: value, locale, translatedText: explicitText.trim(), status: "APPROVED", isManual: true, provider: "manual" });
+        } else if (typeof generated[locale] === "string" && generated[locale].trim()) {
+          await upsertUiTranslation({ key, sourceText: value, locale, translatedText: generated[locale], status: "AUTO", isManual: false, provider: process.env.GOOGLE_TRANSLATE_API_KEY ? "google" : "libretranslate" });
+        }
+      }
+    }
+
     revalidatePath("/", "layout");
     revalidateTag("public-site-settings", { expire: 0 });
+    invalidateServerTranslations();
     return NextResponse.json({ success: true, warning: translationWarning });
   } catch (error) {
     console.error(error);
