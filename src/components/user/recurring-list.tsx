@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { formatPaise } from "@/lib/types";
 import Link from "next/link";
+import { useI18n } from "@/lib/i18n";
 
 interface Recurring {
   id: string;
@@ -20,43 +21,45 @@ interface Recurring {
 const cancellable = new Set(["CREATED", "AUTHENTICATED", "ACTIVE", "PENDING", "HALTED", "PAUSED"]);
 
 export function RecurringList() {
+  const { t } = useI18n();
   const [items, setItems] = useState<Recurring[] | null>(null);
   const [error, setError] = useState("");
   const [verified, setVerified] = useState(true);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    setError("");
     try {
       const response = await fetch("/api/recurring", { cache: "no-store" });
       const data = await response.json();
-      if (!response.ok || !data.success) throw new Error(data.error?.message || "Could not load subscriptions.");
+      if (!response.ok || !data.success) throw new Error(t(data.error?.message || "Could not load subscriptions."));
+      setError("");
       setVerified(Boolean(data.verified));
       setItems(data.recurring);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Could not load subscriptions.");
+      setError(cause instanceof Error ? t(cause.message) : t("Could not load subscriptions."));
       setItems([]);
     }
-  }, []);
+  }, [t]);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- Fetch current subscriptions when this client panel mounts.
   useEffect(() => { void load(); }, [load]);
 
   const cancel = async (id: string) => {
-    if (!window.confirm("Schedule cancellation at the end of the current billing cycle? Your current cycle will remain in effect until then.")) return;
+    if (!window.confirm(t("Schedule cancellation at the end of the current billing cycle? Your current cycle will remain in effect until then."))) return;
     setCancellingId(id); setError("");
     try {
       const response = await fetch(`/api/recurring/${id}/cancel`, { method: "POST" });
       const data = await response.json();
-      if (!response.ok || !data.success) throw new Error(data.error?.message || "Could not cancel this subscription.");
+      if (!response.ok || !data.success) throw new Error(t(data.error?.message || "Could not cancel this subscription."));
       await load();
-    } catch (cause) { setError(cause instanceof Error ? cause.message : "Could not cancel this subscription."); }
+    } catch (cause) { setError(cause instanceof Error ? t(cause.message) : t("Could not cancel this subscription.")); }
     finally { setCancellingId(null); }
   };
 
-  if (items === null) return <p className="text-sm text-muted">Loading your subscriptions…</p>;
+  if (items === null) return <p className="text-sm text-muted">{t("Loading your subscriptions…")}</p>;
   if (error && items.length === 0) return <p role="alert" className="rounded-lg border border-red/30 bg-red/5 p-4 text-sm text-red">{error}</p>;
   if (items.length === 0) return <div className="rounded-lg border border-border bg-surface p-5">
-    {!verified ? <><p className="font-medium text-text">Verify your email before starting monthly giving.</p><p className="mt-1 text-sm text-muted">This connects subscription charges safely to your donor account and donation history.</p><Link href="/user/settings" className="mt-3 inline-block text-sm text-primary underline">Account settings</Link></> : <><p className="font-medium text-text">No monthly subscriptions on this account.</p><p className="mt-1 text-sm text-muted">When you start monthly giving, the status and billing dates will appear here.</p><Link href="/monthly" className="mt-3 inline-block text-sm text-primary underline">View monthly plans</Link></>}
+    {!verified ? <><p className="font-medium text-text">{t("Verify your email before starting monthly giving.")}</p><p className="mt-1 text-sm text-muted">{t("This connects subscription charges safely to your donor account and donation history.")}</p><Link href="/user/settings" className="mt-3 inline-block text-sm text-primary underline">{t("Account settings")}</Link></> : <><p className="font-medium text-text">{t("No monthly subscriptions on this account.")}</p><p className="mt-1 text-sm text-muted">{t("When you start monthly giving, the status and billing dates will appear here.")}</p><Link href="/monthly" className="mt-3 inline-block text-sm text-primary underline">{t("View monthly plans")}</Link></>}
   </div>;
 
   return <div className="space-y-3">
@@ -64,14 +67,14 @@ export function RecurringList() {
     {items.map((item) => <article key={item.id} className="flex flex-col justify-between gap-4 rounded-lg border border-border bg-surface p-4 sm:flex-row sm:items-center">
       <div>
         <p className="font-medium text-maroon">{item.plan.name} · {formatPaise(item.amountPaise)}/month</p>
-        <p className="mt-1 text-xs text-muted">Status: {item.cancelAtCycleEnd ? "Cancellation scheduled" : item.status} · Up to {item.plan.totalCycles} monthly payments</p>
-        {item.nextChargeAt && !item.cancelAtCycleEnd && <p className="mt-1 text-xs text-muted">Next charge: {new Date(item.nextChargeAt).toLocaleDateString("en-IN")}</p>}
-        {item.lastChargeAt && <p className="mt-1 text-xs text-muted">Last successful charge: {new Date(item.lastChargeAt).toLocaleDateString("en-IN")}</p>}
-        {item.cancelledAt && <p className="mt-1 text-xs text-muted">Ended: {new Date(item.cancelledAt).toLocaleDateString("en-IN")}</p>}
+        <p className="mt-1 text-xs text-muted">{t("Status: {status}", { status: t(item.cancelAtCycleEnd ? "Cancellation scheduled" : item.status) })} · {t("Up to {count} monthly payments", { count: item.plan.totalCycles })}</p>
+        {item.nextChargeAt && !item.cancelAtCycleEnd && <p className="mt-1 text-xs text-muted">{t("Next charge: {date}", { date: new Date(item.nextChargeAt).toLocaleDateString("en-IN") })}</p>}
+        {item.lastChargeAt && <p className="mt-1 text-xs text-muted">{t("Last successful charge: {date}", { date: new Date(item.lastChargeAt).toLocaleDateString("en-IN") })}</p>}
+        {item.cancelledAt && <p className="mt-1 text-xs text-muted">{t("Ended: {date}", { date: new Date(item.cancelledAt).toLocaleDateString("en-IN") })}</p>}
       </div>
       <div className="flex shrink-0 flex-wrap gap-3">
-        {item.status === "CREATED" && item.shortUrl && <a href={item.shortUrl} className="text-sm text-primary underline">Finish Razorpay authorization</a>}
-        {cancellable.has(item.status) && !item.cancelAtCycleEnd && <button disabled={cancellingId === item.id} onClick={() => void cancel(item.id)} className="text-sm text-red underline disabled:opacity-50">{cancellingId === item.id ? "Requesting…" : "Cancel subscription"}</button>}
+        {item.status === "CREATED" && item.shortUrl && <a href={item.shortUrl} className="text-sm text-primary underline">{t("Finish Razorpay authorization")}</a>}
+        {cancellable.has(item.status) && !item.cancelAtCycleEnd && <button disabled={cancellingId === item.id} onClick={() => void cancel(item.id)} className="text-sm text-red underline disabled:opacity-50">{cancellingId === item.id ? t("Requesting…") : t("Cancel subscription")}</button>}
       </div>
     </article>)}
   </div>;
