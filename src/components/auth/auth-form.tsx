@@ -5,8 +5,10 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Eye, EyeOff } from "lucide-react";
+import { useI18n } from "@/lib/i18n";
 
 export function AuthForm({ mode }: { mode: "login" | "register" }) {
+  const { t } = useI18n();
   const [form, setForm] = useState({ name: "", email: "", phone: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -18,9 +20,10 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
 
   useEffect(() => {
     if (mode === "login" && new URLSearchParams(window.location.search).get("account") === "deactivated") {
-      setNotice("Your account is deactivated. Your donation records are retained; register again with the same email and verify it to restore access.");
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Show the one-time status from the current URL after hydration.
+      setNotice(t("Your account is deactivated. Your donation records are retained; register again with the same email and verify it to restore access."));
     }
-  }, [mode]);
+  }, [mode, t]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,23 +41,23 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
     const data = await res.json();
     setLoading(false);
     if (!data.success) {
-      setError(data.error?.message ?? "Something went wrong.");
+      setError(t(data.error?.message ?? "Something went wrong."));
       if (data.error?.code === "VERIFICATION_EMAIL_FAILED" || data.error?.code === "EMAIL_IN_USE") setResendAvailable(true);
       return;
     }
     if (data.verificationRequired) {
       setResendAvailable(true);
-      setNotice(mode === "login"
+      setNotice(t(mode === "login"
         ? "This account’s email is not verified yet. Request a verification link below, then use the link in your inbox before logging in."
         : data.accountRestored
-          ? `We sent an account recovery link to ${data.email || form.email}. Open it, verify this same email, and choose a new password to restore access to your retained donation history.`
-          : `We sent a verification link to ${data.email || form.email}. Open it to verify your email, then log in. Only donations made with that exact email address will be linked to your account.`);
+          ? "We sent an account recovery link to {email}. Open it, verify this same email, and choose a new password to restore access to your retained donation history."
+          : "We sent a verification link to {email}. Open it to verify your email, then log in. Only donations made with that exact email address will be linked to your account.", { email: data.email || form.email }));
       return;
     }
     router.push("/user/dashboard");
     router.refresh();
     } catch {
-      setError("We couldn’t reach the server. Check your connection and try again.");
+      setError(t("We couldn’t reach the server. Check your connection and try again."));
     } finally {
       setLoading(false);
     }
@@ -69,19 +72,19 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
         body: JSON.stringify({ email: form.email }),
       });
       const data = await res.json();
-      if (!res.ok || !data.success) throw new Error(data.error?.message || "Could not send the verification email.");
-      setNotice(data.message || "If this address needs verification, we’ve sent an email with the next steps.");
-    } catch (cause) { setError(cause instanceof Error ? cause.message : "Could not send the verification email."); }
+      if (!res.ok || !data.success) throw new Error(t(data.error?.message || "Could not send the verification email."));
+      setNotice(t(data.message || "If this address needs verification, we’ve sent an email with the next steps."));
+    } catch (cause) { setError(cause instanceof Error ? cause.message : t("Could not send the verification email.")); }
     finally { setResending(false); }
   };
 
   return (
     <div className="container-app py-20 max-w-sm mx-auto">
-      <h1 className="text-3xl text-center">{mode === "login" ? "Welcome Back" : "Create Account"}</h1>
+      <h1 className="text-3xl text-center">{t(mode === "login" ? "Welcome Back" : "Create Account")}</h1>
       <form onSubmit={handleSubmit} className="mt-8 space-y-4">
         {mode === "register" && (
           <div>
-            <label className="text-sm text-muted" htmlFor="name">Full Name</label>
+            <label className="text-sm text-muted" htmlFor="name">{t("Full Name")}</label>
             <input
               id="name"
               required
@@ -92,7 +95,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
           </div>
         )}
         <div>
-          <label className="text-sm text-muted" htmlFor="email">Email</label>
+          <label className="text-sm text-muted" htmlFor="email">{t("Email")}</label>
           <input
             id="email"
             type="email"
@@ -104,7 +107,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
         </div>
         {mode === "register" && (
           <div>
-            <label className="text-sm text-muted" htmlFor="phone">Phone (optional)</label>
+            <label className="text-sm text-muted" htmlFor="phone">{t("Phone (optional)")}</label>
             <input
               id="phone"
               value={form.phone}
@@ -114,7 +117,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
           </div>
         )}
         <div className="relative">
-          <label className="text-sm text-muted" htmlFor="password">Password</label>
+          <label className="text-sm text-muted" htmlFor="password">{t("Password")}</label>
           <div className="relative">
             <input
               id="password"
@@ -128,7 +131,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              aria-label={showPassword ? "Hide password" : "Show password"}
+              aria-label={t(showPassword ? "Hide password" : "Show password")}
               className="absolute right-3 top-1/2 -translate-y-1/2 mt-[3px] text-muted hover:text-text"
             >
               {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -137,25 +140,25 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
         </div>
         {error && <p role="alert" className="text-sm text-red">{error}</p>}
         {notice && <p role="status" className="rounded-lg border border-primary/20 bg-cream p-3 text-sm text-maroon">{notice}</p>}
-        {resendAvailable && <button type="button" disabled={resending || !form.email} onClick={resendVerification} className="w-full text-sm font-medium text-primary underline disabled:opacity-60">{resending ? "Sending verification email…" : "Resend verification email"}</button>}
-        {mode === "login" && <div className="text-right"><Link href="/forgot-password" className="text-sm text-primary hover:underline">Forgot password?</Link></div>}
+        {resendAvailable && <button type="button" disabled={resending || !form.email} onClick={resendVerification} className="w-full text-sm font-medium text-primary underline disabled:opacity-60">{resending ? t("Sending verification email…") : t("Resend verification email")}</button>}
+        {mode === "login" && <div className="text-right"><Link href="/forgot-password" className="text-sm text-primary hover:underline">{t("Forgot password?")}</Link></div>}
         <Button type="submit" size="lg" className="w-full" disabled={loading}>
-          {loading ? "Please wait…" : mode === "login" ? "Login" : "Create Account"}
+          {loading ? t("Please wait…") : t(mode === "login" ? "Login" : "Create Account")}
         </Button>
       </form>
       <p className="mt-6 text-center text-sm text-muted">
         {mode === "login" ? (
           <>
-            New here?{" "}
+            {t("New here?")} {" "}
             <Link href="/register" className="text-primary hover:text-secondary">
-              Create an account
+              {t("Create an account")}
             </Link>
           </>
         ) : (
           <>
-            Already have an account?{" "}
+            {t("Already have an account?")} {" "}
             <Link href="/login" className="text-primary hover:text-secondary">
-              Login
+              {t("Login")}
             </Link>
           </>
         )}
