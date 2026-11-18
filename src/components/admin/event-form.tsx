@@ -46,26 +46,41 @@ export function EventForm({
     setError(null);
     const url = mode === "create" ? "/api/admin/events" : `/api/admin/events/${eventId}`;
     const method = mode === "create" ? "POST" : "PATCH";
-    const res = await fetch(url, {
-      method,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
-    });
-    const data = await res.json();
-    setLoading(false);
-    if (!data.success) {
-      setError(data.error?.message ?? "Something went wrong.");
-      return;
+    try {
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data?.success) {
+        setError(data?.error?.message ?? "Could not save this event.");
+        return;
+      }
+      router.push("/admin/content/events");
+      router.refresh();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not save this event.");
+    } finally {
+      setLoading(false);
     }
-    router.push("/admin/content/events");
-    router.refresh();
   };
 
   const handleDelete = async () => {
     if (!eventId || !confirm("Delete this event?")) return;
-    await fetch(`/api/admin/events/${eventId}`, { method: "DELETE" });
-    router.push("/admin/content/events");
-    router.refresh();
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/admin/events/${eventId}`, { method: "DELETE" });
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data?.success) throw new Error(data?.error?.message || "Could not delete this event.");
+      router.push("/admin/content/events");
+      router.refresh();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not delete this event.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -164,7 +179,7 @@ export function EventForm({
           {loading ? "Saving…" : mode === "create" ? "Create Event" : "Save Changes"}
         </Button>
         {mode === "edit" && (
-          <Button type="button" variant="outline" onClick={handleDelete} className="ml-auto">
+          <Button type="button" variant="outline" onClick={handleDelete} disabled={loading} className="ml-auto">
             Delete
           </Button>
         )}
