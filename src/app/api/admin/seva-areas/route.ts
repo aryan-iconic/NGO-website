@@ -19,8 +19,6 @@ const createSevaAreaSchema = z.object({
 export async function GET() {
   const guard = await requireAdmin(["SUPER_ADMIN", "ADMIN", "CONTENT_ADMIN"]);
   if (guard.error) return guard.error;
-  revalidatePath("/");
-    revalidatePath("/campaigns");
     return NextResponse.json({ success: true, sevaAreas: await db.listSevaAreas(false) });
 }
 
