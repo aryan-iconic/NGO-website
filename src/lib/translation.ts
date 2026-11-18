@@ -1,3 +1,6 @@
+import { translationSourceHash } from "@/lib/translation-hash";
+import { dictionary } from "@/lib/i18n-dictionary";
+
 export const ENABLED_LOCALES = ["hi", "te", "ta"] as const;
 
 export const TRANSLATABLE_MODELS = [
@@ -16,11 +19,12 @@ export const TRANSLATABLE_MODELS = [
   { key: "galleryItem", label: "Gallery items", delegate: "galleryItem", fields: ["title", "caption", "description", "category", "altText"] },
   { key: "teamMember", label: "Team members", delegate: "teamMember", fields: ["name", "role", "bio"] },
   { key: "statutoryRegistration", label: "Transparency records", delegate: "statutoryRegistration", fields: ["title", "description", "issuingAuthority"] },
+  { key: "monthlyGivingPlan", label: "Monthly giving plans", delegate: "monthlyGivingPlan", fields: ["name", "description"] },
   { key: "siteSettings", label: "Homepage, About, and legal page text", delegate: "setting", fields: [] },
 ] as const;
 
 export function isTranslatableSettingKey(key: string) {
-  return /^(home\.(hero\.(title|subtitle)|giveOnce|featured|seva|upcomingInitiatives|followOurJourney|watchOurVideos|howItWorks|step[1-5]|ctaTitle|ctaBody)|about\.(title|subtitle|s[1-7]\.(h|p\d*|btn))|(priv|terms|don|ref)\.(title|s\d+\.(h|p))|footer\.tagline|contact\.address)$/.test(key);
+  return Object.hasOwn(dictionary.en, key) || /^(home\.(hero\.(title|subtitle)|giveOnce|featured|seva|upcomingInitiatives|followOurJourney|watchOurVideos|howItWorks|step[1-5]|ctaTitle|ctaBody)|about\.(title|subtitle|s[1-7]\.(h|p\d*|btn))|(priv|terms|don|ref)\.(title|s\d+\.(h|p))|footer\.tagline|contact\.address)$/.test(key);
 }
 
 const PROTECTED_TERMS = [
@@ -30,7 +34,7 @@ const PROTECTED_TERMS = [
   "BrandName",
 ];
 
-type TranslationMetadata = { source?: string; updated_at?: string };
+type TranslationMetadata = { source?: string; source_hash?: string; status?: string; updated_at?: string };
 type LocaleTranslations = Record<string, string | Record<string, TranslationMetadata>> & {
   _meta?: Record<string, TranslationMetadata>;
 };
@@ -182,8 +186,37 @@ export async function generateAllTranslations(
       const text = sourceRecord[field];
       if (typeof text !== "string" || !text.trim()) continue;
       const metadata = translations[locale]._meta?.[field];
-      if (metadata?.source === "manual") continue;
-      if (options.onlyMissing && typeof translations[locale][field] === "string" && translations[locale][field] !== text) continue;
+      const existingText = translations[locale][field];
+      const currentHash = translationSourceHash(text, locale, field);
+      if (metadata?.status === "REJECTED") continue;
+      if (typeof existingText === "string" && existingText.trim() && !metadata?.source_hash) {
+        // Older content translations stored their source/provider but not a
+        // source fingerprint. Adopt them once without retranslation (and
+        // without an API bill), so subsequent source edits can be detected.
+        if (!translations[locale]._meta) translations[locale]._meta = {};
+        translations[locale]._meta![field] = {
+          ...metadata,
+          source: metadata?.source ?? "auto",
+          source_hash: currentHash,
+          status: metadata?.status ?? (metadata?.source === "manual" ? "APPROVED" : "AUTO"),
+          updated_at: metadata?.updated_at ?? new Date().toISOString(),
+        };
+        continue;
+      }
+      if (metadata?.source === "manual") {
+        // Do not overwrite human work. If the source changed, take it off the
+        // public page and make the stale item visible for review in Admin.
+        if (metadata.source_hash && metadata.source_hash !== currentHash) metadata.status = "REVIEW_REQUIRED";
+        continue;
+      }
+      if (options.onlyMissing && typeof existingText === "string" && existingText) {
+        if (!metadata?.source_hash) {
+          // Keep legacy translations until a source edit gives us a reliable
+          // fingerprint; backfill should not spend provider calls redoing them.
+          continue;
+        }
+        if (metadata.source_hash === currentHash) continue;
+      }
       fields.push(field);
       sourceTexts.push(text);
     }
@@ -194,7 +227,12 @@ export async function generateAllTranslations(
     fields.forEach((field, index) => {
       translations[locale][field] = translatedTexts[index];
       if (!translations[locale]._meta) translations[locale]._meta = {};
-      translations[locale]._meta[field] = { source: "auto", updated_at: updatedAt };
+      translations[locale]._meta[field] = {
+        source: "auto",
+        source_hash: translationSourceHash(String(sourceRecord[field]), locale, field),
+        status: "AUTO",
+        updated_at: updatedAt,
+      };
     });
   });
   await Promise.all(jobs);
@@ -208,7 +246,12 @@ export function resolveLocalizedRecord<T extends Record<string, unknown>>(record
   if (!localeData) return record;
   const localized = { ...record };
   for (const [key, value] of Object.entries(localeData)) {
-    if (key !== "_meta" && typeof value === "string" && value) (localized as Record<string, unknown>)[key] = value;
+    if (key === "_meta" || typeof value !== "string" || !value) continue;
+    const metadata = localeData._meta?.[key];
+    const sourceText = record[key];
+    const stale = Boolean(metadata?.source_hash && typeof sourceText === "string" && metadata.source_hash !== translationSourceHash(sourceText, locale, key));
+    if (metadata?.status === "REJECTED" || metadata?.status === "REVIEW_REQUIRED" || stale) continue;
+    (localized as Record<string, unknown>)[key] = value;
   }
   return localized;
 }
