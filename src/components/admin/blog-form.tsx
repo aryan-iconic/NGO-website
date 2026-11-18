@@ -42,26 +42,41 @@ export function BlogForm({
     setError(null);
     const url = mode === "create" ? "/api/admin/blog" : `/api/admin/blog/${postId}`;
     const method = mode === "create" ? "POST" : "PATCH";
-    const res = await fetch(url, {
-      method,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
-    });
-    const data = await res.json();
-    setLoading(false);
-    if (!data.success) {
-      setError(data.error?.message ?? "Something went wrong.");
-      return;
+    try {
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data?.success) {
+        setError(data?.error?.message ?? "Could not save this post.");
+        return;
+      }
+      router.push("/admin/content/blog");
+      router.refresh();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not save this post.");
+    } finally {
+      setLoading(false);
     }
-    router.push("/admin/content/blog");
-    router.refresh();
   };
 
   const handleDelete = async () => {
     if (!postId || !confirm("Delete this post?")) return;
-    await fetch(`/api/admin/blog/${postId}`, { method: "DELETE" });
-    router.push("/admin/content/blog");
-    router.refresh();
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/admin/blog/${postId}`, { method: "DELETE" });
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data?.success) throw new Error(data?.error?.message || "Could not delete this post.");
+      router.push("/admin/content/blog");
+      router.refresh();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not delete this post.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -139,7 +154,7 @@ export function BlogForm({
           {loading ? "Saving…" : mode === "create" ? "Create Post" : "Save Changes"}
         </Button>
         {mode === "edit" && (
-          <Button type="button" variant="outline" onClick={handleDelete} className="ml-auto">
+          <Button type="button" variant="outline" onClick={handleDelete} disabled={loading} className="ml-auto">
             Delete
           </Button>
         )}
