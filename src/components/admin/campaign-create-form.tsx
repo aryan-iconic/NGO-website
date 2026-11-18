@@ -5,12 +5,14 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ImageUpload } from "@/components/ui/image-upload";
 
-export function CampaignCreateForm({ sevaAreas }: { sevaAreas: { id: string; name: string }[] }) {
+export function CampaignCreateForm({ sevaAreas, defaultMinimumAmountPaise }: { sevaAreas: { id: string; name: string }[]; defaultMinimumAmountPaise: number }) {
   const router = useRouter();
   const [form, setForm] = useState({
     title: "",
     shortDescription: "",
     story: "",
+    beneficiaryInfo: "",
+    impactDescription: "",
     sevaAreaId: sevaAreas[0]?.id || "",
     locationText: "",
     donationMode: "GENERAL" as "PRODUCTS" | "GENERAL" | "BOTH",
@@ -18,6 +20,7 @@ export function CampaignCreateForm({ sevaAreas }: { sevaAreas: { id: string; nam
     isFeatured: false,
     isUrgent: false,
     coverImage: "",
+    minimumAmountRupees: (defaultMinimumAmountPaise / 100).toString(),
   });
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -27,13 +30,23 @@ export function CampaignCreateForm({ sevaAreas }: { sevaAreas: { id: string; nam
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const minimumRupees = Number(form.minimumAmountRupees);
+    const minimumAmountPaise = Math.round(minimumRupees * 100);
+    if (!Number.isFinite(minimumRupees) || !Number.isSafeInteger(minimumAmountPaise) || minimumAmountPaise < 100) {
+      setError("Campaign minimum must be at least ₹1.");
+      return;
+    }
     setSubmitting(true);
     setError(null);
     try {
       const res = await fetch("/api/admin/campaigns", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, minimumAmountPaise: 10100 }),
+        body: JSON.stringify({
+          ...form,
+          sevaAreaId: form.sevaAreaId || undefined,
+          minimumAmountPaise,
+        }),
       });
       const data = await res.json();
       if (!res.ok || !data.success || !data.campaign?.id) {
@@ -134,6 +147,16 @@ export function CampaignCreateForm({ sevaAreas }: { sevaAreas: { id: string; nam
       </div>
       <div className="grid sm:grid-cols-2 gap-4">
         <div>
+          <label className="text-sm text-muted" htmlFor="beneficiaryInfo">Who benefits?</label>
+          <textarea id="beneficiaryInfo" rows={3} value={form.beneficiaryInfo} onChange={(e) => setForm({ ...form, beneficiaryInfo: e.target.value })} className="mt-1.5 w-full rounded-lg border border-border px-4 py-2.5 bg-surface" />
+        </div>
+        <div>
+          <label className="text-sm text-muted" htmlFor="impactDescription">Expected impact</label>
+          <textarea id="impactDescription" rows={3} value={form.impactDescription} onChange={(e) => setForm({ ...form, impactDescription: e.target.value })} className="mt-1.5 w-full rounded-lg border border-border px-4 py-2.5 bg-surface" />
+        </div>
+      </div>
+      <div className="grid sm:grid-cols-2 gap-4">
+        <div>
           <label className="text-sm text-muted" htmlFor="sevaAreaId">Seva Area</label>
           <select
             id="sevaAreaId"
@@ -156,6 +179,28 @@ export function CampaignCreateForm({ sevaAreas }: { sevaAreas: { id: string; nam
           />
         </div>
       </div>
+
+      <section className="space-y-4 bg-surface p-5 rounded-lg border border-border">
+        <h2 className="text-lg font-serif">Donation options</h2>
+        <div className="grid sm:grid-cols-2 gap-4">
+          <div>
+            <label className="text-sm text-muted" htmlFor="donationMode">Donation mode</label>
+            <select id="donationMode" value={form.donationMode} onChange={(e) => setForm({ ...form, donationMode: e.target.value as typeof form.donationMode })} className="mt-1.5 w-full rounded-lg border border-border px-4 py-2.5 bg-surface">
+              <option value="GENERAL">General donations</option>
+              <option value="PRODUCTS">Products</option>
+              <option value="BOTH">Donations and products</option>
+            </select>
+          </div>
+          <div>
+            <label className="text-sm text-muted" htmlFor="minimumAmountRupees">Minimum amount (₹)</label>
+            <input id="minimumAmountRupees" type="number" min="1" step="0.01" required value={form.minimumAmountRupees} onChange={(e) => setForm({ ...form, minimumAmountRupees: e.target.value })} className="mt-1.5 w-full rounded-lg border border-border px-4 py-2.5 bg-surface" />
+          </div>
+        </div>
+        <label className="flex items-center gap-2 text-sm text-muted">
+          <input type="checkbox" checked={form.allowCustomAmount} onChange={(e) => setForm({ ...form, allowCustomAmount: e.target.checked })} />
+          Allow donors to enter a custom amount
+        </label>
+      </section>
       
       <div className="pt-2">
         <ImageUpload
@@ -179,9 +224,9 @@ export function CampaignCreateForm({ sevaAreas }: { sevaAreas: { id: string; nam
             disabled={submitting}
             onChange={(event) => {
               const selected = Array.from(event.target.files ?? []);
-              const oversized = selected.filter((file) => file.size > 5 * 1024 * 1024);
-              if (oversized.length) setError(`Images must be 5 MB or smaller: ${oversized.map((file) => file.name).join(", ")}`);
-              const valid = selected.filter((file) => file.size <= 5 * 1024 * 1024);
+              const oversized = selected.filter((file) => file.size > 4 * 1024 * 1024);
+              if (oversized.length) setError(`Images must be 4 MB or smaller: ${oversized.map((file) => file.name).join(", ")}`);
+              const valid = selected.filter((file) => file.size <= 4 * 1024 * 1024);
               setGalleryImages((current) => [...current, ...valid]);
               event.target.value = "";
             }}
