@@ -1,146 +1,192 @@
-# Shri Nityanikunj Trust — Website & Giving Platform
+<p align="center">
+  <img src="public/logo.png" alt="Shri Nityanikunj Trust logo" width="112" />
+</p>
 
-A Next.js application for the Trust’s public website, online donations, and admin-managed content. It uses PostgreSQL through Prisma, Razorpay for one-time payments, SMTP for email, and optional S3-compatible object storage and translation providers.
+<h1 align="center">Shri Nityanikunj Ras Seva Sansthan Trust</h1>
 
-> **Deployment note:** A successful build does not configure external services. Before accepting live donations, configure the production environment variables below and verify the live Razorpay webhook, payment confirmation, receipt email, database, and storage.
+<p align="center">
+  The Trust’s public website and digital giving platform
+</p>
+
+<p align="center">
+  <a href="https://www.shrinityanikunjtrust.com/">Visit the website</a>
+  ·
+  <a href="https://github.com/aryan-iconic/NGO-website">Source code</a>
+</p>
+
+<p align="center">
+  <img alt="Next.js 16" src="https://img.shields.io/badge/Next.js-16.3.5-111111?logo=next.js" />
+  <img alt="React 19" src="https://img.shields.io/badge/React-19.2-149ECA?logo=react&logoColor=white" />
+  <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white" />
+  <img alt="PostgreSQL" src="https://img.shields.io/badge/PostgreSQL-Prisma-4169E1?logo=postgresql&logoColor=white" />
+</p>
+
+The project brings the Trust’s public information, campaigns, donations, and content management together in one responsive web application. Donors can support campaigns, manage their giving, and receive payment updates; authorized staff maintain the site through a protected Admin area.
 
 ## Contents
 
-- [Getting started](#getting-started)
-- [Environment variables](#environment-variables)
-- [External service setup](#external-service-setup)
-- [Available features](#available-features)
+- [What’s included](#whats-included)
+- [Technology](#technology)
+- [Run locally](#run-locally)
+- [Environment configuration](#environment-configuration)
+- [Integrations](#integrations)
+- [Production deployment](#production-deployment)
+- [Project layout](#project-layout)
 - [Useful commands](#useful-commands)
 
-## Getting started
-
-Requirements: Node.js compatible with the installed Next.js version, npm, and a PostgreSQL database.
-
-```bash
-npm install
-cp .env.example .env
-```
-
-Fill in at least `DATABASE_URL` and `AUTH_SECRET` in `.env`. This repository currently contains a Prisma schema but no committed migration history or configured seed command. For local development, create an initial migration from the schema, then start the app:
-
-```bash
-npx prisma migrate dev --name init
-npm run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000). Commit reviewed migrations and apply them with `npx prisma migrate deploy` during deployment. Do not use `prisma db push` as a substitute for a production migration workflow.
-
-`prisma/seed.ts` can create `admin@nityanikunj.org` when `ADMIN_BOOTSTRAP_PASSWORD` is set, but this repository does not currently configure a Prisma seed command or include a TypeScript seed runner. Configure an approved seed invocation in your deployment/setup workflow before relying on it; do not assume the admin account is automatically created.
-
-Never use a demo password or the development fallback signing secret on a public deployment. Keep `.env` out of version control and configure production secrets in the hosting provider’s environment settings.
-
-## Environment variables
-
-See [`.env.example`](.env.example) for a commented template. The application reads these exact names:
-
-| Variable | Required? | Used for |
-| --- | --- | --- |
-| `DATABASE_URL` | Yes | PostgreSQL connection used by Prisma. |
-| `AUTH_SECRET` | Yes in production | Signs user and admin session cookies. Use a strong random value. |
-| `RAZORPAY_KEY_ID` | For donations | Razorpay API key ID used for order creation and checkout. |
-| `RAZORPAY_KEY_SECRET` | For donations | Razorpay API secret used for payment verification. |
-| `RAZORPAY_WEBHOOK_SECRET` | For webhook confirmation | Verifies Razorpay webhook signatures. Set the same value in Razorpay and hosting. |
-| `EMAIL_HOST` | For real email delivery | SMTP hostname. For Resend, use `smtp.resend.com`. |
-| `EMAIL_PORT` | For real email delivery | SMTP port. Resend supports `465` for SSL; the app defaults to `465`. |
-| `EMAIL_USER` | For real email delivery | SMTP username. For Resend, use `resend`. |
-| `EMAIL_PASSWORD` | For real email delivery | SMTP password. For Resend, use your Resend API key. |
-| `EMAIL_FROM` | Recommended | Sender address. Use an address on a domain verified with your mail provider. |
-| `S3_ENDPOINT` | For image uploads | S3-compatible endpoint. For R2, use the account’s R2 S3 API endpoint. |
-| `S3_REGION` | For image uploads | Storage region required by the S3 client. For the current Supabase project, use `ap-northeast-2`; use the region shown in Supabase Storage S3 settings for other projects. |
-| `S3_ACCESS_KEY_ID` | For image uploads | S3/R2 access key ID. |
-| `S3_SECRET_ACCESS_KEY` | For image uploads | Matching S3/R2 secret access key. |
-| `S3_BUCKET_NAME` | For image uploads | Destination bucket name. |
-| `S3_PUBLIC_URL` | For public images | Public bucket URL or connected custom domain used to form image URLs. |
-| `GOOGLE_TRANSLATE_API_KEY` | Optional | Google Cloud Translation provider. Tried first when configured. |
-| `LIBRETRANSLATE_URL` | Optional | LibreTranslate server URL; used if Google is absent or fails. |
-| `LIBRETRANSLATE_API_KEY` | Optional | API key for LibreTranslate instances that require one. |
-| `NEXT_PUBLIC_BASE_URL` | Optional | Production site URL used in newsletter unsubscribe links. Defaults to `https://shrinityanikunjtrust.org`. |
-| `ADMIN_BOOTSTRAP_PASSWORD` | Setup only | Password used by the seed script when creating the first admin. |
-| `NODE_ENV` | Hosting-managed | Determines development/production behavior. Normally set by the platform. |
-
-`REDIS_URL`, `DIRECT_URL`, and the old `STORAGE_*` names are not read by the current application. Translation uses PostgreSQL and a process-memory cache; Redis credentials are not needed. Uploads use the `S3_*` names above.
-
-## External service setup
-
-### Razorpay — one-time donations
-
-1. Generate API keys in the Razorpay Dashboard. Use **Test Mode** while testing and **Live Mode** only after the account is ready to accept payments.
-2. Add `RAZORPAY_KEY_ID` and `RAZORPAY_KEY_SECRET` to the hosting environment.
-3. Configure a webhook pointing to `https://your-domain.example/api/webhooks/razorpay`.
-4. Subscribe to `payment.captured` and `payment.failed`. Set a webhook secret and copy the same value to `RAZORPAY_WEBHOOK_SECRET` in hosting.
-5. Complete a test-mode donation and verify that the donation status, receipt number, and donor email are correct before switching to live keys.
-
-The donor-facing checkout creates an order through Razorpay. Payment verification and the webhook update the donation; the successful payment flow generates a receipt number and sends the receipt email when SMTP is configured.
-
-### Resend — email via SMTP
-
-The app uses Nodemailer SMTP, not Resend’s HTTP API. Use:
-
-```text
-EMAIL_HOST=smtp.resend.com
-EMAIL_PORT=465
-EMAIL_USER=resend
-EMAIL_PASSWORD=<your Resend API key>
-EMAIL_FROM=<sender address on your verified domain>
-```
-
-Verify the sending domain in Resend and use a permitted sender address. Without SMTP credentials, some development paths only log a simulated email; that does not deliver mail to a donor.
-
-### Cloudflare R2 or another S3-compatible store — image uploads
-
-Create a bucket and an API token with only the object permissions this app needs. For Cloudflare R2, copy its S3 endpoint and access key pair, connect a public custom domain (recommended for production), and configure the `S3_*` variables. For Supabase Storage, copy the S3 endpoint, region, and access key pair from Storage settings, and make the bucket public if its images should appear on public pages. The app returns image URLs using `S3_PUBLIC_URL`; the corresponding bucket/domain must serve those objects publicly for public pages to display them.
-
-### Translations — Google or LibreTranslate
-
-The active translated content locales are Hindi (`hi`), Telugu (`te`), and Tamil (`ta`), with English as the source. Configure Google, LibreTranslate, or both. If both are set, Google is attempted first and LibreTranslate is used if Google fails. A LibreTranslate URL may point to a self-hosted instance or a hosted service; availability, request limits, and any key requirements depend on that instance.
-
-## Available features
+## What’s included
 
 ### Public website
 
-Campaigns, events, blog posts, FAQs, gallery, team and transparency information, legal pages, contact form, volunteer form, newsletter signup, user registration/login, and donation checkout. Admin-authored public content is read from the database and translated content is served when available.
+- Trust information, initiatives, campaigns, events, blog, FAQs, gallery, and contact pages.
+- Campaign stories, media galleries, product sponsorship, custom donations, and related campaigns.
+- One-time donation checkout and Razorpay payment confirmation.
+- Monthly giving plans with Razorpay subscription authorization and management.
+- Donor accounts with email verification, password reset, donation history, receipts, subscription management, and account settings.
+- Volunteer applications, contact messages, newsletter signup, and social links.
+- English interface with Hindi, Telugu, and Tamil translations where translations are available.
 
-### Admin
+### Admin workspace
 
-Admin login and authorization, optional TOTP two-factor authentication, campaign and content management, donation records, volunteer and contact inquiry management, site settings, translation management, and audit logging. Site Settings values for contact email, phone, address, map URL, WhatsApp, and footer social links feed the corresponding public areas where wired.
+- Protected Admin login, role-based access, optional TOTP two-factor authentication, and audit logs.
+- Campaign management, including donation settings, products, cover images, and campaign media.
+- Blog, events, FAQs, gallery, social posts, team, site content, and settings management.
+- Donation records, monthly giving plans and subscriptions, volunteer and contact inquiries, and 80G information workflows.
+- Translation review and content backfill tools.
 
-### One-time donations
+## Technology
 
-Razorpay order creation, payment verification, webhook processing, donation status updates, receipt-number creation, and receipt email are implemented. Actual payment acceptance and email delivery depend on correct production credentials, webhook setup, database connectivity, and SMTP configuration.
+| Area | Implementation |
+| --- | --- |
+| Application | Next.js App Router, React, TypeScript |
+| Styling | Tailwind CSS 4 |
+| Database | PostgreSQL with Prisma ORM |
+| Payments | Razorpay for one-time donations and recurring subscriptions |
+| Email | Resend API, with SMTP as a fallback |
+| Media storage | Cloudflare R2 or another S3-compatible object store |
+| Translation | Google Cloud Translation, with optional LibreTranslate fallback |
+| Hosting | Vercel |
 
-### Recurring donations
+## Run locally
 
-Recurring/subscription payment infrastructure is not implemented in the current database layer. The monthly giving UI/API should not be treated as a live recurring billing feature until a subscription provider flow is implemented and verified.
+### Requirements
 
-### Translation
+- Node.js **20.9 or newer** and npm.
+- A PostgreSQL database.
+- Optional credentials for the external services you want to exercise locally.
 
-Stored field translations are generated for registered content text fields on save when a provider is configured. The admin Translations page can also backfill missing translations for existing content. Machine translations should be reviewed, especially legal and statutory text.
+### Setup
+
+```bash
+git clone https://github.com/aryan-iconic/NGO-website.git
+cd NGO-website
+npm install
+```
+
+Copy `.env.example` to `.env` and configure at least `DATABASE_URL` and `AUTH_SECRET`. The `.env` file is ignored by Git; keep credentials out of commits and screenshots.
+
+Apply the committed database migrations and start the development server:
+
+```bash
+npx prisma migrate dev
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000). Prisma Client is generated by the project’s `postinstall` script; if needed, regenerate it with `npx prisma generate`.
+
+The repository includes `prisma/seed.ts`, but it does not define an automatic `npm run seed` command. Provision the first Admin using the Trust’s approved secure setup process. `ADMIN_BOOTSTRAP_PASSWORD` is read by that seed file if it is invoked manually; it is not an application login password and should never be committed.
+
+## Environment configuration
+
+Use `.env.example` as the source of truth for variable names and local placeholders. Set production values in Vercel’s Environment Variables for the environments that need them.
+
+| Variable | Purpose |
+| --- | --- |
+| `DATABASE_URL` | PostgreSQL connection used by Prisma at runtime. |
+| `DIRECT_URL` | Migration connection used by the production Vercel build. Use a direct or session-pooler connection; do not use Supabase’s transaction pooler for migrations. |
+| `AUTH_SECRET` | Secret for signing authentication cookies. Use a long, random value. |
+| `RAZORPAY_KEY_ID` | Razorpay API key ID for payments and subscriptions. |
+| `RAZORPAY_KEY_SECRET` | Razorpay API secret for payment and subscription requests. |
+| `RAZORPAY_WEBHOOK_SECRET` | Separate secret used to verify incoming Razorpay webhook signatures. |
+| `RESEND_API_KEY` | Resend API key. When set, the app sends email through the Resend API. |
+| `EMAIL_FROM` | Verified sender address used by Resend or SMTP. |
+| `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_USER`, `EMAIL_PASSWORD` | Optional SMTP fallback when `RESEND_API_KEY` is not set. |
+| `APP_URL` | Base site URL used for account verification and password-reset links. |
+| `S3_ENDPOINT` | S3 API endpoint for R2 or another S3-compatible store. |
+| `S3_REGION` | Storage region; use `auto` for Cloudflare R2. |
+| `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` | Storage credentials with access to the upload bucket. |
+| `S3_BUCKET_NAME` | Bucket used for uploaded media. |
+| `S3_PUBLIC_URL` | Public base URL used to build image links. |
+| `S3_FORCE_PATH_STYLE` | Optional AWS SDK addressing override; normally `false` for R2. |
+| `GOOGLE_TRANSLATE_API_KEY` | Optional primary machine-translation provider. |
+| `LIBRETRANSLATE_URL`, `LIBRETRANSLATE_API_KEY` | Optional LibreTranslate fallback and its API key, if required by the instance. |
+| `NEXT_PUBLIC_BASE_URL` | Public site URL used for newsletter unsubscribe links. |
+| `ADMIN_BOOTSTRAP_PASSWORD` | Optional secret read only by the manually invoked seed script when provisioning an initial Admin. |
+
+Email delivery requires either `RESEND_API_KEY` plus `EMAIL_FROM`, or a complete SMTP configuration. For Resend SMTP, use `smtp.resend.com`, port `465`, username `resend`, and the Resend API key as the SMTP password. Verify the sender domain in Resend before sending production email.
+
+## Integrations
+
+### Razorpay
+
+The webhook endpoint is:
+
+```text
+https://www.shrinityanikunjtrust.com/api/webhooks/razorpay
+```
+
+Configure the endpoint in Razorpay and subscribe it to the payment, refund, and subscription events used by the app. Set the Razorpay webhook secret in Vercel as `RAZORPAY_WEBHOOK_SECRET`; this is separate from `RAZORPAY_KEY_SECRET`. The endpoint verifies `X-Razorpay-Signature` against the raw request body and handles repeat event notifications safely.
+
+Use Test Mode and complete end-to-end payment and subscription checks before enabling Live Mode. Confirm the database status, receipt, and email outcome for successful donations.
+
+### Resend email
+
+The app uses Resend’s HTTP API when `RESEND_API_KEY` is configured. Nodemailer SMTP is the fallback. Verification links, password reset links, payment messages, and other transactional email require a valid sender configured through `EMAIL_FROM`.
+
+### Cloudflare R2 media
+
+Create an R2 bucket, generate an S3-compatible access key, and configure its endpoint, region (`auto`), credentials, bucket name, and public URL. The public URL must serve uploaded objects without authentication so campaign and gallery images can load for visitors. Keep the access keys private; only public object URLs belong in page content.
+
+### Translations
+
+English is the source language; Hindi (`hi`), Telugu (`te`), and Tamil (`ta`) are enabled. Google Translate is tried first when configured. LibreTranslate is used if Google is unavailable or fails. Generated translations are stored with the content in PostgreSQL or in the translation records used for UI text; configuring a provider is optional. Review machine translations before using them for legal, financial, or statutory text.
+
+## Production deployment
+
+The project is designed for Vercel. Configure production environment variables before deploying. The `vercel-build` script applies Prisma migrations in Vercel Production, then builds the Next.js app. Production builds require both `DATABASE_URL` and `DIRECT_URL`; migrations use `DIRECT_URL` so the runtime connection can remain pooler-friendly.
+
+Review each committed migration before production deployment and keep a current database backup. After a deployment, verify the public site, Admin sign-in, media uploads, email delivery, Razorpay checkout, and webhook events using the corresponding provider dashboards.
+
+## Project layout
+
+```text
+src/app/                 Public pages, Admin pages, and API routes
+src/components/           Shared public and Admin interface
+src/lib/db.ts             Prisma-backed domain and data access layer
+src/lib/auth.ts           User and Admin session handling
+src/lib/translation.ts    Translation providers and content translation registry
+src/lib/email.ts          Resend API and SMTP email delivery
+src/lib/razorpay-subscriptions.ts  Razorpay recurring-payment helpers
+prisma/schema.prisma      PostgreSQL data model
+prisma/migrations/        Versioned database migrations
+prisma/seed.ts            Optional Admin bootstrap script (not auto-run)
+scripts/vercel-build.mjs  Production migration and Next.js build workflow
+public/                   Trust branding and static assets
+```
 
 ## Useful commands
 
-```bash
-npm run dev             # Start the local development server
-npm run build           # Compile the production application
-npm run start           # Start the production server after a build
-npm run lint            # Run ESLint
-npx prisma generate     # Generate Prisma Client
-npx prisma migrate deploy  # Apply committed migrations
-```
+| Command | Description |
+| --- | --- |
+| `npm run dev` | Start the local development server. |
+| `npm run build` | Build the Next.js application without applying migrations. |
+| `npm run vercel-build` | In Vercel Production, apply migrations and build the application. |
+| `npm run start` | Run the production build locally. |
+| `npm run lint` | Run ESLint. |
+| `npx prisma generate` | Regenerate Prisma Client. |
+| `npx prisma migrate dev` | Apply migrations to a local development database. |
+| `npx prisma migrate deploy` | Apply committed migrations to a deployment database. |
 
-## Project structure
+---
 
-```text
-src/app/                 Public pages, admin pages, and API route handlers
-src/components/          Shared public and admin UI
-src/lib/db.ts            Prisma-backed data access and domain operations
-src/lib/auth.ts          Signed user/admin sessions
-src/lib/translation.ts   Translation providers and content translation registry
-prisma/schema.prisma     PostgreSQL data model
-prisma/migrations/       Database migrations
-prisma/seed.ts           Optional initial-admin bootstrap
-```
+<p align="center"><sub>Built to support the Trust’s seva work and community giving.</sub></p>
