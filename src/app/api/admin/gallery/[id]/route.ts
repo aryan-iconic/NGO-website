@@ -22,9 +22,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   const { id } = await params;
   const item = await db.getGalleryItem(id);
   if (!item) return NextResponse.json({ success: false }, { status: 404 });
-  revalidatePath("/gallery");
-    revalidatePath("/");
-    return NextResponse.json({ success: true, item });
+  return NextResponse.json({ success: true, item });
 }
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
