@@ -7,10 +7,11 @@ import { Trash2 } from "lucide-react";
 import { useCart } from "@/lib/cart-context";
 import { formatPaise } from "@/lib/types";
 import { Button } from "@/components/ui/button";
+import { useI18n } from "@/lib/i18n";
 
 declare global {
   interface Window {
-    Razorpay?: new (options: Record<string, any>) => { open: () => void; on: (event: string, callback: (response: any) => void) => void };
+    Razorpay?: new (options: Record<string, unknown>) => { open: () => void; on: (event: string, callback: (response: { error?: { description?: string } }) => void) => void };
   }
 }
 
@@ -37,6 +38,7 @@ interface CampaignSummary {
 
 function CheckoutContent() {
   const { items, addItem, removeItem, clear, totalPaise } = useCart();
+  const { t } = useI18n();
   const params = useSearchParams();
   const router = useRouter();
 
@@ -57,13 +59,13 @@ function CheckoutContent() {
           if (d.success) {
             setCampaign(d.campaign);
             if (wantsCustom && (!d.campaign.allowCustomAmount || d.campaign.donationMode === "PRODUCTS")) {
-              setError("This campaign does not accept custom amount donations. Choose one of its available sponsorship items.");
+              setError(t("This campaign does not accept custom amount donations. Choose one of its available sponsorship items."));
             }
           }
-          else setError(d.error?.message || "Could not load campaign details. Please go back and try again.");
-        }).catch(() => setError("Could not load campaign details. Please check your connection and try again."));
+          else setError(t(d.error?.message || "Could not load campaign details. Please go back and try again."));
+        }).catch(() => setError(t("Could not load campaign details. Please check your connection and try again.")));
     }
-  }, [campaignSlug]);
+  }, [campaignSlug, t, wantsCustom]);
 
   const addCustomAmount = () => {
     const paise = Math.round(parseFloat(customAmount || "0") * 100);
@@ -111,19 +113,19 @@ function CheckoutContent() {
 
     if (!data.success) {
       setSubmitting(false);
-      setError(data.error?.message ?? "Something went wrong. Please try again.");
+      setError(t(data.error?.message ?? "Something went wrong. Please try again."));
       return;
     }
 
     const loaded = await loadRazorpayCheckout();
-    if (!loaded || !window.Razorpay) throw new Error("Could not load Razorpay Checkout. Please try again.");
+    if (!loaded || !window.Razorpay) throw new Error(t("Could not load Razorpay Checkout. Please try again."));
 
     const checkout = new window.Razorpay({
       key: data.keyId,
       amount: data.amount,
       currency: data.currency,
       name: "Shri Nityanikunj Trust",
-      description: "Donation",
+      description: t("Donation"),
       order_id: data.orderId,
       prefill: { name: data.donorName, email: data.donorEmail, contact: data.donorPhone },
       theme: { color: "#7b1e2b" },
@@ -135,38 +137,38 @@ function CheckoutContent() {
             body: JSON.stringify(response),
           });
           const verified = await verifyResponse.json();
-          if (!verifyResponse.ok || !verified.success) throw new Error(verified.error?.message || "Payment confirmation is pending.");
+          if (!verifyResponse.ok || !verified.success) throw new Error(t(verified.error?.message || "Payment confirmation is pending."));
           clear();
           router.push(`/thank-you?confirmation=${encodeURIComponent(verified.confirmationToken)}`);
         } catch (verificationError) {
           setSubmitting(false);
-          setError(verificationError instanceof Error ? verificationError.message : "Payment confirmation is pending.");
+          setError(t(verificationError instanceof Error ? verificationError.message : "Payment confirmation is pending."));
         }
       },
       modal: { ondismiss: () => setSubmitting(false) },
     });
     checkout.on("payment.failed", (response) => {
       setSubmitting(false);
-      setError(response.error?.description || "Payment failed. Please try again.");
+      setError(t(response.error?.description || "Payment failed. Please try again."));
     });
     checkout.open();
     } catch (submitError) {
       setSubmitting(false);
-      setError(submitError instanceof Error ? submitError.message : "Could not start payment. Please try again.");
+      setError(t(submitError instanceof Error ? submitError.message : "Could not start payment. Please try again."));
     }
   };
 
   if (items.length === 0 && !(wantsCustom && campaignSlug)) {
     return (
       <div className="container-app py-20 text-center">
-        <h1 className="text-2xl">Your cart is empty</h1>
-        <p className="text-muted mt-2">Choose a campaign to support, or make a general donation.</p>
+        <h1 className="text-2xl">{t("Your cart is empty")}</h1>
+        <p className="text-muted mt-2">{t("Choose a campaign to support, or make a general donation.")}</p>
         <div className="mt-6 flex justify-center gap-3">
           <Link href="/campaigns" className="text-primary hover:text-secondary">
-            Explore campaigns
+            {t("Explore campaigns")}
           </Link>
           <Link href="/donate" className="text-primary hover:text-secondary">
-            General donation
+            {t("General donation")}
           </Link>
         </div>
       </div>
@@ -176,11 +178,11 @@ function CheckoutContent() {
   return (
     <div className="container-app py-14 grid lg:grid-cols-[1fr_380px] gap-10">
       <div>
-        <h1 className="text-3xl">Checkout</h1>
+        <h1 className="text-3xl">{t("Checkout")}</h1>
 
         {wantsCustom && campaign && (
           <div className="mt-6 p-5 rounded-lg border border-border bg-cream">
-            <p className="text-sm text-muted">Custom amount for</p>
+            <p className="text-sm text-muted">{t("Custom amount for")}</p>
             <p className="font-semibold text-maroon">{campaign.title}</p>
             <div className="mt-3 flex gap-2">
               <input
@@ -188,11 +190,11 @@ function CheckoutContent() {
                 min={campaign.minimumAmountPaise / 100}
                 value={customAmount}
                 onChange={(e) => setCustomAmount(e.target.value)}
-                placeholder={`Min ${formatPaise(campaign.minimumAmountPaise)}`}
+                placeholder={t("Min {amount}", { amount: formatPaise(campaign.minimumAmountPaise) })}
                 className="flex-1 rounded-lg border border-border px-4 py-2.5 bg-surface"
               />
               <Button type="button" disabled={!customAmount || Number(customAmount) < campaign.minimumAmountPaise / 100} onClick={addCustomAmount}>
-                Add
+                {t("Add")}
               </Button>
             </div>
           </div>
@@ -211,7 +213,7 @@ function CheckoutContent() {
                 <div className="flex items-center gap-4">
                   <span className="font-semibold">{formatPaise(item.unitPricePaise * item.quantity)}</span>
                   <button
-                    aria-label={`Remove ${item.name}`}
+                    aria-label={t("Remove {name}", { name: item.name })}
                     onClick={() => removeItem(i)}
                     className="text-muted hover:text-red"
                   >
@@ -224,10 +226,10 @@ function CheckoutContent() {
         )}
 
         <form onSubmit={handleSubmit} className="mt-10 space-y-4 max-w-md">
-          <h2 className="text-xl">Donor Details</h2>
+          <h2 className="text-xl">{t("Donor Details")}</h2>
           <div>
             <label className="text-sm text-muted" htmlFor="name">
-              Full Name{form.anonymous ? " (optional)" : ""}
+              {form.anonymous ? t("Full Name (optional)") : t("Full Name")}
             </label>
             <input
               id="name"
@@ -238,12 +240,12 @@ function CheckoutContent() {
             />
             {form.anonymous && (
               <p className="mt-1.5 text-xs text-muted">
-                Your name won’t be shown publicly. Leave this blank to use “Anonymous donor” on the receipt.
+                {t("Your name won’t be shown publicly. Leave this blank to use “Anonymous donor” on the receipt.")}
               </p>
             )}
           </div>
           <div>
-            <label className="text-sm text-muted" htmlFor="email">Email</label>
+            <label className="text-sm text-muted" htmlFor="email">{t("Email")}</label>
             <input
               id="email"
               type="email"
@@ -254,7 +256,7 @@ function CheckoutContent() {
             />
           </div>
           <div>
-            <label className="text-sm text-muted" htmlFor="phone">Phone (optional)</label>
+            <label className="text-sm text-muted" htmlFor="phone">{t("Phone (optional)")}</label>
             <input
               id="phone"
               value={form.phone}
@@ -268,7 +270,7 @@ function CheckoutContent() {
               checked={form.anonymous}
               onChange={(e) => setForm({ ...form, anonymous: e.target.checked })}
             />
-            Donate anonymously
+            {t("Donate anonymously")}
           </label>
 
           {error && <p className="text-sm text-red">{error}</p>}
@@ -279,22 +281,22 @@ function CheckoutContent() {
             className="w-full"
             disabled={submitting || items.length === 0}
           >
-            {submitting ? "Processing…" : `Pay ${formatPaise(totalPaise)}`}
+            {submitting ? t("Processing…") : `${t("Pay")} ${formatPaise(totalPaise)}`}
           </Button>
           <p className="text-xs text-muted">
-            Payment is processed securely by Razorpay. Your donation is confirmed after server-side verification.
+            {t("Payment is processed securely by Razorpay. Your donation is confirmed after server-side verification.")}
           </p>
         </form>
       </div>
 
       <aside className="p-6 rounded-lg border border-border bg-cream h-fit sticky top-24">
-        <h3 className="font-semibold text-maroon">Order Summary</h3>
+        <h3 className="font-semibold text-maroon">{t("Order Summary")}</h3>
         <div className="mt-4 flex justify-between text-sm text-muted">
-          <span>Items</span>
+          <span>{t("Items")}</span>
           <span>{items.length}</span>
         </div>
         <div className="mt-2 flex justify-between font-semibold text-maroon text-lg border-t border-border pt-3">
-          <span>Total</span>
+          <span>{t("Total")}</span>
           <span>{formatPaise(totalPaise)}</span>
         </div>
       </aside>
