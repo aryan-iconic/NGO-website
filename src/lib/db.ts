@@ -477,10 +477,8 @@ export const db = {
         suggestedAmountsJson: input.suggestedAmountsPaise ? JSON.stringify(input.suggestedAmountsPaise) : null,
         taxBenefitEnabled: input.taxBenefitEnabled ?? false,
         createdByAdminId: input.createdByAdminId,
+        financials: { create: { internalTargetPaise: null, internalBudgetPaise: null } },
       }
-    });
-    await prisma.campaignFinancials.create({
-      data: { campaignId: campaign.id, internalTargetPaise: null, internalBudgetPaise: null }
     });
     await triggerTranslation("campaign", campaign.id, campaign, translationFields("campaign"));
     const c = await resolve(Promise.resolve(campaign));
