@@ -3,16 +3,20 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/require-admin";
 import { z } from "zod";
+import { getMinimumDonationAmountPaise } from "@/lib/server-settings";
+import { randomUUID } from "node:crypto";
 
 const createCampaignSchema = z.object({
   title: z.string().min(3),
   shortDescription: z.string().min(10),
   story: z.string().min(20),
+  beneficiaryInfo: z.string().optional().nullable(),
+  impactDescription: z.string().optional().nullable(),
   categoryId: z.string().optional(),
   locationText: z.string().optional(),
   donationMode: z.enum(["PRODUCTS", "GENERAL", "BOTH"]).default("BOTH"),
   allowCustomAmount: z.boolean().default(true),
-  minimumAmountPaise: z.number().int().positive().default(10100),
+  minimumAmountPaise: z.number().int().min(100).max(100_000_000).optional(),
   isFeatured: z.boolean().default(false),
   isUrgent: z.boolean().default(false),
   sevaAreaId: z.string().optional(),
@@ -30,17 +34,14 @@ function slugify(title: string) {
 export async function GET() {
   const guard = await requireAdmin(["SUPER_ADMIN", "ADMIN", "CONTENT_ADMIN"]);
   if (guard.error) return guard.error;
-  revalidatePath("/campaigns");
-    revalidatePath("/donate");
-    revalidatePath("/");
-    return NextResponse.json({ success: true, campaigns: await db.listAllCampaigns() });
+  return NextResponse.json({ success: true, campaigns: await db.listAllCampaigns() });
 }
 
 export async function POST(req: NextRequest) {
   const guard = await requireAdmin(["SUPER_ADMIN", "ADMIN", "CONTENT_ADMIN"]);
   if (guard.error) return guard.error;
 
-  const parsed = createCampaignSchema.safeParse(await req.json());
+  const parsed = createCampaignSchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) {
     return NextResponse.json(
       { success: false, error: { code: "VALIDATION_ERROR", message: parsed.error.issues[0]?.message } },
@@ -48,17 +49,17 @@ export async function POST(req: NextRequest) {
     );
   }
   const input = parsed.data;
-  const baseSlug = slugify(input.title);
+  const minimumAmountPaise = input.minimumAmountPaise ?? await getMinimumDonationAmountPaise();
+  const existingSlugs = new Set((await db.listAllCampaigns()).map((campaign: { slug: string }) => campaign.slug));
+  const baseSlug = slugify(input.title) || `campaign-${randomUUID().slice(0, 8)}`;
   let slug = baseSlug;
-  let n = 1;
-  while (await db.getCampaignById(slug) || (await db.listAllCampaigns()).some((c: any) => c.slug === slug)) {
-    slug = `${baseSlug}-${++n}`;
-  }
+  let suffix = 1;
+  while (existingSlugs.has(slug)) slug = `${baseSlug}-${++suffix}`;
 
   const campaign = await db.createCampaign({
     ...input,
     slug,
-    suggestedAmountsPaise: [10100, 50100, 100100],
+    minimumAmountPaise,
     createdByAdminId: guard.admin!.id,
     status: "DRAFT",
   });
@@ -73,7 +74,7 @@ export async function POST(req: NextRequest) {
   });
 
   revalidatePath("/campaigns");
-    revalidatePath("/donate");
-    revalidatePath("/");
-    return NextResponse.json({ success: true, campaign });
+  revalidatePath("/donate");
+  revalidatePath("/");
+  return NextResponse.json({ success: true, campaign });
 }
