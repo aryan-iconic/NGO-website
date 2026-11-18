@@ -6,8 +6,11 @@ import { toPublicCampaign } from "@/lib/view-models";
 import { LinkButton } from "@/components/ui/button";
 import { ProductCard } from "@/components/campaign/product-card";
 import { CampaignCard } from "@/components/campaign/campaign-card";
+import { CampaignMediaGallery } from "@/components/campaign/campaign-media-gallery";
 import { ShareButtons } from "@/components/ui/share-buttons";
 import { getServerTranslator } from "@/lib/i18n-server";
+import type { Campaign } from "@/lib/db";
+import type { PublicCampaign } from "@/lib/types";
 
 export default async function CampaignDetailPage({
   params,
@@ -23,8 +26,8 @@ export default async function CampaignDetailPage({
   const allowProductDonations = campaign.donationMode !== "GENERAL" && campaign.products.length > 0;
 
   const campaignsList = await db.listPublicCampaigns(campaign.sevaArea?.slug);
-  const related = (await Promise.all(campaignsList.map(toPublicCampaign)))
-    .filter((c: any) => c.id !== campaign.id)
+  const related: PublicCampaign[] = (await Promise.all(campaignsList.map((item: Campaign) => toPublicCampaign(item))) as PublicCampaign[])
+    .filter((item) => item.id !== campaign.id)
     .slice(0, 3);
   const { t } = await getServerTranslator();
 
@@ -86,26 +89,7 @@ export default async function CampaignDetailPage({
             )}
           </section>
 
-          {/* Media Gallery */}
-          {campaign.gallery.length > 0 && (
-            <section>
-              <h2 className="text-2xl">{t("Gallery & Media")}</h2>
-              <div className="mt-5 grid grid-cols-2 sm:grid-cols-3 gap-4">
-                {campaign.gallery.map((m, idx) => (
-                  <div key={idx} className="aspect-square rounded-lg border border-border overflow-hidden bg-cream relative">
-                    {m.type === "IMAGE" ? (
-                      <img src={m.url} alt="Campaign Media" className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex flex-col items-center justify-center p-4">
-                        <span className="text-3xl mb-2">🎥</span>
-                        <a href={m.url} target="_blank" rel="noopener noreferrer" className="text-sm text-maroon hover:underline">{t("Watch Video")}</a>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </section>
-          )}
+          <CampaignMediaGallery items={campaign.gallery} campaignTitle={campaign.title} heading={t("Gallery & Media")} />
 
           {/* Products */}
           {allowProductDonations && (
