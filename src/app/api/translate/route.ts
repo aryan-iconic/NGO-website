@@ -1,123 +1,112 @@
 import { NextResponse } from "next/server";
 import { isLocale } from "@/lib/locales";
 import { prisma } from "@/lib/prisma";
-import { createHash } from "crypto";
-import { ENABLED_LOCALES, translateTexts } from "@/lib/translation";
+import { ENABLED_LOCALES, hasTranslationProvider, translateTexts } from "@/lib/translation";
+import { legacyTranslationSourceHash, translationSourceHash } from "@/lib/translation-hash";
 import { rateLimit } from "@/lib/rate-limit";
+import { upsertUiTranslation } from "@/lib/translation-store";
 
-// Fallback to memory cache if Redis is not configured
-const memCache = new Map<string, string>();
-type TranslateItem = { text: string; isSensitive?: boolean };
-
+type TranslateItem = { text: string; key?: string; fallbackText?: string; isSensitive?: boolean };
 function isTranslateItem(item: unknown): item is TranslateItem {
   return !!item && typeof item === "object" && "text" in item && typeof item.text === "string";
 }
 
-function hashSource(text: string, locale: string) {
-  return createHash("sha256").update(`${locale}:${text}`).digest("hex");
-}
-
-export async function POST(req: Request) {
+export async function POST(request: Request) {
   try {
-    const ip = req.headers.get("x-real-ip") || req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-    if (!rateLimit(`translate:${ip}`, 20, 60_000)) return NextResponse.json({ error: "Translation request limit reached. Please wait a minute." }, { status: 429 });
-    const body = await req.json() as { target?: unknown; items?: unknown };
-    const { target, items } = body;
-
-    if (typeof target !== "string" || !isLocale(target) || target === "en" || !ENABLED_LOCALES.includes(target as (typeof ENABLED_LOCALES)[number])) {
-      return NextResponse.json({ error: "Invalid target locale" }, { status: 400 });
+    const ip = request.headers.get("x-real-ip") || request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+    if (!rateLimit(`translate:${ip}`, 60, 60_000)) {
+      return NextResponse.json({ error: "Translation request limit reached. Please wait a minute." }, { status: 429 });
     }
-
-    if (!Array.isArray(items) || items.length === 0 || items.length > 20) {
+    const body = await request.json() as { target?: unknown; items?: unknown };
+    const { target, items } = body;
+    if (typeof target !== "string" || !isLocale(target) || target === "en" || !ENABLED_LOCALES.includes(target as (typeof ENABLED_LOCALES)[number])) {
+      return NextResponse.json({ error: "Invalid target locale." }, { status: 400 });
+    }
+    if (!Array.isArray(items) || items.length < 1 || items.length > 20) {
       return NextResponse.json({ error: "Submit between 1 and 20 translation items at a time." }, { status: 400 });
     }
-
-    // Filter items to ensure they are valid
-    const validItems = items.filter((item): item is TranslateItem =>
-      isTranslateItem(item) && item.text.trim().length > 0 && item.text.length <= 1500
-    );
-    if (validItems.length !== items.length || validItems.reduce((sum, item) => sum + item.text.length, 0) > 10_000) {
-      return NextResponse.json({ error: "Translation text is invalid or exceeds the 10,000 character request limit." }, { status: 400 });
+    const validItems = items.filter(isTranslateItem);
+    if (validItems.length !== items.length || validItems.some((item) => !item.text.trim() || item.text.length > 1500 || (item.key && item.key.length > 240) || (item.fallbackText && item.fallbackText.length > 1500)) || validItems.reduce((total, item) => total + item.text.length, 0) > 10_000) {
+      return NextResponse.json({ error: "Translation text or key is invalid or exceeds the request limit." }, { status: 400 });
     }
-    if (validItems.length === 0) return NextResponse.json({ translations: [] });
 
-    // Step 1: Check DB for existing translations to avoid duplicate API calls
-    const sourceHashes = validItems.map(item => hashSource(item.text, target));
-    const existingTranslations = await prisma.translation.findMany({
+    const keys = validItems.map((item) => item.key?.trim() || item.text);
+    const newHashes = validItems.map((item, index) => translationSourceHash(item.text, target, keys[index]));
+    const legacyHashes = validItems.map((item) => legacyTranslationSourceHash(item.text, target));
+    const existingRows = await prisma.translation.findMany({
       where: {
-        sourceHash: { in: sourceHashes },
         locale: target,
+        OR: [
+          { sourceType: "UI", sourceId: { in: keys } },
+          { sourceHash: { in: legacyHashes } },
+        ],
+      },
+    });
+    const byKey = new Map(existingRows.filter((row) => row.sourceType === "UI" && row.sourceId).map((row) => [row.sourceId!, row]));
+    const legacyHashSet = new Set(legacyHashes);
+    const byLegacyText = new Map(existingRows.filter((row) => !row.sourceId && legacyHashSet.has(row.sourceHash)).map((row) => [row.sourceText, row]));
+    const resolved: Array<{ value: string; cacheable: boolean; forceSource?: boolean } | null> = validItems.map(() => null);
+    const missing: number[] = [];
+
+    for (let index = 0; index < validItems.length; index++) {
+      const item = validItems[index];
+      const key = keys[index];
+      let row = byKey.get(key);
+      if (!row) row = byLegacyText.get(item.text);
+      if (row?.status === "REJECTED") {
+        resolved[index] = { value: item.text, cacheable: false, forceSource: true };
+        continue;
       }
-    });
-
-    const translationMap = new Map<string, string>();
-    existingTranslations.forEach(t => {
-      translationMap.set(t.sourceText, t.translatedText);
-    });
-
-    const itemsToTranslate = validItems.filter(item => !translationMap.has(item.text) && !memCache.has(hashSource(item.text, target)));
-    
-    // Fill memCache ones
-    validItems.forEach(item => {
-      const h = hashSource(item.text, target);
-      if (memCache.has(h) && !translationMap.has(item.text)) {
-        translationMap.set(item.text, memCache.get(h)!);
+      if (row?.sourceHash === newHashes[index] && ["APPROVED", "AUTO"].includes(row.status)) {
+        resolved[index] = { value: row.translatedText, cacheable: true };
+        continue;
       }
-    });
+      if (row?.isManual) {
+        if (row.status !== "REVIEW_REQUIRED") await prisma.translation.update({ where: { id: row.id }, data: { status: "REVIEW_REQUIRED" } });
+        resolved[index] = { value: item.text, cacheable: false, forceSource: true };
+        continue;
+      }
+      if (row?.status === "REVIEW_REQUIRED") {
+        resolved[index] = { value: item.text, cacheable: false, forceSource: true };
+        continue;
+      }
+      if (item.isSensitive) {
+        await upsertUiTranslation({ key, sourceText: item.text, locale: target, translatedText: item.text, status: "REVIEW_REQUIRED", isManual: false, provider: "review-required", existingId: row?.id });
+        resolved[index] = { value: item.text, cacheable: false, forceSource: true };
+        continue;
+      }
+      if (item.fallbackText && item.fallbackText !== item.text) {
+        await upsertUiTranslation({ key, sourceText: item.text, locale: target, translatedText: item.fallbackText, status: "AUTO", isManual: false, provider: "dictionary", existingId: row?.id });
+        resolved[index] = { value: item.fallbackText, cacheable: true };
+        continue;
+      }
+      if (!hasTranslationProvider()) {
+        resolved[index] = { value: item.text, cacheable: false };
+        continue;
+      }
+      missing.push(index);
+    }
 
-    const autoTranslatingItems = itemsToTranslate.filter(i => !i.isSensitive);
-    const sensitiveItems = itemsToTranslate.filter(i => i.isSensitive);
-
-    if (autoTranslatingItems.length > 0) {
-      try {
-        const translatedTexts = await translateTexts(autoTranslatingItems.map((item) => item.text), target);
-        const newTranslations = autoTranslatingItems.map((item, index) => ({
-          sourceText: item.text,
-          sourceHash: hashSource(item.text, target),
-          locale: target,
-          translatedText: translatedTexts[index],
-          status: "AUTO",
-          isManual: false,
-        }));
-        await prisma.translation.createMany({ data: newTranslations, skipDuplicates: true });
-        newTranslations.forEach((translation) => {
-          translationMap.set(translation.sourceText, translation.translatedText);
-          memCache.set(translation.sourceHash, translation.translatedText);
-        });
-      } catch (error) {
-        console.error("Google Translate API Error", error);
+    if (missing.length) {
+      const translated = await translateTexts(missing.map((index) => validItems[index].text), target);
+      for (let offset = 0; offset < missing.length; offset++) {
+        const index = missing[offset];
+        const item = validItems[index];
+        const key = keys[index];
+        const row = byKey.get(key) ?? byLegacyText.get(item.text);
+        await upsertUiTranslation({ key, sourceText: item.text, locale: target, translatedText: translated[offset], status: "AUTO", isManual: false, provider: process.env.GOOGLE_TRANSLATE_API_KEY ? "google" : "libretranslate", existingId: row?.id });
+        resolved[index] = { value: translated[offset], cacheable: true };
       }
     }
 
-    if (sensitiveItems.length > 0) {
-      // Insert sensitive items as REVIEW_REQUIRED, falling back to English text initially
-      const newSensitiveTranslations = sensitiveItems.map(item => ({
-        sourceText: item.text,
-        sourceHash: hashSource(item.text, target),
-        locale: target,
-        translatedText: item.text, // fallback
-        status: "REVIEW_REQUIRED",
-        sourceType: "LEGAL",
-        isManual: false,
-      }));
-
-      await prisma.translation.createMany({
-        data: newSensitiveTranslations,
-        skipDuplicates: true
-      });
-
-      newSensitiveTranslations.forEach(t => {
-        translationMap.set(t.sourceText, t.translatedText);
-        memCache.set(t.sourceHash, t.translatedText);
-      });
-    }
-
-    const finalTranslations = items.map((item) => isTranslateItem(item) ? translationMap.get(item.text) || item.text : "");
-
-    return NextResponse.json({ translations: finalTranslations });
-
+    const results = validItems.map((item, index) => resolved[index] ?? { value: item.text, cacheable: false });
+    return NextResponse.json({
+      translations: results.map((result) => result.value),
+      cacheable: results.map((result) => result.cacheable),
+      forceSource: results.map((result) => result.forceSource ?? false),
+    });
   } catch (error) {
-    console.error("Translation route error:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    console.error("Translation route failed:", error);
+    return NextResponse.json({ error: "Translation is temporarily unavailable. Please retry." }, { status: 503 });
   }
 }
