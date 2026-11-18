@@ -21,9 +21,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   const { id } = await params;
   const event = await db.getEventById(id);
   if (!event) return NextResponse.json({ success: false, error: { code: "NOT_FOUND", message: "Event not found." } }, { status: 404 });
-  revalidatePath("/events");
-    revalidatePath("/");
-    return NextResponse.json({ success: true, event });
+  return NextResponse.json({ success: true, event });
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
