@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/require-admin";
 import { z } from "zod";
+import { randomUUID } from "node:crypto";
 
 const schema = z.object({
   title: z.string().min(3),
@@ -35,10 +36,12 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const baseSlug = slugify(parsed.data.title);
+  const existingPosts = await db.listBlogPosts(false);
+  const existingSlugs = new Set(existingPosts.map((post: { slug: string }) => post.slug));
+  const baseSlug = slugify(parsed.data.title) || `post-${randomUUID().slice(0, 8)}`;
   let slug = baseSlug;
   let n = 1;
-  while ((await db.listBlogPosts(false)).some((p: any) => p.slug === slug)) slug = `${baseSlug}-${++n}`;
+  while (existingSlugs.has(slug)) slug = `${baseSlug}-${++n}`;
 
   const post = await db.createBlogPost({
     ...parsed.data,
