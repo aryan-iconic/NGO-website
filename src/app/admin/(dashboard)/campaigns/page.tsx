@@ -3,9 +3,11 @@ import { db } from "@/lib/db";
 import { LinkButton } from "@/components/ui/button";
 import { StatusToggle } from "@/components/admin/status-toggle";
 import { CampaignDeleteButton } from "@/components/admin/campaign-delete-button";
+import type { Campaign } from "@/lib/db";
 
 export default async function AdminCampaignsPage() {
-  let campaigns: any[] = [];
+  let campaigns: Campaign[] = [];
+  let loadFailed = false;
   const sevaAreaMap = new Map<string, string>();
 
   try {
@@ -19,6 +21,7 @@ export default async function AdminCampaignsPage() {
     }
   } catch (err) {
     console.error("Failed to load campaigns or seva areas:", err);
+    loadFailed = true;
   }
 
   return (
@@ -31,6 +34,7 @@ export default async function AdminCampaignsPage() {
       </div>
 
       <div className="mt-6 bg-surface border border-border rounded-lg overflow-hidden">
+        {loadFailed && <p role="alert" className="p-4 text-sm text-red border-b border-border">Campaigns could not be loaded. Refresh the page or check the database connection.</p>}
         <table className="w-full text-sm">
           <thead className="bg-cream">
             <tr className="text-left">
@@ -45,11 +49,11 @@ export default async function AdminCampaignsPage() {
             {campaigns.length === 0 ? (
               <tr>
                 <td colSpan={5} className="p-6 text-center text-muted">
-                  No campaigns found.
+                  {loadFailed ? "Campaign list is unavailable." : "No campaigns found."}
                 </td>
               </tr>
             ) : (
-              campaigns.map((c: any) => (
+              campaigns.map((c) => (
                 <CampaignRow 
                   key={c.id} 
                   c={c} 
@@ -64,7 +68,7 @@ export default async function AdminCampaignsPage() {
   );
 }
 
-function CampaignRow({ c, sevaAreaName }: { c: any; sevaAreaName?: string }) {
+function CampaignRow({ c, sevaAreaName }: { c: Campaign; sevaAreaName?: string }) {
   const formattedDate = c.updatedAt 
     ? new Date(c.updatedAt).toLocaleDateString("en-IN") 
     : "—";
