@@ -305,6 +305,7 @@ model MonthlyGivingPlan {
   amountPaise   Int                   @map("amount_paise")
   totalCycles   Int                   @map("total_cycles")
   isActive      Boolean               @default(true) @map("is_active")
+  translations  Json?                 @map("translations")
   createdAt     DateTime              @default(now()) @map("created_at")
   updatedAt     DateTime              @updatedAt @map("updated_at")
   subscriptions MonthlySubscription[]
@@ -643,7 +644,7 @@ model DonorTaxInformation {
 model Translation {
   id             String   @id @default(uuid())
   sourceText     String   @map("source_text") // The English string
-  sourceHash     String   @map("source_hash") // hash(sourceText + locale)
+  sourceHash     String   @map("source_hash") // hash(locale + stable owner key + sourceText)
   locale         String
   translatedText String   @map("translated_text")
   sourceType     String   @default("STATIC") @map("source_type")
