@@ -19,9 +19,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   const { id } = await params;
   const post = await db.getBlogPostById(id);
   if (!post) return NextResponse.json({ success: false, error: { code: "NOT_FOUND", message: "Post not found." } }, { status: 404 });
-  revalidatePath("/blog");
-    revalidatePath("/");
-    return NextResponse.json({ success: true, post });
+  return NextResponse.json({ success: true, post });
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
