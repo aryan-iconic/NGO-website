@@ -15,8 +15,7 @@ const createSchema = z.object({
 export async function GET() {
   const guard = await requireAdmin(["SUPER_ADMIN", "ADMIN", "CONTENT_ADMIN"]);
   if (guard.error) return guard.error;
-  revalidatePath("/");
-    return NextResponse.json({ success: true, data: await db.listYouTubeVideos() });
+  return NextResponse.json({ success: true, data: await db.listYouTubeVideos() });
 }
 
 export async function POST(req: NextRequest) {
