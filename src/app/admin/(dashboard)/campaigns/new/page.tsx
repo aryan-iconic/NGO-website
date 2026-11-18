@@ -2,9 +2,13 @@ import { db } from "@/lib/db";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { CampaignCreateForm } from "@/components/admin/campaign-create-form";
+import { getMinimumDonationAmountPaise } from "@/lib/server-settings";
 
 export default async function NewCampaignPage() {
-  const sevaAreas = await db.listSevaAreas(false);
+  const [sevaAreas, defaultMinimumAmountPaise] = await Promise.all([
+    db.listSevaAreas(false),
+    getMinimumDonationAmountPaise(),
+  ]);
   return (
     <div className="max-w-2xl">
       <div className="mb-4">
@@ -18,7 +22,7 @@ export default async function NewCampaignPage() {
         <code className="text-xs">requireAdmin()</code> on the API, not just this UI being hidden.
       </p>
 
-      <CampaignCreateForm sevaAreas={sevaAreas} />
+      <CampaignCreateForm sevaAreas={sevaAreas} defaultMinimumAmountPaise={defaultMinimumAmountPaise} />
     </div>
   );
 }
