@@ -4,6 +4,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/require-admin";
 import { createRazorpayPlan, RazorpayApiError } from "@/lib/razorpay-subscriptions";
+import { generateAllTranslations, hasTranslationProvider } from "@/lib/translation";
 
 const planSchema = z.object({
   name: z.string().trim().min(2).max(80),
@@ -44,7 +45,7 @@ export async function POST(request: NextRequest) {
   const amountPaise = Math.round(parsed.data.amountRupees * 100);
   if (!Number.isSafeInteger(amountPaise)) return NextResponse.json({ success: false, error: { message: "Enter a valid amount." } }, { status: 400 });
   try {
-    const plan = await prisma.monthlyGivingPlan.create({
+    let plan = await prisma.monthlyGivingPlan.create({
       data: {
         id,
         gatewayPlanId: `pending_${id}`,
@@ -54,6 +55,14 @@ export async function POST(request: NextRequest) {
         totalCycles: parsed.data.totalCycles,
       },
     });
+    if (hasTranslationProvider()) {
+      try {
+        const translations = await generateAllTranslations(plan, ["name", "description"]);
+        plan = await prisma.monthlyGivingPlan.update({ where: { id }, data: { translations } });
+      } catch (error) {
+        console.error("Monthly plan was created but its translations could not be generated:", error);
+      }
+    }
     try {
       const external = await createRazorpayPlan({
         name: plan.name,
