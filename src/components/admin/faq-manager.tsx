@@ -15,34 +15,56 @@ export function FaqManager({ initial }: { initial: Faq[] }) {
   const [faqs, setFaqs] = useState<Faq[]>(initial);
   const [form, setForm] = useState({ question: "", answer: "", category: "" });
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<string | null>(null);
 
   const refresh = async () => {
     const res = await fetch("/api/admin/faqs");
-    const data = await res.json();
-    if (data.success) setFaqs(data.faqs);
+    const data = await res.json().catch(() => null);
+    if (!res.ok || !data?.success || !Array.isArray(data.faqs)) throw new Error(data?.error?.message || "Could not load FAQs.");
+    setFaqs(data.faqs);
   };
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    await fetch("/api/admin/faqs", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
-    });
-    setForm({ question: "", answer: "", category: "" });
-    setLoading(false);
-    refresh();
+    setError(null);
+    try {
+      const res = await fetch("/api/admin/faqs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data?.success) throw new Error(data?.error?.message || "Could not add FAQ.");
+      setForm({ question: "", answer: "", category: "" });
+      await refresh();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not add FAQ.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleDelete = async (id: string) => {
-    await fetch(`/api/admin/faqs/${id}`, { method: "DELETE" });
-    setFaqs((prev) => prev.filter((f) => f.id !== id));
+    setPendingDelete(id);
+    setError(null);
+    try {
+      const res = await fetch(`/api/admin/faqs/${id}`, { method: "DELETE" });
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data?.success) throw new Error(data?.error?.message || "Could not delete FAQ.");
+      setFaqs((prev) => prev.filter((f) => f.id !== id));
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not delete FAQ.");
+    } finally {
+      setPendingDelete(null);
+    }
   };
 
   return (
     <div className="max-w-2xl">
       <form onSubmit={handleAdd} className="p-5 rounded-lg border border-border bg-cream space-y-3">
+        {error && <p role="alert" className="text-sm text-red">{error}</p>}
         <p className="font-medium text-maroon">Add FAQ</p>
         <input
           required
@@ -81,6 +103,7 @@ export function FaqManager({ initial }: { initial: Faq[] }) {
             <button
               aria-label={`Delete FAQ: ${f.question}`}
               onClick={() => handleDelete(f.id)}
+              disabled={pendingDelete === f.id}
               className="text-muted hover:text-red shrink-0"
             >
               <Trash2 size={16} />
