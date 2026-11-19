@@ -13,11 +13,15 @@ const playfair = Playfair_Display({ subsets: ["latin"], variable: "--font-playfa
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.shrinityanikunjtrust.com"),
+  applicationName: "Shri Nityanikunj Ras Seva Sansthan Trust",
   title: "Shri Nityanikunj Ras Seva Sansthan Trust",
   description: "A commitment to Seva, Culture and Social Welfare. Shri Nityanikunj Ras Seva Sansthan Trust, Varanasi focuses on education, healthcare, social welfare, environment and animal welfare.",
   icons: {
-    icon: [{ url: "/favicon.png", type: "image/png", sizes: "512x512" }],
-    shortcut: "/favicon.png",
+    icon: [
+      { url: "/favicon.ico", type: "image/x-icon", sizes: "any" },
+      { url: "/favicon.png", type: "image/png", sizes: "512x512" },
+    ],
+    shortcut: "/favicon.ico",
     apple: [{ url: "/favicon.png", sizes: "512x512", type: "image/png" }],
   },
   openGraph: {

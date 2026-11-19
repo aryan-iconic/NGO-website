@@ -62,7 +62,7 @@ export default async function HomePage() {
         "@type": "WebSite",
         "@id": `${siteUrl}#website`,
         name: "Shri Nityanikunj Ras Seva Sansthan Trust",
-        alternateName: "Shri Nityanikunj Trust",
+        alternateName: ["Shri Nityanikunj Trust", "shrinityanikunjtrust.com"],
         url: siteUrl,
         publisher: { "@id": `${siteUrl}#organization` },
       },
